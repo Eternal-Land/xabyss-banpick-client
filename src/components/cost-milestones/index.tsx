@@ -146,8 +146,8 @@ export default function CostMilestonesTab() {
     };
 
     return (
-        <div className="ms-4 flex flex-col gap-3">
-            <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2">
                 <h1>{t(LocaleKeys.cost_milestones_title)}</h1>
                 <Button size="icon" variant="ghost" onClick={handleOpenCreate}>
                     <PlusIcon className="size-4" />

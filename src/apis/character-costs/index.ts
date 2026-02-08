@@ -15,11 +15,20 @@ async function syncCharacterCostsWithCharacters() {
 
 async function listCharacterCosts(query: CharacterCostQuery) {
 	const params = new URLSearchParams();
+	params.append("limit", String(query.limit));
 	if (query.showInactive !== undefined) {
 		params.append("showInactive", String(query.showInactive));
 	}
 	if (query.startId !== undefined) {
 		params.append("startId", String(query.startId));
+	}
+	if (query.element !== undefined) {
+		query.element.forEach((el) => {
+			params.append("element", el.toString());
+		});
+	}
+	if (query.search !== undefined) {
+		params.append("search", query.search);
 	}
 	const response = await http.get<
 		BaseApiResponse<CharacterCostCharacterResponse[]>

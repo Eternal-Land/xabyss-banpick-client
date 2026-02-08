@@ -425,6 +425,8 @@ const common: LocaleObject = {
 	admin_sidebar_character_costs: "Character Costs",
 	character_costs_title: "Character costs",
 	character_costs_sync: "Sync",
+	character_costs_saving: "Saving...",
+	character_costs_saved: "Saved",
 	character_costs_table_character: "Character",
 	costs_tab_character_costs: "Character costs",
 	costs_tab_cost_milestones: "Cost milestones",
@@ -469,6 +471,8 @@ const common: LocaleObject = {
 	cost_milestones_cost_to_min: "Cost to must be greater than or equal to 0.",
 	cost_milestones_cost_value_per_sec_min:
 		"Cost value per second must be greater than or equal to 0.",
+	search_placeholder: "Search...",
+	admin_sidebar_match_settings: "Match Settings",
 };
 
 export default common;

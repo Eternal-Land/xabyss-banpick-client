@@ -414,6 +414,8 @@ export const LocaleKeys = {
 	admin_sidebar_character_costs: "admin_sidebar_character_costs",
 	character_costs_title: "character_costs_title",
 	character_costs_sync: "character_costs_sync",
+	character_costs_saving: "character_costs_saving",
+	character_costs_saved: "character_costs_saved",
 	character_costs_table_character: "character_costs_table_character",
 	costs_tab_character_costs: "costs_tab_character_costs",
 	costs_tab_cost_milestones: "costs_tab_cost_milestones",
@@ -458,4 +460,6 @@ export const LocaleKeys = {
 	cost_milestones_cost_to_min: "cost_milestones_cost_to_min",
 	cost_milestones_cost_value_per_sec_min:
 		"cost_milestones_cost_value_per_sec_min",
+	search_placeholder: "search_placeholder",
+	admin_sidebar_match_settings: "admin_sidebar_match_settings",
 } as const;

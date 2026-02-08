@@ -416,6 +416,8 @@ const common: LocaleObject = {
 	admin_sidebar_character_costs: "Cost nhân vật",
 	character_costs_title: "Cost nhân vật",
 	character_costs_sync: "Đồng bộ",
+	character_costs_saving: "Đang lưu...",
+	character_costs_saved: "Đã lưu",
 	character_costs_table_character: "Nhân vật",
 	costs_tab_character_costs: "Cost nhân vật",
 	costs_tab_cost_milestones: "Mốc cost",
@@ -458,6 +460,8 @@ const common: LocaleObject = {
 	cost_milestones_cost_to_min: "Cost đến phải lớn hơn hoặc bằng 0.",
 	cost_milestones_cost_value_per_sec_min:
 		"Giá trị cost mỗi giây phải lớn hơn hoặc bằng 0.",
+	search_placeholder: "Tìm kiếm...",
+	admin_sidebar_match_settings: "Cài đặt trận đấu",
 };
 
 export default common;
