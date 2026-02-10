@@ -43,19 +43,19 @@ export default function CharacterContainer({
             <div className={`aspect-square ${rarityBackground} rounded-br-lg overflow-hidden flex items-center justify-center relative`}>
                 <div
                     className={cn(
-                        "absolute left-1 top-1 size-6 rounded-full shadow flex items-center justify-center border",
+                        "absolute left-1 top-1 size-6 rounded-full shadow flex items-center justify-center border z-1",
                         elementBadgeClass,
                     )}
                 >
                     <img src={element.iconUrl} alt={element.name} className="size-4" />
                 </div>
                 <div className={cn(
-                    "absolute right-1 top-1 min-w-6 rounded-full bg-black/70 px-2 pt-0.5 text-center text-xs text-white shadow",
+                    "absolute right-1 top-1 min-w-6 rounded-full bg-black/70 px-2 pt-0.5 text-center text-xs text-white shadow z-1",
                     constellation === 6 ? "text-yellow-700 bg-orange-200" : "",
                 )}>
                     C{constellation}
                 </div>
-                <img src={imageUrl} alt={name} />
+                <img src={imageUrl} alt={name} className="hover:scale-115 transition-transform duration-300"/>
             </div>
             <div className="text-center">
                 <span className={cn(
