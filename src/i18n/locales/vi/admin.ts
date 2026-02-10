@@ -21,6 +21,7 @@ const adminVi: AdminLocaleObject = {
 	admin_sidebar_users: "Người dùng",
 	admin_sidebar_character_costs: "Cost nhân vật",
 	admin_sidebar_match_settings: "Cài đặt trận đấu",
+	admin_sidebar_weapon_costs: "Cost vũ khí",
 };
 
 export default adminVi;

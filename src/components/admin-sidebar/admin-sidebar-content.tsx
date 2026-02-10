@@ -110,6 +110,14 @@ const adminRouteGroups: AdminSidebarRouteGroup[] = [
 				),
 				icon: <ChartScatterIcon className="size-4" />,
 			},
+			{
+				to: "/admin/weapon-costs",
+				label: getTranslationToken(
+					"admin",
+					adminLocaleKeys.admin_sidebar_weapon_costs,
+				),
+				icon: <ChartScatterIcon className="size-4" />,
+			},
 		],
 	},
 ];
