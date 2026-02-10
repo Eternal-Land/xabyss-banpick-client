@@ -1,5 +1,7 @@
 import z from "zod";
-import { LocaleKeys, type AccountRoleEnum } from "@/lib/constants";
+import { type AccountRoleEnum } from "@/lib/constants";
+import { commonLocaleKeys } from "@/i18n/keys";
+import { getTranslationToken } from "@/i18n/namespaces";
 
 export interface ProfileResponse {
 	id: string;
@@ -14,7 +16,11 @@ export interface ProfileResponse {
 
 export const updateProfileSchema = z.object({
 	ingameUuid: z.string().optional(),
-	avatar: z.url({ message: LocaleKeys.validation_url }).optional(),
+	avatar: z
+		.url({
+			message: getTranslationToken("common", commonLocaleKeys.validation_url),
+		})
+		.optional(),
 	displayName: z.string().optional(),
 });
 

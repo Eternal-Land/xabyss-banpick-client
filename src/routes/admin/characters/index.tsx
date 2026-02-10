@@ -32,7 +32,8 @@ import {
 	InputGroupInput,
 } from "@/components/ui/input-group";
 import { useTranslation } from "react-i18next";
-import { LocaleKeys } from "@/lib/constants";
+import { getTranslationToken } from "@/i18n/namespaces";
+import { charactersLocaleKeys } from "@/i18n/keys";
 import {
 	CharactersTable,
 	CharacterToggleDialog,
@@ -75,14 +76,26 @@ function RouteComponent() {
 	>({
 		mutationFn: (id) => charactersApi.toggleActive(id),
 		onSuccess: () => {
-			toast.success(t(LocaleKeys.characters_status_updated));
+			toast.success(
+				t(
+					getTranslationToken(
+						"characters",
+						charactersLocaleKeys.characters_status_updated,
+					),
+				),
+			);
 			refetch();
 			setConfirmTarget(null);
 		},
 		onError: (mutationError) => {
 			toast.error(
 				mutationError.response?.data.message ||
-					t(LocaleKeys.characters_status_update_error),
+					t(
+						getTranslationToken(
+							"characters",
+							charactersLocaleKeys.characters_status_update_error,
+						),
+					),
 			);
 		},
 	});
@@ -115,14 +128,32 @@ function RouteComponent() {
 		<div className="space-y-6">
 			<Card>
 				<CardHeader>
-					<CardTitle>{t(LocaleKeys.characters_title)}</CardTitle>
+					<CardTitle>
+						{t(
+							getTranslationToken(
+								"characters",
+								charactersLocaleKeys.characters_title,
+							),
+						)}
+					</CardTitle>
 					<CardDescription className="flex flex-wrap items-center gap-2">
 						<span>
-							{t(LocaleKeys.characters_count, { count: characters.length })}
+							{t(
+								getTranslationToken(
+									"characters",
+									charactersLocaleKeys.characters_count,
+								),
+								{ count: characters.length },
+							)}
 						</span>
 						{error ? (
 							<span className="text-destructive">
-								{t(LocaleKeys.characters_load_error)}
+								{t(
+									getTranslationToken(
+										"characters",
+										charactersLocaleKeys.characters_load_error,
+									),
+								)}
 							</span>
 						) : null}
 					</CardDescription>
@@ -131,7 +162,12 @@ function RouteComponent() {
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 						<InputGroup>
 							<InputGroupInput
-								placeholder={t(LocaleKeys.characters_search_placeholder)}
+								placeholder={t(
+									getTranslationToken(
+										"characters",
+										charactersLocaleKeys.characters_search_placeholder,
+									),
+								)}
 								value={search}
 								onChange={(event) => handleSearchChange(event.target.value)}
 							/>
@@ -158,7 +194,12 @@ function RouteComponent() {
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
-									{t(LocaleKeys.characters_refresh)}
+									{t(
+										getTranslationToken(
+											"characters",
+											charactersLocaleKeys.characters_refresh,
+										),
+									)}
 								</TooltipContent>
 							</Tooltip>
 
@@ -171,7 +212,12 @@ function RouteComponent() {
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
-									{t(LocaleKeys.characters_create_new)}
+									{t(
+										getTranslationToken(
+											"characters",
+											charactersLocaleKeys.characters_create_new,
+										),
+									)}
 								</TooltipContent>
 							</Tooltip>
 						</div>

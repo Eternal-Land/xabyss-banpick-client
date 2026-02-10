@@ -10,11 +10,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	LocaleKeys,
-	type WeaponRarityEnum,
-	type WeaponTypeEnum,
-} from "@/lib/constants";
+import type { WeaponRarityEnum, WeaponTypeEnum } from "@/lib/constants";
 import type { WeaponQuery, WeaponResponse } from "@/apis/weapons/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +30,8 @@ import {
 	useWeaponRarityOptions,
 } from "@/hooks/use-weapon-rarity-label";
 import FilterTableHead from "../filter-table-head";
+import { getTranslationToken } from "@/i18n/namespaces";
+import { commonLocaleKeys, weaponsLocaleKeys } from "@/i18n/keys";
 
 export interface WeaponsTableProps {
 	isLoading?: boolean;
@@ -68,11 +66,37 @@ export default function WeaponsTable({
 		<Table className="w-full table-auto">
 			<TableHeader>
 				<TableRow>
-					<TableHead>{t(LocaleKeys.weapons_table_icon)}</TableHead>
-					<TableHead>{t(LocaleKeys.weapons_table_name)}</TableHead>
-					<TableHead>{t(LocaleKeys.weapons_table_key)}</TableHead>
+					<TableHead>
+						{t(
+							getTranslationToken(
+								"weapons",
+								weaponsLocaleKeys.weapons_table_icon,
+							),
+						)}
+					</TableHead>
+					<TableHead>
+						{t(
+							getTranslationToken(
+								"weapons",
+								weaponsLocaleKeys.weapons_table_name,
+							),
+						)}
+					</TableHead>
+					<TableHead>
+						{t(
+							getTranslationToken(
+								"weapons",
+								weaponsLocaleKeys.weapons_table_key,
+							),
+						)}
+					</TableHead>
 					<FilterTableHead
-						label={t(LocaleKeys.weapons_table_type)}
+						label={t(
+							getTranslationToken(
+								"weapons",
+								weaponsLocaleKeys.weapons_table_type,
+							),
+						)}
 						multiSelect
 						options={weaponTypeOptions}
 						value={filter?.type?.map(String)}
@@ -84,7 +108,12 @@ export default function WeaponsTable({
 						}
 					/>
 					<FilterTableHead
-						label={t(LocaleKeys.weapons_table_rarity)}
+						label={t(
+							getTranslationToken(
+								"weapons",
+								weaponsLocaleKeys.weapons_table_rarity,
+							),
+						)}
 						multiSelect
 						options={weaponRarityOptions}
 						value={filter?.rarity?.map(String)}
@@ -96,14 +125,29 @@ export default function WeaponsTable({
 						}
 					/>
 					<FilterTableHead
-						label={t(LocaleKeys.weapons_table_status)}
+						label={t(
+							getTranslationToken(
+								"weapons",
+								weaponsLocaleKeys.weapons_table_status,
+							),
+						)}
 						options={[
 							{
-								label: t(LocaleKeys.show_inactive_false),
+								label: t(
+									getTranslationToken(
+										"common",
+										commonLocaleKeys.show_inactive_false,
+									),
+								),
 								value: "false",
 							},
 							{
-								label: t(LocaleKeys.show_inactive_true),
+								label: t(
+									getTranslationToken(
+										"common",
+										commonLocaleKeys.show_inactive_true,
+									),
+								),
 								value: "true",
 							},
 						]}
@@ -116,10 +160,20 @@ export default function WeaponsTable({
 						}
 					/>
 					<TableHead className="w-50">
-						{t(LocaleKeys.weapons_table_updated_at)}
+						{t(
+							getTranslationToken(
+								"weapons",
+								weaponsLocaleKeys.weapons_table_updated_at,
+							),
+						)}
 					</TableHead>
 					<TableHead className="w-30">
-						{t(LocaleKeys.weapons_table_action)}
+						{t(
+							getTranslationToken(
+								"weapons",
+								weaponsLocaleKeys.weapons_table_action,
+							),
+						)}
 					</TableHead>
 				</TableRow>
 			</TableHeader>
@@ -176,11 +230,21 @@ export default function WeaponsTable({
 								<TableCell>
 									{weapon.isActive ? (
 										<Badge variant="secondary">
-											{t(LocaleKeys.weapons_status_active)}
+											{t(
+												getTranslationToken(
+													"weapons",
+													weaponsLocaleKeys.weapons_status_active,
+												),
+											)}
 										</Badge>
 									) : (
 										<Badge variant="destructive">
-											{t(LocaleKeys.weapons_status_inactive)}
+											{t(
+												getTranslationToken(
+													"weapons",
+													weaponsLocaleKeys.weapons_status_inactive,
+												),
+											)}
 										</Badge>
 									)}
 								</TableCell>
@@ -203,7 +267,12 @@ export default function WeaponsTable({
 												</Button>
 											</TooltipTrigger>
 											<TooltipContent>
-												{t(LocaleKeys.weapons_edit_tooltip)}
+												{t(
+													getTranslationToken(
+														"weapons",
+														weaponsLocaleKeys.weapons_edit_tooltip,
+													),
+												)}
 											</TooltipContent>
 										</Tooltip>
 										<Tooltip>
@@ -229,8 +298,18 @@ export default function WeaponsTable({
 											</TooltipTrigger>
 											<TooltipContent>
 												{weapon.isActive
-													? t(LocaleKeys.weapons_deactivate_tooltip)
-													: t(LocaleKeys.weapons_activate_tooltip)}
+													? t(
+															getTranslationToken(
+																"weapons",
+																weaponsLocaleKeys.weapons_deactivate_tooltip,
+															),
+														)
+													: t(
+															getTranslationToken(
+																"weapons",
+																weaponsLocaleKeys.weapons_activate_tooltip,
+															),
+														)}
 											</TooltipContent>
 										</Tooltip>
 									</div>

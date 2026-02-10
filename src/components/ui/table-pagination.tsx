@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { LocaleKeys } from "@/lib/constants";
+import { getTranslationToken } from "@/i18n/namespaces";
+import { commonLocaleKeys } from "@/i18n/keys";
 import type { PaginationDto } from "@/lib/types";
 import {
 	Pagination,
@@ -93,10 +94,16 @@ export default function TablePagination({
 				{showPageInfo && (
 					<span className="text-muted-foreground text-sm">
 						{pagination
-							? t(LocaleKeys.pagination_page_info, {
-									current: page,
-									total: totalPage,
-								})
+							? t(
+									getTranslationToken(
+										"common",
+										commonLocaleKeys.pagination_page_info,
+									),
+									{
+										current: page,
+										total: totalPage,
+									},
+								)
 							: null}
 					</span>
 				)}
@@ -104,7 +111,12 @@ export default function TablePagination({
 					<PaginationContent>
 						<PaginationItem>
 							<PaginationPrevious
-								text={t(LocaleKeys.pagination_previous)}
+								text={t(
+									getTranslationToken(
+										"common",
+										commonLocaleKeys.pagination_previous,
+									),
+								)}
 								onClick={() => handlePageChange(page - 1)}
 								aria-disabled={isPreviousDisabled}
 								className={
@@ -139,7 +151,12 @@ export default function TablePagination({
 
 						<PaginationItem>
 							<PaginationNext
-								text={t(LocaleKeys.pagination_next)}
+								text={t(
+									getTranslationToken(
+										"common",
+										commonLocaleKeys.pagination_next,
+									),
+								)}
 								onClick={() => handlePageChange(page + 1)}
 								aria-disabled={isNextDisabled}
 								className={

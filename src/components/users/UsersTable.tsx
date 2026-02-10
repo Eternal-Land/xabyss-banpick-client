@@ -1,7 +1,8 @@
 import { useTranslation } from "react-i18next";
 import dayjs from "dayjs";
 import type { UserQuery, UserResponse } from "@/apis/users/types";
-import { LocaleKeys } from "@/lib/constants";
+import { getTranslationToken } from "@/i18n/namespaces";
+import { usersLocaleKeys } from "@/i18n/keys";
 import FilterTableHead from "@/components/filter-table-head";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -41,19 +42,42 @@ export default function UsersTable({
 	const { t } = useTranslation();
 
 	const statusFilterOptions = [
-		{ label: t(LocaleKeys.users_status_active), value: "true" },
-		{ label: t(LocaleKeys.users_status_inactive), value: "false" },
+		{
+			label: t(
+				getTranslationToken("users", usersLocaleKeys.users_status_active),
+			),
+			value: "true",
+		},
+		{
+			label: t(
+				getTranslationToken("users", usersLocaleKeys.users_status_inactive),
+			),
+			value: "false",
+		},
 	];
 
 	return (
 		<Table className="w-full table-auto">
 			<TableHeader>
 				<TableRow>
-					<TableHead>{t(LocaleKeys.users_table_name)}</TableHead>
-					<TableHead>{t(LocaleKeys.users_table_email)}</TableHead>
-					<TableHead>{t(LocaleKeys.users_table_ingame_uid)}</TableHead>
+					<TableHead>
+						{t(getTranslationToken("users", usersLocaleKeys.users_table_name))}
+					</TableHead>
+					<TableHead>
+						{t(getTranslationToken("users", usersLocaleKeys.users_table_email))}
+					</TableHead>
+					<TableHead>
+						{t(
+							getTranslationToken(
+								"users",
+								usersLocaleKeys.users_table_ingame_uid,
+							),
+						)}
+					</TableHead>
 					<FilterTableHead
-						label={t(LocaleKeys.users_table_status)}
+						label={t(
+							getTranslationToken("users", usersLocaleKeys.users_table_status),
+						)}
 						options={statusFilterOptions}
 						multiSelect
 						value={filter?.isActive?.map(String)}
@@ -64,8 +88,22 @@ export default function UsersTable({
 							})
 						}
 					/>
-					<TableHead>{t(LocaleKeys.users_table_last_login)}</TableHead>
-					<TableHead>{t(LocaleKeys.users_table_created_at)}</TableHead>
+					<TableHead>
+						{t(
+							getTranslationToken(
+								"users",
+								usersLocaleKeys.users_table_last_login,
+							),
+						)}
+					</TableHead>
+					<TableHead>
+						{t(
+							getTranslationToken(
+								"users",
+								usersLocaleKeys.users_table_created_at,
+							),
+						)}
+					</TableHead>
 				</TableRow>
 			</TableHeader>
 			<TableBody>
@@ -115,8 +153,18 @@ export default function UsersTable({
 								<TableCell>
 									<Badge variant={user.isActive ? "success" : "destructive"}>
 										{user.isActive
-											? t(LocaleKeys.users_status_active)
-											: t(LocaleKeys.users_status_inactive)}
+											? t(
+													getTranslationToken(
+														"users",
+														usersLocaleKeys.users_status_active,
+													),
+												)
+											: t(
+													getTranslationToken(
+														"users",
+														usersLocaleKeys.users_status_inactive,
+													),
+												)}
 									</Badge>
 								</TableCell>
 								<TableCell className="whitespace-nowrap">
@@ -132,7 +180,9 @@ export default function UsersTable({
 				{!isLoading && (!users || users.length === 0) && (
 					<TableRow>
 						<TableCell colSpan={6}>
-							<Empty>{t(LocaleKeys.users_empty)}</Empty>
+							<Empty>
+								{t(getTranslationToken("users", usersLocaleKeys.users_empty))}
+							</Empty>
 						</TableCell>
 					</TableRow>
 				)}

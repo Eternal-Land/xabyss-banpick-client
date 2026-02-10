@@ -1,0 +1,22 @@
+export const i18nNamespaces = [
+	"common",
+	"admin",
+	"auth",
+	"character-costs",
+	"characters",
+	"cost-milestones",
+	"header",
+	"permissions",
+	"profile",
+	"staff-roles",
+	"staffs",
+	"users",
+	"weapons",
+] as const;
+
+export function getTranslationToken(
+	namespace: (typeof i18nNamespaces)[number],
+	key: string,
+) {
+	return `${namespace}:${key}`;
+}

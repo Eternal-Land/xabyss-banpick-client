@@ -4,7 +4,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RefreshCcwIcon, SearchIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { usersApi } from "@/apis/users";
-import { LocaleKeys } from "@/lib/constants";
+import { getTranslationToken } from "@/i18n/namespaces";
+import { usersLocaleKeys } from "@/i18n/keys";
 import { UsersTable } from "@/components/users";
 import { Button } from "@/components/ui/button";
 import {
@@ -87,16 +88,25 @@ function RouteComponent() {
 		<div className="space-y-6">
 			<Card>
 				<CardHeader>
-					<CardTitle>{t(LocaleKeys.users_title)}</CardTitle>
+					<CardTitle>
+						{t(getTranslationToken("users", usersLocaleKeys.users_title))}
+					</CardTitle>
 					<CardDescription className="flex flex-wrap items-center gap-2">
 						<span>
 							{pagination
-								? t(LocaleKeys.users_count, { count: pagination.totalRecord })
+								? t(getTranslationToken("users", usersLocaleKeys.users_count), {
+										count: pagination.totalRecord,
+									})
 								: null}
 						</span>
 						{error ? (
 							<span className="text-destructive">
-								{t(LocaleKeys.users_load_error)}
+								{t(
+									getTranslationToken(
+										"users",
+										usersLocaleKeys.users_load_error,
+									),
+								)}
 							</span>
 						) : null}
 					</CardDescription>
@@ -105,7 +115,12 @@ function RouteComponent() {
 					<div className="flex gap-3 sm:flex-row sm:items-center sm:justify-between">
 						<InputGroup>
 							<InputGroupInput
-								placeholder={t(LocaleKeys.users_search_placeholder)}
+								placeholder={t(
+									getTranslationToken(
+										"users",
+										usersLocaleKeys.users_search_placeholder,
+									),
+								)}
 								value={search}
 								onChange={(event) => handleSearchChange(event.target.value)}
 							/>
@@ -131,7 +146,11 @@ function RouteComponent() {
 										)}
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>{t(LocaleKeys.users_refresh)}</TooltipContent>
+								<TooltipContent>
+									{t(
+										getTranslationToken("users", usersLocaleKeys.users_refresh),
+									)}
+								</TooltipContent>
 							</Tooltip>
 						</div>
 					</div>

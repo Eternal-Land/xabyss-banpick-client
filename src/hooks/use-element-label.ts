@@ -1,19 +1,56 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { CharacterElement, LocaleKeys } from "@/lib/constants";
+import { CharacterElement } from "@/lib/constants";
+import { charactersLocaleKeys } from "@/i18n/keys";
+import { getTranslationToken } from "@/i18n/namespaces";
 
 export function useElementLabel() {
 	const { t } = useTranslation();
 
 	return useMemo(
 		() => ({
-			[CharacterElement.PYRO]: t(LocaleKeys.characters_element_pyro),
-			[CharacterElement.HYDRO]: t(LocaleKeys.characters_element_hydro),
-			[CharacterElement.ANEMO]: t(LocaleKeys.characters_element_anemo),
-			[CharacterElement.ELECTRO]: t(LocaleKeys.characters_element_electro),
-			[CharacterElement.DENDRO]: t(LocaleKeys.characters_element_dendro),
-			[CharacterElement.CRYO]: t(LocaleKeys.characters_element_cryo),
-			[CharacterElement.GEO]: t(LocaleKeys.characters_element_geo),
+			[CharacterElement.PYRO]: t(
+				getTranslationToken(
+					"characters",
+					charactersLocaleKeys.characters_element_pyro,
+				),
+			),
+			[CharacterElement.HYDRO]: t(
+				getTranslationToken(
+					"characters",
+					charactersLocaleKeys.characters_element_hydro,
+				),
+			),
+			[CharacterElement.ANEMO]: t(
+				getTranslationToken(
+					"characters",
+					charactersLocaleKeys.characters_element_anemo,
+				),
+			),
+			[CharacterElement.ELECTRO]: t(
+				getTranslationToken(
+					"characters",
+					charactersLocaleKeys.characters_element_electro,
+				),
+			),
+			[CharacterElement.DENDRO]: t(
+				getTranslationToken(
+					"characters",
+					charactersLocaleKeys.characters_element_dendro,
+				),
+			),
+			[CharacterElement.CRYO]: t(
+				getTranslationToken(
+					"characters",
+					charactersLocaleKeys.characters_element_cryo,
+				),
+			),
+			[CharacterElement.GEO]: t(
+				getTranslationToken(
+					"characters",
+					charactersLocaleKeys.characters_element_geo,
+				),
+			),
 		}),
 		[t],
 	);

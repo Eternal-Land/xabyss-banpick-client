@@ -22,7 +22,9 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { LocaleKeys, WeaponRarity } from "@/lib/constants";
+import { getTranslationToken } from "@/i18n/namespaces";
+import { weaponsLocaleKeys } from "@/i18n/keys";
+import { WeaponRarity } from "@/lib/constants";
 import { WeaponForm, type WeaponFormValues } from "@/components/weapons";
 
 export const Route = createFileRoute("/admin/weapons/$weaponId")({
@@ -79,13 +81,25 @@ function RouteComponent() {
 		mutationFn: (input: UpdateWeaponInput) =>
 			weaponApis.updateWeapon(weaponId, input),
 		onSuccess: () => {
-			toast.success(t(LocaleKeys.weapons_edit_success));
+			toast.success(
+				t(
+					getTranslationToken(
+						"weapons",
+						weaponsLocaleKeys.weapons_edit_success,
+					),
+				),
+			);
 			navigate({ to: "/admin/weapons", search: { page: 1, take: 10 } });
 		},
 		onError: (mutationError) => {
 			toast.error(
 				mutationError.response?.data.message ||
-					t(LocaleKeys.weapons_edit_error),
+					t(
+						getTranslationToken(
+							"weapons",
+							weaponsLocaleKeys.weapons_edit_error,
+						),
+					),
 			);
 		},
 	});
@@ -103,18 +117,42 @@ function RouteComponent() {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t(LocaleKeys.weapons_edit_title)}</CardTitle>
+				<CardTitle>
+					{t(
+						getTranslationToken(
+							"weapons",
+							weaponsLocaleKeys.weapons_edit_title,
+						),
+					)}
+				</CardTitle>
 				<CardDescription className="space-y-1">
-					<span>{t(LocaleKeys.weapons_edit_description)}</span>
+					<span>
+						{t(
+							getTranslationToken(
+								"weapons",
+								weaponsLocaleKeys.weapons_edit_description,
+							),
+						)}
+					</span>
 					{weaponError ? (
 						<span className="text-destructive">
-							{t(LocaleKeys.weapons_edit_load_error)}
+							{t(
+								getTranslationToken(
+									"weapons",
+									weaponsLocaleKeys.weapons_edit_load_error,
+								),
+							)}
 						</span>
 					) : null}
 					{updateMutation.isError && (
 						<span className="text-destructive">
 							{updateMutation.error.response?.data.message ||
-								t(LocaleKeys.weapons_edit_error)}
+								t(
+									getTranslationToken(
+										"weapons",
+										weaponsLocaleKeys.weapons_edit_error,
+									),
+								)}
 						</span>
 					)}
 				</CardDescription>
@@ -135,7 +173,7 @@ function RouteComponent() {
 						navigate({ to: "/admin/weapons", search: { page: 1, take: 10 } })
 					}
 				>
-					{t(LocaleKeys.weapons_cancel)}
+					{t(getTranslationToken("weapons", weaponsLocaleKeys.weapons_cancel))}
 				</Button>
 				<Button
 					type="submit"
@@ -143,8 +181,18 @@ function RouteComponent() {
 					disabled={updateMutation.isPending || !isFormReady}
 				>
 					{updateMutation.isPending
-						? t(LocaleKeys.weapons_edit_pending)
-						: t(LocaleKeys.weapons_edit_submit)}
+						? t(
+								getTranslationToken(
+									"weapons",
+									weaponsLocaleKeys.weapons_edit_pending,
+								),
+							)
+						: t(
+								getTranslationToken(
+									"weapons",
+									weaponsLocaleKeys.weapons_edit_submit,
+								),
+							)}
 				</Button>
 			</CardFooter>
 		</Card>

@@ -20,12 +20,13 @@ import {
 	WrenchIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { LocaleKeys } from "@/lib/constants";
+import { adminLocaleKeys } from "@/i18n/keys";
+import { getTranslationToken } from "@/i18n/namespaces";
 
 type AdminSidebarRouteGroup = {
 	label: string;
 	routes: AdminSidebarRoute[];
-}
+};
 
 type AdminSidebarRoute = {
 	to: string;
@@ -35,56 +36,83 @@ type AdminSidebarRoute = {
 
 const adminRouteGroups: AdminSidebarRouteGroup[] = [
 	{
-		label: LocaleKeys.admin_sidebar_label,
+		label: getTranslationToken("admin", adminLocaleKeys.admin_sidebar_label),
 		routes: [
 			{
 				to: "/admin",
-				label: LocaleKeys.admin_sidebar_dashboard,
+				label: getTranslationToken(
+					"admin",
+					adminLocaleKeys.admin_sidebar_dashboard,
+				),
 				icon: <HouseIcon className="size-4" />,
 			},
 			{
 				to: "/admin/permissions",
-				label: LocaleKeys.admin_sidebar_permissions,
+				label: getTranslationToken(
+					"admin",
+					adminLocaleKeys.admin_sidebar_permissions,
+				),
 				icon: <WrenchIcon className="size-4" />,
 			},
 			{
 				to: "/admin/staff-roles",
-				label: LocaleKeys.admin_sidebar_staff_roles,
+				label: getTranslationToken(
+					"admin",
+					adminLocaleKeys.admin_sidebar_staff_roles,
+				),
 				icon: <BriefcaseIcon className="size-4" />,
 			},
 			{
 				to: "/admin/staffs",
-				label: LocaleKeys.admin_sidebar_staffs,
+				label: getTranslationToken(
+					"admin",
+					adminLocaleKeys.admin_sidebar_staffs,
+				),
 				icon: <ContactIcon className="size-4" />,
 			},
 			{
 				to: "/admin/users",
-				label: LocaleKeys.admin_sidebar_users,
+				label: getTranslationToken(
+					"admin",
+					adminLocaleKeys.admin_sidebar_users,
+				),
 				icon: <UsersIcon className="size-4" />,
 			},
 		],
 	},
 	{
-		label: LocaleKeys.admin_sidebar_match_settings,
+		label: getTranslationToken(
+			"admin",
+			adminLocaleKeys.admin_sidebar_match_settings,
+		),
 		routes: [
 			{
 				to: "/admin/characters",
-				label: LocaleKeys.admin_sidebar_characters,
+				label: getTranslationToken(
+					"admin",
+					adminLocaleKeys.admin_sidebar_characters,
+				),
 				icon: <SparklesIcon className="size-4" />,
 			},
 			{
 				to: "/admin/weapons",
-				label: LocaleKeys.admin_sidebar_weapons,
+				label: getTranslationToken(
+					"admin",
+					adminLocaleKeys.admin_sidebar_weapons,
+				),
 				icon: <SwordIcon className="size-4" />,
 			},
 			{
 				to: "/admin/costs",
-				label: LocaleKeys.admin_sidebar_character_costs,
+				label: getTranslationToken(
+					"admin",
+					adminLocaleKeys.admin_sidebar_character_costs,
+				),
 				icon: <ChartScatterIcon className="size-4" />,
 			},
-		]
-	}
-]
+		],
+	},
+];
 
 export default function AdminSidebarContent() {
 	const { t } = useTranslation();

@@ -1,0 +1,15 @@
+export const commonLocaleKeys = {
+	validation_required: "validation_required",
+	validation_email: "validation_email",
+	validation_password_strength: "validation_password_strength",
+	validation_password_mismatch: "validation_password_mismatch",
+	validation_url: "validation_url",
+	validation_permission_required: "validation_permission_required",
+	pagination_page_info: "pagination_page_info",
+	pagination_previous: "pagination_previous",
+	pagination_next: "pagination_next",
+	search_placeholder: "search_placeholder",
+	show_inactive_true: "show_inactive_true",
+	show_inactive_false: "show_inactive_false",
+	level: "level",
+} as const;

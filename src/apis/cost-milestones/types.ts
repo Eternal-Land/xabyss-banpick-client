@@ -1,5 +1,6 @@
 import z from "zod";
-import { LocaleKeys } from "@/lib/constants/locale-keys";
+import { costMilestonesLocaleKeys } from "@/i18n/keys";
+import { getTranslationToken } from "@/i18n/namespaces";
 import type { ProfileResponse } from "../self/types";
 
 export interface CostMilestoneResponse {
@@ -14,15 +15,35 @@ export interface CostMilestoneResponse {
 }
 
 export const createCostMilestoneSchema = z.object({
-	costFrom: z.number().min(0, LocaleKeys.cost_milestones_cost_from_min),
+	costFrom: z
+		.number()
+		.min(
+			0,
+			getTranslationToken(
+				"cost-milestones",
+				costMilestonesLocaleKeys.cost_milestones_cost_from_min,
+			),
+		),
 	costTo: z
 		.number()
-		.min(0, LocaleKeys.cost_milestones_cost_to_min)
+		.min(
+			0,
+			getTranslationToken(
+				"cost-milestones",
+				costMilestonesLocaleKeys.cost_milestones_cost_to_min,
+			),
+		)
 		.nullable()
 		.optional(),
 	costValuePerSec: z
 		.number()
-		.min(0, LocaleKeys.cost_milestones_cost_value_per_sec_min),
+		.min(
+			0,
+			getTranslationToken(
+				"cost-milestones",
+				costMilestonesLocaleKeys.cost_milestones_cost_value_per_sec_min,
+			),
+		),
 });
 
 export type CreateCostMilestoneInput = z.infer<
@@ -30,15 +51,35 @@ export type CreateCostMilestoneInput = z.infer<
 >;
 
 export const updateCostMilestoneSchema = z.object({
-	costFrom: z.number().min(0, LocaleKeys.cost_milestones_cost_from_min),
+	costFrom: z
+		.number()
+		.min(
+			0,
+			getTranslationToken(
+				"cost-milestones",
+				costMilestonesLocaleKeys.cost_milestones_cost_from_min,
+			),
+		),
 	costTo: z
 		.number()
-		.min(0, LocaleKeys.cost_milestones_cost_to_min)
+		.min(
+			0,
+			getTranslationToken(
+				"cost-milestones",
+				costMilestonesLocaleKeys.cost_milestones_cost_to_min,
+			),
+		)
 		.nullable()
 		.optional(),
 	costValuePerSec: z
 		.number()
-		.min(0, LocaleKeys.cost_milestones_cost_value_per_sec_min),
+		.min(
+			0,
+			getTranslationToken(
+				"cost-milestones",
+				costMilestonesLocaleKeys.cost_milestones_cost_value_per_sec_min,
+			),
+		),
 });
 
 export type UpdateCostMilestoneInput = z.infer<

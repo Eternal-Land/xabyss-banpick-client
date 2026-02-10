@@ -34,7 +34,8 @@ import {
 	InputGroupInput,
 } from "@/components/ui/input-group";
 import { useTranslation } from "react-i18next";
-import { LocaleKeys } from "@/lib/constants";
+import { getTranslationToken } from "@/i18n/namespaces";
+import { weaponsLocaleKeys } from "@/i18n/keys";
 import { WeaponsTable, WeaponToggleDialog } from "@/components/weapons";
 import TablePagination from "@/components/ui/table-pagination";
 
@@ -70,14 +71,26 @@ function RouteComponent() {
 	>({
 		mutationFn: (id) => weaponApis.toggleActive(id),
 		onSuccess: () => {
-			toast.success(t(LocaleKeys.weapons_status_updated));
+			toast.success(
+				t(
+					getTranslationToken(
+						"weapons",
+						weaponsLocaleKeys.weapons_status_updated,
+					),
+				),
+			);
 			refetch();
 			setConfirmTarget(null);
 		},
 		onError: (mutationError) => {
 			toast.error(
 				mutationError.response?.data.message ||
-					t(LocaleKeys.weapons_status_update_error),
+					t(
+						getTranslationToken(
+							"weapons",
+							weaponsLocaleKeys.weapons_status_update_error,
+						),
+					),
 			);
 		},
 	});
@@ -113,14 +126,24 @@ function RouteComponent() {
 		<div className="space-y-6">
 			<Card>
 				<CardHeader>
-					<CardTitle>{t(LocaleKeys.weapons_title)}</CardTitle>
+					<CardTitle>
+						{t(getTranslationToken("weapons", weaponsLocaleKeys.weapons_title))}
+					</CardTitle>
 					<CardDescription className="flex flex-wrap items-center gap-2">
 						<span>
-							{t(LocaleKeys.weapons_count, { count: weapons.length })}
+							{t(
+								getTranslationToken("weapons", weaponsLocaleKeys.weapons_count),
+								{ count: weapons.length },
+							)}
 						</span>
 						{error ? (
 							<span className="text-destructive">
-								{t(LocaleKeys.weapons_load_error)}
+								{t(
+									getTranslationToken(
+										"weapons",
+										weaponsLocaleKeys.weapons_load_error,
+									),
+								)}
 							</span>
 						) : null}
 					</CardDescription>
@@ -129,7 +152,12 @@ function RouteComponent() {
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 						<InputGroup>
 							<InputGroupInput
-								placeholder={t(LocaleKeys.weapons_search_placeholder)}
+								placeholder={t(
+									getTranslationToken(
+										"weapons",
+										weaponsLocaleKeys.weapons_search_placeholder,
+									),
+								)}
 								value={search}
 								onChange={(event) => handleSearchChange(event.target.value)}
 							/>
@@ -155,7 +183,14 @@ function RouteComponent() {
 										)}
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>{t(LocaleKeys.weapons_refresh)}</TooltipContent>
+								<TooltipContent>
+									{t(
+										getTranslationToken(
+											"weapons",
+											weaponsLocaleKeys.weapons_refresh,
+										),
+									)}
+								</TooltipContent>
 							</Tooltip>
 
 							<Tooltip>
@@ -167,7 +202,12 @@ function RouteComponent() {
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
-									{t(LocaleKeys.weapons_create_new)}
+									{t(
+										getTranslationToken(
+											"weapons",
+											weaponsLocaleKeys.weapons_create_new,
+										),
+									)}
 								</TooltipContent>
 							</Tooltip>
 						</div>

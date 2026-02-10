@@ -1,0 +1,43 @@
+export const costMilestonesLocaleKeys = {
+	cost_milestones_title: "cost_milestones_title",
+	cost_milestones_table_index: "cost_milestones_table_index",
+	cost_milestones_table_range: "cost_milestones_table_range",
+	cost_milestones_table_value: "cost_milestones_table_value",
+	cost_milestones_table_action: "cost_milestones_table_action",
+	cost_milestones_empty: "cost_milestones_empty",
+	cost_milestones_range_open: "cost_milestones_range_open",
+	cost_milestones_edit_action: "cost_milestones_edit_action",
+	cost_milestones_delete_action: "cost_milestones_delete_action",
+	cost_milestones_create_success: "cost_milestones_create_success",
+	cost_milestones_create_error: "cost_milestones_create_error",
+	cost_milestones_edit_success: "cost_milestones_edit_success",
+	cost_milestones_edit_error: "cost_milestones_edit_error",
+	cost_milestones_delete_success: "cost_milestones_delete_success",
+	cost_milestones_delete_error: "cost_milestones_delete_error",
+	cost_milestones_delete_confirm: "cost_milestones_delete_confirm",
+	cost_milestones_delete_title: "cost_milestones_delete_title",
+	cost_milestones_delete_description: "cost_milestones_delete_description",
+	cost_milestones_delete_confirm_action:
+		"cost_milestones_delete_confirm_action",
+	cost_milestones_delete_pending: "cost_milestones_delete_pending",
+	cost_milestones_title_create: "cost_milestones_title_create",
+	cost_milestones_title_edit: "cost_milestones_title_edit",
+	cost_milestones_description_create: "cost_milestones_description_create",
+	cost_milestones_description_edit: "cost_milestones_description_edit",
+	cost_milestones_cost_from_label: "cost_milestones_cost_from_label",
+	cost_milestones_cost_from_placeholder:
+		"cost_milestones_cost_from_placeholder",
+	cost_milestones_cost_to_label: "cost_milestones_cost_to_label",
+	cost_milestones_cost_to_placeholder: "cost_milestones_cost_to_placeholder",
+	cost_milestones_cost_value_per_sec_label:
+		"cost_milestones_cost_value_per_sec_label",
+	cost_milestones_cost_value_per_sec_placeholder:
+		"cost_milestones_cost_value_per_sec_placeholder",
+	cost_milestones_cancel: "cost_milestones_cancel",
+	cost_milestones_submit_create: "cost_milestones_submit_create",
+	cost_milestones_submit_edit: "cost_milestones_submit_edit",
+	cost_milestones_cost_from_min: "cost_milestones_cost_from_min",
+	cost_milestones_cost_to_min: "cost_milestones_cost_to_min",
+	cost_milestones_cost_value_per_sec_min:
+		"cost_milestones_cost_value_per_sec_min",
+} as const;

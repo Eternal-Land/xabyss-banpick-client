@@ -1,0 +1,17 @@
+export const permissionsLocaleKeys = {
+	permissions_title: "permissions_title",
+	permissions_total: "permissions_total",
+	permissions_total_plural: "permissions_total_plural",
+	permissions_deprecated_count: "permissions_deprecated_count",
+	permissions_load_error: "permissions_load_error",
+	permissions_search_placeholder: "permissions_search_placeholder",
+	permissions_refresh: "permissions_refresh",
+	permissions_table_id: "permissions_table_id",
+	permissions_table_code: "permissions_table_code",
+	permissions_table_description: "permissions_table_description",
+	permissions_table_status: "permissions_table_status",
+	permissions_no_desc: "permissions_no_desc",
+	permissions_status_deprecated: "permissions_status_deprecated",
+	permissions_status_active: "permissions_status_active",
+	permissions_empty: "permissions_empty",
+} as const;

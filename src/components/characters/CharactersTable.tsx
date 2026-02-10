@@ -11,10 +11,11 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import {
-	LocaleKeys,
 	type CharacterElementEnum,
 	type WeaponTypeEnum,
 } from "@/lib/constants";
+import { charactersLocaleKeys, commonLocaleKeys } from "@/i18n/keys";
+import { getTranslationToken } from "@/i18n/namespaces";
 import type {
 	CharacterQuery,
 	CharacterResponse,
@@ -68,15 +69,37 @@ export default function CharactersTable({
 		<Table className="w-full table-auto">
 			<TableHeader>
 				<TableRow>
-					<TableHead>{t(LocaleKeys.characters_table_icon)}</TableHead>
+					<TableHead>
+						{t(
+							getTranslationToken(
+								"characters",
+								charactersLocaleKeys.characters_table_icon,
+							),
+						)}
+					</TableHead>
 					<TableHead className="w-70">
-						{t(LocaleKeys.characters_table_name)}
+						{t(
+							getTranslationToken(
+								"characters",
+								charactersLocaleKeys.characters_table_name,
+							),
+						)}
 					</TableHead>
 					<TableHead className="w-50">
-						{t(LocaleKeys.characters_table_key)}
+						{t(
+							getTranslationToken(
+								"characters",
+								charactersLocaleKeys.characters_table_key,
+							),
+						)}
 					</TableHead>
 					<FilterTableHead
-						label={t(LocaleKeys.characters_table_element)}
+						label={t(
+							getTranslationToken(
+								"characters",
+								charactersLocaleKeys.characters_table_element,
+							),
+						)}
 						multiSelect
 						options={elementOptions}
 						value={filter?.element?.map(String)}
@@ -88,7 +111,12 @@ export default function CharactersTable({
 						}
 					/>
 					<FilterTableHead
-						label={t(LocaleKeys.characters_table_weapon)}
+						label={t(
+							getTranslationToken(
+								"characters",
+								charactersLocaleKeys.characters_table_weapon,
+							),
+						)}
 						multiSelect
 						options={weaponTypeOptions}
 						value={filter?.weaponType?.map(String)}
@@ -100,7 +128,12 @@ export default function CharactersTable({
 						}
 					/>
 					<FilterTableHead
-						label={t(LocaleKeys.characters_table_rarity)}
+						label={t(
+							getTranslationToken(
+								"characters",
+								charactersLocaleKeys.characters_table_rarity,
+							),
+						)}
 						multiSelect
 						options={[4, 5].map((item) => ({
 							label: `${item}★`,
@@ -115,14 +148,29 @@ export default function CharactersTable({
 						}
 					/>
 					<FilterTableHead
-						label={t(LocaleKeys.characters_table_status)}
+						label={t(
+							getTranslationToken(
+								"characters",
+								charactersLocaleKeys.characters_table_status,
+							),
+						)}
 						options={[
 							{
-								label: t(LocaleKeys.show_inactive_false),
+								label: t(
+									getTranslationToken(
+										"common",
+										commonLocaleKeys.show_inactive_false,
+									),
+								),
 								value: "false",
 							},
 							{
-								label: t(LocaleKeys.show_inactive_true),
+								label: t(
+									getTranslationToken(
+										"common",
+										commonLocaleKeys.show_inactive_true,
+									),
+								),
 								value: "true",
 							},
 						]}
@@ -135,10 +183,20 @@ export default function CharactersTable({
 						}
 					/>
 					<TableHead className="w-50">
-						{t(LocaleKeys.characters_table_updated_at)}
+						{t(
+							getTranslationToken(
+								"characters",
+								charactersLocaleKeys.characters_table_updated_at,
+							),
+						)}
 					</TableHead>
 					<TableHead className="w-30">
-						{t(LocaleKeys.characters_table_action)}
+						{t(
+							getTranslationToken(
+								"characters",
+								charactersLocaleKeys.characters_table_action,
+							),
+						)}
 					</TableHead>
 				</TableRow>
 			</TableHeader>
@@ -205,11 +263,21 @@ export default function CharactersTable({
 								<TableCell>
 									{character.isActive ? (
 										<Badge variant="secondary">
-											{t(LocaleKeys.characters_status_active)}
+											{t(
+												getTranslationToken(
+													"characters",
+													charactersLocaleKeys.characters_status_active,
+												),
+											)}
 										</Badge>
 									) : (
 										<Badge variant="destructive">
-											{t(LocaleKeys.characters_status_inactive)}
+											{t(
+												getTranslationToken(
+													"characters",
+													charactersLocaleKeys.characters_status_inactive,
+												),
+											)}
 										</Badge>
 									)}
 								</TableCell>
@@ -232,7 +300,12 @@ export default function CharactersTable({
 												</Button>
 											</TooltipTrigger>
 											<TooltipContent>
-												{t(LocaleKeys.characters_edit_tooltip)}
+												{t(
+													getTranslationToken(
+														"characters",
+														charactersLocaleKeys.characters_edit_tooltip,
+													),
+												)}
 											</TooltipContent>
 										</Tooltip>
 										<Tooltip>
@@ -259,8 +332,18 @@ export default function CharactersTable({
 											</TooltipTrigger>
 											<TooltipContent>
 												{character.isActive
-													? t(LocaleKeys.characters_deactivate_tooltip)
-													: t(LocaleKeys.characters_activate_tooltip)}
+													? t(
+															getTranslationToken(
+																"characters",
+																charactersLocaleKeys.characters_deactivate_tooltip,
+															),
+														)
+													: t(
+															getTranslationToken(
+																"characters",
+																charactersLocaleKeys.characters_activate_tooltip,
+															),
+														)}
 											</TooltipContent>
 										</Tooltip>
 									</div>

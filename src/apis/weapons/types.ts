@@ -1,12 +1,13 @@
 import z from "zod";
 import type { ProfileResponse } from "../self/types";
 import {
-	LocaleKeys,
 	WeaponRarity,
 	WeaponType,
 	type WeaponRarityEnum,
 	type WeaponTypeEnum,
 } from "@/lib/constants";
+import { commonLocaleKeys } from "@/i18n/keys";
+import { getTranslationToken } from "@/i18n/namespaces";
 import { paginationQuerySchema } from "@/lib/types";
 
 export interface WeaponResponse {
@@ -27,10 +28,10 @@ export const createWeaponSchema = z.object({
 	key: z.string().min(1).max(100),
 	name: z.string().min(1).max(100),
 	type: z.enum(WeaponType, {
-		error: LocaleKeys.validation_required,
+		error: getTranslationToken("common", commonLocaleKeys.validation_required),
 	}),
 	rarity: z.enum(WeaponRarity, {
-		error: LocaleKeys.validation_required,
+		error: getTranslationToken("common", commonLocaleKeys.validation_required),
 	}),
 	iconUrl: z.string().optional(),
 });
@@ -41,10 +42,10 @@ export const updateWeaponSchema = createWeaponSchema.extend({
 	key: z.string().min(1).max(100),
 	name: z.string().min(1).max(100),
 	type: z.enum(WeaponType, {
-		error: LocaleKeys.validation_required,
+		error: getTranslationToken("common", commonLocaleKeys.validation_required),
 	}),
 	rarity: z.enum(WeaponRarity, {
-		error: LocaleKeys.validation_required,
+		error: getTranslationToken("common", commonLocaleKeys.validation_required),
 	}),
 	iconUrl: z.string().optional(),
 });

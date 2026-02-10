@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { LocaleKeys } from "@/lib/constants";
+import { getTranslationToken } from "@/i18n/namespaces";
+import { charactersLocaleKeys } from "@/i18n/keys";
 import {
 	CharacterForm,
 	type CharacterFormValues,
@@ -56,13 +57,25 @@ function RouteComponent() {
 		mutationFn: (input: CreateCharacterInput) =>
 			charactersApi.createCharacter(input),
 		onSuccess: () => {
-			toast.success(t(LocaleKeys.characters_create_success));
+			toast.success(
+				t(
+					getTranslationToken(
+						"characters",
+						charactersLocaleKeys.characters_create_success,
+					),
+				),
+			);
 			navigate({ to: "/admin/characters", search: { page: 1, take: 10 } });
 		},
 		onError: (mutationError) => {
 			toast.error(
 				mutationError.response?.data.message ||
-					t(LocaleKeys.characters_create_error),
+					t(
+						getTranslationToken(
+							"characters",
+							charactersLocaleKeys.characters_create_error,
+						),
+					),
 			);
 		},
 	});
@@ -81,13 +94,32 @@ function RouteComponent() {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t(LocaleKeys.characters_create_title)}</CardTitle>
+				<CardTitle>
+					{t(
+						getTranslationToken(
+							"characters",
+							charactersLocaleKeys.characters_create_title,
+						),
+					)}
+				</CardTitle>
 				<CardDescription className="space-y-1">
-					<span>{t(LocaleKeys.characters_create_description)}</span>
+					<span>
+						{t(
+							getTranslationToken(
+								"characters",
+								charactersLocaleKeys.characters_create_description,
+							),
+						)}
+					</span>
 					{createMutation.isError && (
 						<span className="text-destructive">
 							{createMutation.error.response?.data.message ||
-								t(LocaleKeys.characters_create_error)}
+								t(
+									getTranslationToken(
+										"characters",
+										charactersLocaleKeys.characters_create_error,
+									),
+								)}
 						</span>
 					)}
 				</CardDescription>
@@ -107,7 +139,12 @@ function RouteComponent() {
 						navigate({ to: "/admin/characters", search: { page: 1, take: 10 } })
 					}
 				>
-					{t(LocaleKeys.characters_cancel)}
+					{t(
+						getTranslationToken(
+							"characters",
+							charactersLocaleKeys.characters_cancel,
+						),
+					)}
 				</Button>
 				<Button
 					type="submit"
@@ -115,8 +152,18 @@ function RouteComponent() {
 					disabled={createMutation.isPending}
 				>
 					{createMutation.isPending
-						? t(LocaleKeys.characters_create_pending)
-						: t(LocaleKeys.characters_create_submit)}
+						? t(
+								getTranslationToken(
+									"characters",
+									charactersLocaleKeys.characters_create_pending,
+								),
+							)
+						: t(
+								getTranslationToken(
+									"characters",
+									charactersLocaleKeys.characters_create_submit,
+								),
+							)}
 				</Button>
 			</CardFooter>
 		</Card>

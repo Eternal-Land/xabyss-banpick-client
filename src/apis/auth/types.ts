@@ -1,30 +1,64 @@
 import { z } from "zod";
-import { LocaleKeys } from "@/lib/constants";
+import { commonLocaleKeys } from "@/i18n/keys";
+import { getTranslationToken } from "@/i18n/namespaces";
 
 export const registerSchema = z
 	.object({
-		ingameUuid: z.string().min(1, LocaleKeys.validation_required),
-		email: z.email({ message: LocaleKeys.validation_email }),
+		ingameUuid: z
+			.string()
+			.min(
+				1,
+				getTranslationToken("common", commonLocaleKeys.validation_required),
+			),
+		email: z.email({
+			message: getTranslationToken("common", commonLocaleKeys.validation_email),
+		}),
 		password: z
 			.string()
 			.regex(
 				/^(?=.{6,30}$)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/,
-				LocaleKeys.validation_password_strength,
+				getTranslationToken(
+					"common",
+					commonLocaleKeys.validation_password_strength,
+				),
 			),
 		avatar: z.string().optional(),
-		confirmPassword: z.string().min(1, LocaleKeys.validation_required),
-		displayName: z.string().min(1, LocaleKeys.validation_required),
+		confirmPassword: z
+			.string()
+			.min(
+				1,
+				getTranslationToken("common", commonLocaleKeys.validation_required),
+			),
+		displayName: z
+			.string()
+			.min(
+				1,
+				getTranslationToken("common", commonLocaleKeys.validation_required),
+			),
 	})
 	.refine((values) => values.password === values.confirmPassword, {
 		path: ["confirmPassword"],
-		message: LocaleKeys.validation_password_mismatch,
+		message: getTranslationToken(
+			"common",
+			commonLocaleKeys.validation_password_mismatch,
+		),
 	});
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 
 export const basicLoginSchema = z.object({
-	ingameUuidOrEmail: z.string().min(1, LocaleKeys.validation_required),
-	password: z.string().min(1, LocaleKeys.validation_required),
+	ingameUuidOrEmail: z
+		.string()
+		.min(
+			1,
+			getTranslationToken("common", commonLocaleKeys.validation_required),
+		),
+	password: z
+		.string()
+		.min(
+			1,
+			getTranslationToken("common", commonLocaleKeys.validation_required),
+		),
 });
 
 export type BasicLoginInput = z.infer<typeof basicLoginSchema>;

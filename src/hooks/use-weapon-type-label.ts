@@ -1,4 +1,6 @@
-import { LocaleKeys, WeaponType } from "@/lib/constants";
+import { WeaponType } from "@/lib/constants";
+import { charactersLocaleKeys } from "@/i18n/keys";
+import { getTranslationToken } from "@/i18n/namespaces";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -7,11 +9,36 @@ export function useWeaponTypeLabel() {
 
 	return useMemo(
 		() => ({
-			[WeaponType.SWORD]: t(LocaleKeys.characters_weapon_sword),
-			[WeaponType.BOW]: t(LocaleKeys.characters_weapon_bow),
-			[WeaponType.POLEARM]: t(LocaleKeys.characters_weapon_polearm),
-			[WeaponType.CATALYST]: t(LocaleKeys.characters_weapon_catalyst),
-			[WeaponType.CLAYMORE]: t(LocaleKeys.characters_weapon_claymore),
+			[WeaponType.SWORD]: t(
+				getTranslationToken(
+					"characters",
+					charactersLocaleKeys.characters_weapon_sword,
+				),
+			),
+			[WeaponType.BOW]: t(
+				getTranslationToken(
+					"characters",
+					charactersLocaleKeys.characters_weapon_bow,
+				),
+			),
+			[WeaponType.POLEARM]: t(
+				getTranslationToken(
+					"characters",
+					charactersLocaleKeys.characters_weapon_polearm,
+				),
+			),
+			[WeaponType.CATALYST]: t(
+				getTranslationToken(
+					"characters",
+					charactersLocaleKeys.characters_weapon_catalyst,
+				),
+			),
+			[WeaponType.CLAYMORE]: t(
+				getTranslationToken(
+					"characters",
+					charactersLocaleKeys.characters_weapon_claymore,
+				),
+			),
 		}),
 		[t],
 	);
