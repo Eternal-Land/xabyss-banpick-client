@@ -144,7 +144,7 @@ export default function CostMilestonesTab() {
 		return {
 			costFrom: editingMilestone.costFrom,
 			costTo: editingMilestone.costTo,
-			costValuePerSec: editingMilestone.costValuePerSec,
+			secPerCost: editingMilestone.secPerCost,
 		};
 	}, [editingMilestone]);
 
@@ -263,7 +263,7 @@ export default function CostMilestonesTab() {
 											: "+"}
 									</TableCell>
 									<TableCell className="text-center">
-										{milestone.costValuePerSec}
+										{milestone.secPerCost}
 									</TableCell>
 									<TableCell className="text-center">
 										<div className="flex justify-center gap-1">

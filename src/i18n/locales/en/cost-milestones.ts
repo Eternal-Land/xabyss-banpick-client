@@ -4,7 +4,7 @@ const costMilestonesEn: CostMilestonesLocaleObject = {
 	cost_milestones_title: "Cost milestones",
 	cost_milestones_table_index: "#",
 	cost_milestones_table_range: "Cost range",
-	cost_milestones_table_value: "Cost value",
+	cost_milestones_table_value: "Time cost (s/cost)",
 	cost_milestones_table_action: "Action",
 	cost_milestones_empty: "No cost milestones found.",
 	cost_milestones_range_open: "No max",
@@ -24,24 +24,22 @@ const costMilestonesEn: CostMilestonesLocaleObject = {
 	cost_milestones_delete_pending: "Deleting...",
 	cost_milestones_title_create: "Create cost milestone",
 	cost_milestones_title_edit: "Edit cost milestone",
-	cost_milestones_description_create:
-		"Define a new cost range and value per second.",
-	cost_milestones_description_edit:
-		"Update the cost range and value per second.",
+	cost_milestones_description_create: "Define a new cost range and time cost.",
+	cost_milestones_description_edit: "Update the cost range and time cost.",
 	cost_milestones_cost_from_label: "Cost from",
 	cost_milestones_cost_from_placeholder: "e.g. 0",
 	cost_milestones_cost_to_label: "Cost to",
 	cost_milestones_cost_to_placeholder: "e.g. 5",
-	cost_milestones_cost_value_per_sec_label: "Cost value per sec",
-	cost_milestones_cost_value_per_sec_placeholder: "e.g. 1.5",
+	cost_milestones_sec_per_cost_label: "Time cost (s/cost)",
+	cost_milestones_sec_per_cost_placeholder: "e.g. 1.5",
 	cost_milestones_cancel: "Cancel",
 	cost_milestones_submit_create: "Create",
 	cost_milestones_submit_edit: "Save changes",
 	cost_milestones_cost_from_min:
 		"Cost from must be greater than or equal to 0.",
 	cost_milestones_cost_to_min: "Cost to must be greater than or equal to 0.",
-	cost_milestones_cost_value_per_sec_min:
-		"Cost value per second must be greater than or equal to 0.",
+	cost_milestones_sec_per_cost_min:
+		"Time cost must be greater than or equal to 0.",
 };
 
 export default costMilestonesEn;

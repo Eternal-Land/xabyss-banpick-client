@@ -29,15 +29,13 @@ export const costMilestonesLocaleKeys = {
 		"cost_milestones_cost_from_placeholder",
 	cost_milestones_cost_to_label: "cost_milestones_cost_to_label",
 	cost_milestones_cost_to_placeholder: "cost_milestones_cost_to_placeholder",
-	cost_milestones_cost_value_per_sec_label:
-		"cost_milestones_cost_value_per_sec_label",
-	cost_milestones_cost_value_per_sec_placeholder:
-		"cost_milestones_cost_value_per_sec_placeholder",
+	cost_milestones_sec_per_cost_label: "cost_milestones_sec_per_cost_label",
+	cost_milestones_sec_per_cost_placeholder:
+		"cost_milestones_sec_per_cost_placeholder",
 	cost_milestones_cancel: "cost_milestones_cancel",
 	cost_milestones_submit_create: "cost_milestones_submit_create",
 	cost_milestones_submit_edit: "cost_milestones_submit_edit",
 	cost_milestones_cost_from_min: "cost_milestones_cost_from_min",
 	cost_milestones_cost_to_min: "cost_milestones_cost_to_min",
-	cost_milestones_cost_value_per_sec_min:
-		"cost_milestones_cost_value_per_sec_min",
+	cost_milestones_sec_per_cost_min: "cost_milestones_sec_per_cost_min",
 } as const;

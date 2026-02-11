@@ -7,7 +7,7 @@ export interface CostMilestoneResponse {
 	id: number;
 	costFrom: number;
 	costTo?: number | null;
-	costValuePerSec: number;
+	secPerCost: number;
 	createdAt: string;
 	createdBy: ProfileResponse;
 	updatedAt?: string;
@@ -35,13 +35,13 @@ export const createCostMilestoneSchema = z.object({
 		)
 		.nullable()
 		.optional(),
-	costValuePerSec: z
+	secPerCost: z
 		.number()
 		.min(
 			0,
 			getTranslationToken(
 				"cost-milestones",
-				costMilestonesLocaleKeys.cost_milestones_cost_value_per_sec_min,
+				costMilestonesLocaleKeys.cost_milestones_sec_per_cost_min,
 			),
 		),
 });
@@ -71,13 +71,13 @@ export const updateCostMilestoneSchema = z.object({
 		)
 		.nullable()
 		.optional(),
-	costValuePerSec: z
+	secPerCost: z
 		.number()
 		.min(
 			0,
 			getTranslationToken(
 				"cost-milestones",
-				costMilestonesLocaleKeys.cost_milestones_cost_value_per_sec_min,
+				costMilestonesLocaleKeys.cost_milestones_sec_per_cost_min,
 			),
 		),
 });

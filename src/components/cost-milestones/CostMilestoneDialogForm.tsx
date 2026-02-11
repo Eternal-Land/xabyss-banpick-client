@@ -39,13 +39,13 @@ const costMilestoneFormSchema = z.object({
 		)
 		.nullable()
 		.optional(),
-	costValuePerSec: z
+	secPerCost: z
 		.number()
 		.min(
 			0,
 			getTranslationToken(
 				"cost-milestones",
-				costMilestonesLocaleKeys.cost_milestones_cost_value_per_sec_min,
+				costMilestonesLocaleKeys.cost_milestones_sec_per_cost_min,
 			),
 		),
 });
@@ -75,7 +75,7 @@ export default function CostMilestoneDialogForm({
 		defaultValues: {
 			costFrom: values?.costFrom ?? 0,
 			costTo: values?.costTo ?? null,
-			costValuePerSec: values?.costValuePerSec ?? 0,
+			secPerCost: values?.secPerCost ?? 0,
 		},
 	});
 
@@ -83,9 +83,9 @@ export default function CostMilestoneDialogForm({
 		form.reset({
 			costFrom: values?.costFrom ?? 0,
 			costTo: values?.costTo ?? null,
-			costValuePerSec: values?.costValuePerSec ?? 0,
+			secPerCost: values?.secPerCost ?? 0,
 		});
-	}, [form, values?.costFrom, values?.costTo, values?.costValuePerSec]);
+	}, [form, values?.costFrom, values?.costTo, values?.secPerCost]);
 
 	const parseNumberValue = (value: string, fallback?: number | null) => {
 		if (value === "") return fallback ?? null;
@@ -222,7 +222,7 @@ export default function CostMilestoneDialogForm({
 							)}
 						/>
 						<Controller
-							name="costValuePerSec"
+							name="secPerCost"
 							control={form.control}
 							render={({ field, fieldState }) => (
 								<Field data-invalid={fieldState.invalid}>
@@ -230,7 +230,7 @@ export default function CostMilestoneDialogForm({
 										{t(
 											getTranslationToken(
 												"cost-milestones",
-												costMilestonesLocaleKeys.cost_milestones_cost_value_per_sec_label,
+												costMilestonesLocaleKeys.cost_milestones_sec_per_cost_label,
 											),
 										)}
 									</FieldLabel>
@@ -247,7 +247,7 @@ export default function CostMilestoneDialogForm({
 											placeholder={t(
 												getTranslationToken(
 													"cost-milestones",
-													costMilestonesLocaleKeys.cost_milestones_cost_value_per_sec_placeholder,
+													costMilestonesLocaleKeys.cost_milestones_sec_per_cost_placeholder,
 												),
 											)}
 											value={field.value ?? 0}

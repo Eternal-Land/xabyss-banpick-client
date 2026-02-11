@@ -4,7 +4,7 @@ const costMilestonesVi: CostMilestonesLocaleObject = {
 	cost_milestones_title: "Mốc cost",
 	cost_milestones_table_index: "#",
 	cost_milestones_table_range: "Khoảng cost",
-	cost_milestones_table_value: "Giá trị cost",
+	cost_milestones_table_value: "Time cost (s/cost)",
 	cost_milestones_table_action: "Thao tác",
 	cost_milestones_empty: "Không có mốc cost.",
 	cost_milestones_range_open: "Không giới hạn",
@@ -24,22 +24,20 @@ const costMilestonesVi: CostMilestonesLocaleObject = {
 	cost_milestones_delete_pending: "Đang xóa...",
 	cost_milestones_title_create: "Tạo mốc cost",
 	cost_milestones_title_edit: "Chỉnh sửa mốc cost",
-	cost_milestones_description_create:
-		"Thiết lập khoảng cost và giá trị mỗi giây.",
-	cost_milestones_description_edit: "Cập nhật khoảng cost và giá trị mỗi giây.",
+	cost_milestones_description_create: "Thiết lập khoảng cost và time cost.",
+	cost_milestones_description_edit: "Cập nhật khoảng cost và time cost.",
 	cost_milestones_cost_from_label: "Cost từ",
 	cost_milestones_cost_from_placeholder: "vd. 0",
 	cost_milestones_cost_to_label: "Cost đến",
 	cost_milestones_cost_to_placeholder: "vd. 5",
-	cost_milestones_cost_value_per_sec_label: "Giá trị cost mỗi giây",
-	cost_milestones_cost_value_per_sec_placeholder: "vd. 1.5",
+	cost_milestones_sec_per_cost_label: "Time cost (s/cost)",
+	cost_milestones_sec_per_cost_placeholder: "vd. 1.5",
 	cost_milestones_cancel: "Huỷ",
 	cost_milestones_submit_create: "Tạo",
 	cost_milestones_submit_edit: "Lưu thay đổi",
 	cost_milestones_cost_from_min: "Cost từ phải lớn hơn hoặc bằng 0.",
 	cost_milestones_cost_to_min: "Cost đến phải lớn hơn hoặc bằng 0.",
-	cost_milestones_cost_value_per_sec_min:
-		"Giá trị cost mỗi giây phải lớn hơn hoặc bằng 0.",
+	cost_milestones_sec_per_cost_min: "Time cost phải lớn hơn hoặc bằng 0.",
 };
 
 export default costMilestonesVi;
