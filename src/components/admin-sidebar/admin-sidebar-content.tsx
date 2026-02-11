@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/sidebar";
 import {
 	BriefcaseIcon,
+	ChartCandlestick,
 	ChartScatterIcon,
 	ContactIcon,
 	HouseIcon,
@@ -116,7 +117,7 @@ const adminRouteGroups: AdminSidebarRouteGroup[] = [
 					"admin",
 					adminLocaleKeys.admin_sidebar_weapon_costs,
 				),
-				icon: <ChartScatterIcon className="size-4" />,
+				icon: <ChartCandlestick className="size-4" />,
 			},
 		],
 	},
