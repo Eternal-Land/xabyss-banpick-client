@@ -19,4 +19,5 @@ export const adminLocaleKeys = {
 	admin_sidebar_users: "admin_sidebar_users",
 	admin_sidebar_character_costs: "admin_sidebar_character_costs",
 	admin_sidebar_match_settings: "admin_sidebar_match_settings",
+	admin_sidebar_weapon_costs: "admin_sidebar_weapon_costs",
 } as const;
