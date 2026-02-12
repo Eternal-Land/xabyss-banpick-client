@@ -37,7 +37,7 @@ import { getTranslationToken } from "@/i18n/namespaces";
 import { profileLocaleKeys } from "@/i18n/keys";
 
 export interface ProfileDialogProps {
-	profile: ProfileResponse;
+	profile: ProfileResponse | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
@@ -64,11 +64,11 @@ export default function ProfileDialog({
 
 	useEffect(() => {
 		form.reset({
-			displayName: profile.displayName ?? "",
-			ingameUuid: profile.ingameUuid ?? "",
-			avatar: profile.avatar ?? undefined,
+			displayName: profile?.displayName ?? "",
+			ingameUuid: profile?.ingameUuid ?? "",
+			avatar: profile?.avatar ?? undefined,
 		});
-	}, [form, profile.avatar, profile.displayName, profile.ingameUuid]);
+	}, [form, profile]);
 
 	const handleUploadProgress = (event: AxiosProgressEvent) => {
 		setProgress((event.progress ?? 0) * 100);
@@ -261,7 +261,7 @@ export default function ProfileDialog({
 									),
 								)}
 							</FieldLabel>
-							<Input value={profile.email ?? ""} disabled />
+							<Input value={profile?.email ?? ""} disabled />
 						</Field>
 					</FieldGroup>
 				</form>
