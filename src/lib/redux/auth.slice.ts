@@ -3,18 +3,16 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from ".";
 
 export interface AuthState {
-	profile: ProfileResponse | null;
+	profile?: ProfileResponse;
 }
 
-const initialState: AuthState = {
-	profile: null,
-};
+const initialState: AuthState = {};
 
 export const authSlice = createSlice({
 	name: "auth",
 	initialState,
 	reducers: {
-		setProfile: (state, action: PayloadAction<ProfileResponse | null>) => {
+		setProfile: (state, action: PayloadAction<ProfileResponse | undefined>) => {
 			state.profile = action.payload;
 		},
 	},

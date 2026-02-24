@@ -37,7 +37,7 @@ import { getTranslationToken } from "@/i18n/namespaces";
 import { profileLocaleKeys } from "@/i18n/keys";
 
 export interface ProfileDialogProps {
-	profile: ProfileResponse | null;
+	profile?: ProfileResponse;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
@@ -111,7 +111,7 @@ export default function ProfileDialog({
 			setProgress(0);
 			onOpenChange(false);
 			const response = await selfApi.getSelf();
-			dispatch(setProfile(response.data ?? null));
+			dispatch(setProfile(response.data ?? undefined));
 		},
 		onError: (error) => {
 			setErrorMsg(

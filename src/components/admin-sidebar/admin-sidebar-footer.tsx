@@ -44,7 +44,7 @@ import { useEffect, useState } from "react";
 import ProfileDialog from "../profile-dialog";
 
 type AdminSidebarFooterProps = {
-	profile: ProfileResponse;
+	profile?: ProfileResponse;
 	onLogout: () => void;
 };
 

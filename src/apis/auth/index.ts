@@ -18,7 +18,7 @@ async function basicLogin(input: BasicLoginInput) {
 
 function logout() {
 	localStorage.removeItem("token");
-	store.dispatch(setProfile(null));
+	store.dispatch(setProfile(undefined));
 	window.location.href = "/auth/login";
 }
 

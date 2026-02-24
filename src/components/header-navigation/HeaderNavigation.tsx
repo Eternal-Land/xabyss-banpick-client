@@ -29,7 +29,7 @@ import { Globe, LogOutIcon, UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type HeaderNavigationProps = {
-	profile: ProfileResponse;
+	profile?: ProfileResponse;
 };
 
 const getInitials = (name?: string) => {
@@ -61,9 +61,9 @@ export default function HeaderNavigation({ profile }: HeaderNavigationProps) {
 				isActive: location.pathname.startsWith("/match"),
 			},
 			{
-				to: profile.role === AccountRole.USER ? "/profile" : "/admin",
+				to: profile?.role === AccountRole.USER ? "/profile" : "/admin",
 				label:
-					profile.role === AccountRole.USER
+					profile?.role === AccountRole.USER
 						? t(
 								getTranslationToken(
 									"header",
@@ -77,14 +77,14 @@ export default function HeaderNavigation({ profile }: HeaderNavigationProps) {
 								),
 							),
 				isActive:
-					profile.role === AccountRole.USER
+					profile?.role === AccountRole.USER
 						? location.pathname.startsWith("/profile")
 						: location.pathname.startsWith("/admin"),
 			},
 		];
 
 		return navigationItems;
-	}, [location.pathname, profile.role, t]);
+	}, [location.pathname, profile?.role, t]);
 
 	const languageOptions = useMemo(
 		() =>
@@ -105,23 +105,23 @@ export default function HeaderNavigation({ profile }: HeaderNavigationProps) {
 							className="flex items-center gap-3 rounded px-2 py-1 transition hover:bg-white/10"
 						>
 							<Avatar className="size-9 rounded-full">
-								<AvatarImage src={profile.avatar} />
+								<AvatarImage src={profile?.avatar} />
 								<AvatarFallback>
-									{getInitials(profile.displayName)}
+									{getInitials(profile?.displayName)}
 								</AvatarFallback>
 							</Avatar>
 							<div className="hidden flex-col md:flex items-start">
 								<span className="text-sm font-semibold text-white">
-									{profile.displayName}
+									{profile?.displayName}
 								</span>
 								<span className="text-xs text-white/70">
-									UID: {profile.ingameUuid}
+									UID: {profile?.ingameUuid}
 								</span>
 							</div>
 						</button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="start" className="min-w-48">
-						<DropdownMenuLabel>{profile.displayName}</DropdownMenuLabel>
+						<DropdownMenuLabel>{profile?.displayName}</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem onSelect={openProfileDialog}>
 							<UserIcon className="size-4" />
