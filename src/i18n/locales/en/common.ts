@@ -15,6 +15,8 @@ const commonEn: CommonLocaleObject = {
 	show_inactive_true: "Include inactive",
 	show_inactive_false: "Active only",
 	level: "Level",
+	cancel: "Cancel",
+	save: "Save",
 };
 
 export default commonEn;

@@ -17,6 +17,7 @@ import { Link } from "@tanstack/react-router";
 import { BanIcon, PenIcon, SquareCheckIcon } from "lucide-react";
 import { getTranslationToken } from "@/i18n/namespaces";
 import { staffRolesLocaleKeys } from "@/i18n/keys";
+import { DateFormat } from "@/lib/constants";
 
 export interface StaffRolesTableProps {
 	isLoading?: boolean;
@@ -137,7 +138,7 @@ export default function StaffRolesTable({
 								<TableCell>{staffRole.updatedBy?.displayName || "-"}</TableCell>
 								<TableCell>
 									{staffRole.updatedAt
-										? dayjs(staffRole.updatedAt).format("DD/MM/YYYY HH:mm")
+										? dayjs(staffRole.updatedAt).format(DateFormat.DEFAULT)
 										: "-"}
 								</TableCell>
 								<TableCell>

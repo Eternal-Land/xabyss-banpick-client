@@ -10,7 +10,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import type { WeaponRarityEnum, WeaponTypeEnum } from "@/lib/constants";
+import {
+	DateFormat,
+	type WeaponRarityEnum,
+	type WeaponTypeEnum,
+} from "@/lib/constants";
 import type { WeaponQuery, WeaponResponse } from "@/apis/weapons/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -250,7 +254,7 @@ export default function WeaponsTable({
 								</TableCell>
 								<TableCell>
 									{weapon.updatedAt
-										? dayjs(weapon.updatedAt).format("DD/MM/YYYY HH:mm")
+										? dayjs(weapon.updatedAt).format(DateFormat.DEFAULT)
 										: "-"}
 								</TableCell>
 								<TableCell>

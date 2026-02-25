@@ -3,7 +3,7 @@ import enkanomiyaBg from "@/assets/image/enkanomiya-bg.png";
 export default function PlayerSideBackground() {
 	return (
 		<div
-			className="pointer-events-none absolute inset-0 -z-10 bg-cover bg-center fixed"
+			className="pointer-events-none inset-0 -z-10 bg-cover bg-center fixed"
 			style={{ backgroundImage: `url(${enkanomiyaBg})` }}
 			aria-hidden="true"
 		>

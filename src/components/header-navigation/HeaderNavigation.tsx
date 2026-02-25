@@ -14,6 +14,7 @@ import {
 	DropdownMenuSubContent,
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
+	DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ProfileDialog from "@/components/profile-dialog";
@@ -96,7 +97,7 @@ export default function HeaderNavigation({ profile }: HeaderNavigationProps) {
 	);
 
 	return (
-		<header className="fixed inset-x-0 top-0 z-20 border-b border-white/10 bg-black/20 backdrop-blur">
+		<header className="sticky inset-x-0 top-0 z-30 border-b border-white/10 backdrop-blur">
 			<div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-4">
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
@@ -143,21 +144,23 @@ export default function HeaderNavigation({ profile }: HeaderNavigationProps) {
 									),
 								)}
 							</DropdownMenuSubTrigger>
-							<DropdownMenuSubContent>
-								<DropdownMenuRadioGroup
-									value={i18n.language}
-									onValueChange={(value) => i18n.changeLanguage(value)}
-								>
-									{languageOptions.map((option) => (
-										<DropdownMenuRadioItem
-											key={option.value}
-											value={option.value}
-										>
-											{option.label}
-										</DropdownMenuRadioItem>
-									))}
-								</DropdownMenuRadioGroup>
-							</DropdownMenuSubContent>
+							<DropdownMenuPortal>
+								<DropdownMenuSubContent>
+									<DropdownMenuRadioGroup
+										value={i18n.language}
+										onValueChange={(value) => i18n.changeLanguage(value)}
+									>
+										{languageOptions.map((option) => (
+											<DropdownMenuRadioItem
+												key={option.value}
+												value={option.value}
+											>
+												{option.label}
+											</DropdownMenuRadioItem>
+										))}
+									</DropdownMenuRadioGroup>
+								</DropdownMenuSubContent>
+							</DropdownMenuPortal>
 						</DropdownMenuSub>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem variant="destructive" onClick={authApi.logout}>
