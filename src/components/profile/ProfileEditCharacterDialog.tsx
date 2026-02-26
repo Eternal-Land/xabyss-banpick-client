@@ -40,7 +40,7 @@ export default function ProfileEditCharacterDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-lg bg-transparent bg-linear-45 from-white/5 to-white/10 backdrop-blur-md">
+			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>
 						{t(

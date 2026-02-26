@@ -8,7 +8,7 @@ import { DateFormat } from "@/lib/constants";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import dayjs from "dayjs";
-import { EditIcon } from "lucide-react";
+import { EditIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -36,6 +36,7 @@ function RouteComponent() {
 			}),
 		onSuccess: () => {
 			getMatchQuery.refetch();
+			toast.success("Match updated successfully");
 		},
 		onError: (error) => {
 			toast.error(error.message || "Failed to update match");
@@ -82,10 +83,15 @@ function RouteComponent() {
 								<div className="flex-1">
 									{match.participants?.[0] ? (
 										<div className="flex items-center gap-2">
-											<Avatar>
-												<AvatarImage src={match.participants[0].avatar} />
-											</Avatar>
-											<p>{match.participants[0].displayName}</p>
+											<div className="flex items-center gap-2">
+												<Avatar>
+													<AvatarImage src={match.participants[0].avatar} />
+												</Avatar>
+												<p>{match.participants[0].displayName}</p>
+											</div>
+											<Button size="icon-sm" variant="destructive">
+												<XIcon />
+											</Button>
 										</div>
 									) : (
 										<Button>Invite</Button>
