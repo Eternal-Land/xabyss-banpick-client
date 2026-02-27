@@ -15,6 +15,8 @@ const commonVi: CommonLocaleObject = {
 	show_inactive_true: "Tất cả",
 	show_inactive_false: "Đang hoạt động",
 	level: "Cấp",
+	cancel: "Hủy",
+	save: "Lưu",
 };
 
 export default commonVi;

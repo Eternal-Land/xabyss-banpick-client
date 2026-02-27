@@ -51,7 +51,7 @@ export default function ProfileAddCharacterDialogContent({
 	const { t } = useTranslation();
 
 	return (
-		<DialogContent className="max-w-lg bg-transparent bg-linear-45 from-white/5 to-white/10 backdrop-blur-md">
+		<DialogContent>
 			<DialogHeader>
 				<DialogTitle>
 					{t(

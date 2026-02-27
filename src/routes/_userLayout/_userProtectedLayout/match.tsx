@@ -1,9 +1,11 @@
 import PlayerSideBackground from "@/components/player-side/background";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/_userLayout/_userProtectedLayout/match")({
-  component: RouteComponent,
-});
+export const Route = createFileRoute("/_userLayout/_userProtectedLayout/match")(
+	{
+		component: RouteComponent,
+	},
+);
 
 function RouteComponent() {  
   return (

@@ -1,19 +1,20 @@
 import axios, { AxiosError } from "axios";
 
 export const API_BASE =
-	import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+	import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5173";
 
 export const http = axios.create({
 	baseURL: API_BASE,
+	withCredentials: true,
 });
 
 // ---- token helpers (simple) ----
-function getToken() {
-	return localStorage.getItem("token");
-}
-function clearToken() {
-	localStorage.removeItem("token");
-}
+// function getToken() {
+// 	return localStorage.getItem("token");
+// }
+// function clearToken() {
+// 	localStorage.removeItem("token");
+// }
 
 // ---- redirect helper ----
 function redirectToLogin() {
@@ -23,14 +24,14 @@ function redirectToLogin() {
 }
 
 // ---- request interceptor: attach token ----
-http.interceptors.request.use((config) => {
-	const token = getToken();
-	if (token) {
-		config.headers = config.headers ?? {};
-		config.headers.Authorization = `Bearer ${token}`;
-	}
-	return config;
-});
+// http.interceptors.request.use((config) => {
+// 	const token = getToken();
+// 	if (token) {
+// 		config.headers = config.headers ?? {};
+// 		config.headers.Authorization = `Bearer ${token}`;
+// 	}
+// 	return config;
+// });
 
 // ---- response interceptor: handle 401 globally ----
 http.interceptors.response.use(
@@ -39,7 +40,7 @@ http.interceptors.response.use(
 		const status = error.response?.status;
 
 		if (status === 401) {
-			clearToken();
+			// clearToken();
 			redirectToLogin();
 		}
 

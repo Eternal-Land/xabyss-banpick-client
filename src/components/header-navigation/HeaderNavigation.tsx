@@ -14,6 +14,7 @@ import {
 	DropdownMenuSubContent,
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
+	DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ProfileDialog from "@/components/profile-dialog";
@@ -29,7 +30,7 @@ import { Globe, LogOutIcon, UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type HeaderNavigationProps = {
-	profile: ProfileResponse;
+	profile?: ProfileResponse;
 };
 
 const getInitials = (name?: string) => {
@@ -61,9 +62,9 @@ export default function HeaderNavigation({ profile }: HeaderNavigationProps) {
 				isActive: location.pathname.startsWith("/match"),
 			},
 			{
-				to: profile.role === AccountRole.USER ? "/profile" : "/admin",
+				to: profile?.role === AccountRole.USER ? "/profile" : "/admin",
 				label:
-					profile.role === AccountRole.USER
+					profile?.role === AccountRole.USER
 						? t(
 								getTranslationToken(
 									"header",
@@ -77,14 +78,14 @@ export default function HeaderNavigation({ profile }: HeaderNavigationProps) {
 								),
 							),
 				isActive:
-					profile.role === AccountRole.USER
+					profile?.role === AccountRole.USER
 						? location.pathname.startsWith("/profile")
 						: location.pathname.startsWith("/admin"),
 			},
 		];
 
 		return navigationItems;
-	}, [location.pathname, profile.role, t]);
+	}, [location.pathname, profile?.role, t]);
 
 	const languageOptions = useMemo(
 		() =>
@@ -96,7 +97,7 @@ export default function HeaderNavigation({ profile }: HeaderNavigationProps) {
 	);
 
 	return (
-		<header className="fixed inset-x-0 top-0 z-20 border-b border-white/10 bg-black/20 backdrop-blur">
+		<header className="sticky inset-x-0 top-0 z-30 border-b border-white/10 backdrop-blur">
 			<div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-4">
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
@@ -105,23 +106,23 @@ export default function HeaderNavigation({ profile }: HeaderNavigationProps) {
 							className="flex items-center gap-3 rounded px-2 py-1 transition hover:bg-white/10"
 						>
 							<Avatar className="size-9 rounded-full">
-								<AvatarImage src={profile.avatar} />
+								<AvatarImage src={profile?.avatar} />
 								<AvatarFallback>
-									{getInitials(profile.displayName)}
+									{getInitials(profile?.displayName)}
 								</AvatarFallback>
 							</Avatar>
 							<div className="hidden flex-col md:flex items-start">
 								<span className="text-sm font-semibold text-white">
-									{profile.displayName}
+									{profile?.displayName}
 								</span>
 								<span className="text-xs text-white/70">
-									UID: {profile.ingameUuid}
+									UID: {profile?.ingameUuid}
 								</span>
 							</div>
 						</button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="start" className="min-w-48">
-						<DropdownMenuLabel>{profile.displayName}</DropdownMenuLabel>
+						<DropdownMenuLabel>{profile?.displayName}</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem onSelect={openProfileDialog}>
 							<UserIcon className="size-4" />
@@ -143,21 +144,23 @@ export default function HeaderNavigation({ profile }: HeaderNavigationProps) {
 									),
 								)}
 							</DropdownMenuSubTrigger>
-							<DropdownMenuSubContent>
-								<DropdownMenuRadioGroup
-									value={i18n.language}
-									onValueChange={(value) => i18n.changeLanguage(value)}
-								>
-									{languageOptions.map((option) => (
-										<DropdownMenuRadioItem
-											key={option.value}
-											value={option.value}
-										>
-											{option.label}
-										</DropdownMenuRadioItem>
-									))}
-								</DropdownMenuRadioGroup>
-							</DropdownMenuSubContent>
+							<DropdownMenuPortal>
+								<DropdownMenuSubContent>
+									<DropdownMenuRadioGroup
+										value={i18n.language}
+										onValueChange={(value) => i18n.changeLanguage(value)}
+									>
+										{languageOptions.map((option) => (
+											<DropdownMenuRadioItem
+												key={option.value}
+												value={option.value}
+											>
+												{option.label}
+											</DropdownMenuRadioItem>
+										))}
+									</DropdownMenuRadioGroup>
+								</DropdownMenuSubContent>
+							</DropdownMenuPortal>
 						</DropdownMenuSub>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem variant="destructive" onClick={authApi.logout}>

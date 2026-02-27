@@ -12,4 +12,6 @@ export const commonLocaleKeys = {
 	show_inactive_true: "show_inactive_true",
 	show_inactive_false: "show_inactive_false",
 	level: "level",
+	cancel: "cancel",
+	save: "save",
 } as const;

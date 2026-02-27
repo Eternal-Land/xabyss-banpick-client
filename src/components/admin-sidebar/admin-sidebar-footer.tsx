@@ -44,7 +44,7 @@ import { useEffect, useState } from "react";
 import ProfileDialog from "../profile-dialog";
 
 type AdminSidebarFooterProps = {
-	profile: ProfileResponse;
+	profile?: ProfileResponse;
 	onLogout: () => void;
 };
 
@@ -194,18 +194,20 @@ export default function AdminSidebarFooter({
 											),
 										)}
 									</DropdownMenuSubTrigger>
-									<DropdownMenuSubContent>
-										<DropdownMenuRadioGroup
-											value={i18n.language}
-											onValueChange={(value) => i18n.changeLanguage(value)}
-										>
-											{SupportedLanguages.map(({ code, label }) => (
-												<DropdownMenuRadioItem key={code} value={code}>
-													{label}
-												</DropdownMenuRadioItem>
-											))}
-										</DropdownMenuRadioGroup>
-									</DropdownMenuSubContent>
+									<DropdownMenuPortal>
+										<DropdownMenuSubContent>
+											<DropdownMenuRadioGroup
+												value={i18n.language}
+												onValueChange={(value) => i18n.changeLanguage(value)}
+											>
+												{SupportedLanguages.map(({ code, label }) => (
+													<DropdownMenuRadioItem key={code} value={code}>
+														{label}
+													</DropdownMenuRadioItem>
+												))}
+											</DropdownMenuRadioGroup>
+										</DropdownMenuSubContent>
+									</DropdownMenuPortal>
 								</DropdownMenuSub>
 								<DropdownMenuItem variant="destructive" onClick={onLogout}>
 									<LogOutIcon className="size-4" />

@@ -11,6 +11,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import {
+	DateFormat,
 	type CharacterElementEnum,
 	type WeaponTypeEnum,
 } from "@/lib/constants";
@@ -283,7 +284,7 @@ export default function CharactersTable({
 								</TableCell>
 								<TableCell>
 									{character.updatedAt
-										? dayjs(character.updatedAt).format("DD/MM/YYYY HH:mm")
+										? dayjs(character.updatedAt).format(DateFormat.DEFAULT)
 										: "-"}
 								</TableCell>
 								<TableCell>

@@ -6,11 +6,6 @@ import { API_BASE, http } from "@/lib/http";
 async function getSelf() {
 	const response = await axios.get<BaseApiResponse<ProfileResponse>>(
 		API_BASE + "/api/self",
-		{
-			headers: {
-				Authorization: `Bearer ${localStorage.getItem("token")}`,
-			},
-		},
 	);
 	return response.data;
 }

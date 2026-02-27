@@ -206,7 +206,7 @@ export default function ProfileHoyolabDialogs({
 		<>
 			<Dialog open={isDialogOpen} onOpenChange={onDialogOpenChange}>
 				<DialogTrigger asChild>{trigger}</DialogTrigger>
-				<DialogContent className="max-h-[80vh] min-w-[70rem] overflow-y-auto bg-transparent bg-linear-45 from-white/5 to-white/10 backdrop-blur-md sm:max-w-2xl">
+				<DialogContent className="max-h-[80vh] min-w-280 overflow-y-auto sm:max-w-2xl">
 					<DialogHeader>
 						<DialogTitle>
 							{t(

@@ -367,177 +367,173 @@ function RouteComponent() {
 				open={isAddCharacterOpen}
 				onOpenChange={handleAddCharacterOpenChange}
 			>
-				<div className="min-h-screen text-white">
-					<div className="mx-auto w-full max-w-6xl px-6 pb-12 pt-24">
-						<div className="flex justify-between items-center">
-							<div className="flex flex-col">
-								<div className="mt-8 flex flex-wrap items-center gap-3">
-									<h1 className="text-4xl font-semibold tracking-tight">
-										{t(
-											getTranslationToken(
-												"profile",
-												profileLocaleKeys.profile_title,
-											),
-										)}
-									</h1>
-									{isLoading ? (
-										<span className="text-sm text-white/60">
-											{t(
-												getTranslationToken(
-													"profile",
-													profileLocaleKeys.profile_loading,
-												),
-											)}
-										</span>
-									) : isError ? (
-										<span className="text-sm text-destructive">
-											{t(
-												getTranslationToken(
-													"profile",
-													profileLocaleKeys.profile_load_error,
-												),
-											)}
-										</span>
-									) : (
-										<div className="flex flex-wrap gap-2">
-											<Badge variant="secondary">{roleLabel}</Badge>
-											{profile?.staffRolename ? (
-												<Badge variant="outline">{profile.staffRolename}</Badge>
-											) : null}
-										</div>
-									)}
-								</div>
-								<p className="mt-2 text-sm text-white/70">
+				<div className="flex justify-between items-center">
+					<div className="flex flex-col">
+						<div className="flex flex-wrap items-center gap-3">
+							<h1 className="text-4xl font-semibold tracking-tight">
+								{t(
+									getTranslationToken(
+										"profile",
+										profileLocaleKeys.profile_title,
+									),
+								)}
+							</h1>
+							{isLoading ? (
+								<span className="text-sm text-white/60">
 									{t(
 										getTranslationToken(
 											"profile",
-											profileLocaleKeys.profile_description,
+											profileLocaleKeys.profile_loading,
 										),
 									)}
-								</p>
+								</span>
+							) : isError ? (
+								<span className="text-sm text-destructive">
+									{t(
+										getTranslationToken(
+											"profile",
+											profileLocaleKeys.profile_load_error,
+										),
+									)}
+								</span>
+							) : (
+								<div className="flex flex-wrap gap-2">
+									<Badge variant="secondary">{roleLabel}</Badge>
+									{profile?.staffRolename ? (
+										<Badge variant="outline">{profile.staffRolename}</Badge>
+									) : null}
+								</div>
+							)}
+						</div>
+						<p className="mt-2 text-sm text-white/70">
+							{t(
+								getTranslationToken(
+									"profile",
+									profileLocaleKeys.profile_description,
+								),
+							)}
+						</p>
 
-								{profile?.permissions?.length ? (
-									<div className="mt-6 flex flex-wrap gap-2">
-										<span className="text-sm text-white/70">
-											{t(
-												getTranslationToken(
-													"profile",
-													profileLocaleKeys.profile_permissions_label,
-												),
-											)}
-											:
-										</span>
-										{profile.permissions.map((permission) => (
-											<Badge key={permission} variant="outline">
-												{permission}
-											</Badge>
-										))}
+						{profile?.permissions?.length ? (
+							<div className="mt-6 flex flex-wrap gap-2">
+								<span className="text-sm text-white/70">
+									{t(
+										getTranslationToken(
+											"profile",
+											profileLocaleKeys.profile_permissions_label,
+										),
+									)}
+									:
+								</span>
+								{profile.permissions.map((permission) => (
+									<Badge key={permission} variant="outline">
+										{permission}
+									</Badge>
+								))}
+							</div>
+						) : null}
+					</div>
+
+					<div className="flex flex-wrap gap-2">
+						<DialogTrigger asChild>
+							<Button size="sm" variant="secondary">
+								{t(
+									getTranslationToken(
+										"profile",
+										profileLocaleKeys.profile_character_button,
+									),
+								)}
+							</Button>
+						</DialogTrigger>
+						<ProfileHoyolabDialogs
+							trigger={
+								<Button size="sm" variant="outline">
+									{t(
+										getTranslationToken(
+											"profile",
+											profileLocaleKeys.profile_hoyolab_sync_button,
+										),
+									)}
+								</Button>
+							}
+							isDialogOpen={isHoyoLabDialogOpen}
+							onDialogOpenChange={setIsHoyoLabDialogOpen}
+							isConfirmOpen={isSyncConfirmOpen}
+							onConfirmOpenChange={setIsSyncConfirmOpen}
+							isResultOpen={isSyncResultOpen}
+							onResultOpenChange={setIsSyncResultOpen}
+							syncResult={syncResult}
+							isSyncPending={syncMutation.isPending}
+							isSyncReady={isSyncReady}
+							hoyoUid={hoyoUid}
+							onHoyoUidChange={setHoyoUid}
+							hoyoServer={hoyoServer}
+							onHoyoServerChange={setHoyoServer}
+							generalCookie={generalCookie}
+							onGeneralCookieChange={setGeneralCookie}
+							cookieTokenV2={cookieTokenV2}
+							onCookieTokenV2Change={setCookieTokenV2}
+							ltokenV2={ltokenV2}
+							onLtokenV2Change={setLtokenV2}
+							onOpenConfirm={() => setIsSyncConfirmOpen(true)}
+							onConfirmSync={handleSyncConfirm}
+						/>
+					</div>
+				</div>
+
+				<div className="mt-8 grid gap-4 md:grid-cols-10">
+					{(accountCharacters.length
+						? accountCharacters
+						: defaultCharacters
+					).map((character, index) => {
+						const accountCharacter = accountCharacterItems[index];
+
+						return (
+							<div
+								key={`${character.name}-${character.element}`}
+								className={`group relative ${accountCharacter ? "cursor-pointer" : ""}`}
+								role={accountCharacter ? "button" : undefined}
+								tabIndex={accountCharacter ? 0 : -1}
+								onClick={
+									accountCharacter
+										? () => handleEditCharacterOpen(accountCharacter)
+										: undefined
+								}
+								onKeyDown={
+									accountCharacter
+										? (event) => {
+												if (event.key === "Enter" || event.key === " ") {
+													event.preventDefault();
+													handleEditCharacterOpen(accountCharacter);
+												}
+											}
+										: undefined
+								}
+							>
+								<CharacterContainer {...character} />
+								{accountCharacter ? (
+									<div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 z-20">
+										<Button
+											size="icon"
+											variant="destructive"
+											className="h-7 w-7"
+											onClick={(event) => {
+												event.stopPropagation();
+												handleRemoveCharacterOpen(accountCharacter);
+											}}
+										>
+											<Trash2 className="h-3.5 w-3.5" />
+										</Button>
 									</div>
 								) : null}
 							</div>
-
-							<div className="flex flex-wrap gap-2">
-								<DialogTrigger asChild>
-									<Button size="sm" variant="secondary">
-										{t(
-											getTranslationToken(
-												"profile",
-												profileLocaleKeys.profile_character_button,
-											),
-										)}
-									</Button>
-								</DialogTrigger>
-								<ProfileHoyolabDialogs
-									trigger={
-										<Button size="sm" variant="outline">
-											{t(
-												getTranslationToken(
-													"profile",
-													profileLocaleKeys.profile_hoyolab_sync_button,
-												),
-											)}
-										</Button>
-									}
-									isDialogOpen={isHoyoLabDialogOpen}
-									onDialogOpenChange={setIsHoyoLabDialogOpen}
-									isConfirmOpen={isSyncConfirmOpen}
-									onConfirmOpenChange={setIsSyncConfirmOpen}
-									isResultOpen={isSyncResultOpen}
-									onResultOpenChange={setIsSyncResultOpen}
-									syncResult={syncResult}
-									isSyncPending={syncMutation.isPending}
-									isSyncReady={isSyncReady}
-									hoyoUid={hoyoUid}
-									onHoyoUidChange={setHoyoUid}
-									hoyoServer={hoyoServer}
-									onHoyoServerChange={setHoyoServer}
-									generalCookie={generalCookie}
-									onGeneralCookieChange={setGeneralCookie}
-									cookieTokenV2={cookieTokenV2}
-									onCookieTokenV2Change={setCookieTokenV2}
-									ltokenV2={ltokenV2}
-									onLtokenV2Change={setLtokenV2}
-									onOpenConfirm={() => setIsSyncConfirmOpen(true)}
-									onConfirmSync={handleSyncConfirm}
-								/>
-							</div>
+						);
+					})}
+					<DialogTrigger asChild>
+						<div className="w-full border-dashed rounded-lg border-2 flex justify-center items-center hover:border-white/50 transition-colors bg-white/5 cursor-pointer">
+							<Plus />
 						</div>
-
-						<div className="mt-8 grid gap-4 md:grid-cols-10">
-							{(accountCharacters.length
-								? accountCharacters
-								: defaultCharacters
-							).map((character, index) => {
-								const accountCharacter = accountCharacterItems[index];
-
-								return (
-									<div
-										key={`${character.name}-${character.element}`}
-										className={`group relative ${accountCharacter ? "cursor-pointer" : ""}`}
-										role={accountCharacter ? "button" : undefined}
-										tabIndex={accountCharacter ? 0 : -1}
-										onClick={
-											accountCharacter
-												? () => handleEditCharacterOpen(accountCharacter)
-												: undefined
-										}
-										onKeyDown={
-											accountCharacter
-												? (event) => {
-														if (event.key === "Enter" || event.key === " ") {
-															event.preventDefault();
-															handleEditCharacterOpen(accountCharacter);
-														}
-													}
-												: undefined
-										}
-									>
-										<CharacterContainer {...character} />
-										{accountCharacter ? (
-											<div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 z-20">
-												<Button
-													size="icon"
-													variant="destructive"
-													className="h-7 w-7"
-													onClick={(event) => {
-														event.stopPropagation();
-														handleRemoveCharacterOpen(accountCharacter);
-													}}
-												>
-													<Trash2 className="h-3.5 w-3.5" />
-												</Button>
-											</div>
-										) : null}
-									</div>
-								);
-							})}
-							<DialogTrigger asChild>
-								<div className="w-full border border-dashed rounded-lg border-2 flex justify-center items-center hover:border-white/50 transition-colors bg-white/5 cursor-pointer">
-									<Plus />
-								</div>
-							</DialogTrigger>
-						</div>
-					</div>
+					</DialogTrigger>
 				</div>
 				<ProfileAddCharacterDialogContent
 					selectedCharacterId={selectedCharacterId}

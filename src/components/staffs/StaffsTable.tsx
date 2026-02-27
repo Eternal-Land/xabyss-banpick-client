@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getTranslationToken } from "@/i18n/namespaces";
 import { staffsLocaleKeys } from "@/i18n/keys";
+import { DateFormat } from "@/lib/constants";
 
 export interface StaffsTableProps {
 	isLoading?: boolean;
@@ -170,12 +171,12 @@ export default function StaffsTable({
 								</TableCell>
 								<TableCell>
 									{staff.lastLoginAt
-										? dayjs(staff.lastLoginAt).format("DD/MM/YYYY HH:mm")
+										? dayjs(staff.lastLoginAt).format(DateFormat.DEFAULT)
 										: "-"}
 								</TableCell>
 								<TableCell>
 									{staff.createdAt
-										? dayjs(staff.createdAt).format("DD/MM/YYYY HH:mm")
+										? dayjs(staff.createdAt).format(DateFormat.DEFAULT)
 										: "-"}
 								</TableCell>
 								<TableCell>

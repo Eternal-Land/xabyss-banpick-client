@@ -16,6 +16,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Empty } from "@/components/ui/empty";
+import { DateFormat } from "@/lib/constants";
 
 export interface UsersTableProps {
 	isLoading?: boolean;
@@ -169,11 +170,11 @@ export default function UsersTable({
 								</TableCell>
 								<TableCell className="whitespace-nowrap">
 									{user.lastLoginAt
-										? dayjs(user.lastLoginAt).format("DD/MM/YYYY HH:mm")
+										? dayjs(user.lastLoginAt).format(DateFormat.DEFAULT)
 										: "-"}
 								</TableCell>
 								<TableCell className="whitespace-nowrap">
-									{dayjs(user.createdAt).format("DD/MM/YYYY HH:mm")}
+									{dayjs(user.createdAt).format(DateFormat.DEFAULT)}
 								</TableCell>
 							</TableRow>
 						))}

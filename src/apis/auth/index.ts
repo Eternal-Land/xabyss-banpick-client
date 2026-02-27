@@ -16,9 +16,9 @@ async function basicLogin(input: BasicLoginInput) {
 	return response.data;
 }
 
-function logout() {
-	localStorage.removeItem("token");
-	store.dispatch(setProfile(null));
+async function logout() {
+	await http.post("/api/auth/logout");
+	store.dispatch(setProfile(undefined));
 	window.location.href = "/auth/login";
 }
 
