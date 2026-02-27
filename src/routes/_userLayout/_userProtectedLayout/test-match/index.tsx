@@ -4,7 +4,9 @@ import MatchDialogForm, {
 	type MatchDialogFormValues,
 } from "@/components/match/MatchDialogForm";
 import { Button } from "@/components/ui/button";
+import { useAppSelector } from "@/hooks/use-app-selector";
 import { DateFormat } from "@/lib/constants";
+import { selectAuthProfile } from "@/lib/redux/auth.slice";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
@@ -21,12 +23,14 @@ export const Route = createFileRoute(
 
 function RouteComponent() {
 	const searchParams = Route.useSearch();
+	const profile = useAppSelector(selectAuthProfile);
 	const navigate = Route.useNavigate();
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
 	const listMatchesQuery = useQuery({
 		queryKey: ["matches", searchParams],
-		queryFn: () => matchApi.listMatches(searchParams),
+		queryFn: () =>
+			matchApi.listMatches({ ...searchParams, accountId: profile?.id }),
 	});
 
 	useEffect(() => {

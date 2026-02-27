@@ -7,3 +7,4 @@ export * from "./weapon-rarity";
 export * from "./upload-folder";
 export * from "./weapon-cost-unit";
 export * from "./date-format";
+export * from "./socket-events";
