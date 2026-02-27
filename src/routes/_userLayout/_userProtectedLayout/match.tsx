@@ -12,7 +12,7 @@ function RouteComponent() {
     <>
       <div className="relative min-h-screen overflow-hidden">
         <PlayerSideBackground />
-        <div className="mx-auto pt-24 relative z-10 flex flex-col min-h-screen max-w-6xl w-full px-6">
+        <div className="mx-auto relative z-10 flex flex-col max-w-6xl w-full">
           <Outlet />
         </div>
       </div>

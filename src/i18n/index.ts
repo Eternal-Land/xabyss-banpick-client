@@ -9,6 +9,7 @@ import enCharacterCosts from "@/i18n/locales/en/character-costs";
 import enCharacters from "@/i18n/locales/en/characters";
 import enCostMilestones from "@/i18n/locales/en/cost-milestones";
 import enHeader from "@/i18n/locales/en/header";
+import enMatch from "@/i18n/locales/en/match";
 import enPermissions from "@/i18n/locales/en/permissions";
 import enProfile from "@/i18n/locales/en/profile";
 import enStaffRoles from "@/i18n/locales/en/staff-roles";
@@ -22,6 +23,7 @@ import viCharacterCosts from "@/i18n/locales/vi/character-costs";
 import viCharacters from "@/i18n/locales/vi/characters";
 import viCostMilestones from "@/i18n/locales/vi/cost-milestones";
 import viHeader from "@/i18n/locales/vi/header";
+import viMatch from "@/i18n/locales/vi/match";
 import viPermissions from "@/i18n/locales/vi/permissions";
 import viProfile from "@/i18n/locales/vi/profile";
 import viStaffRoles from "@/i18n/locales/vi/staff-roles";
@@ -46,6 +48,7 @@ i18n
 				characters: enCharacters,
 				"cost-milestones": enCostMilestones,
 				header: enHeader,
+				match: enMatch,
 				permissions: enPermissions,
 				profile: enProfile,
 				"staff-roles": enStaffRoles,
@@ -62,6 +65,7 @@ i18n
 				characters: viCharacters,
 				"cost-milestones": viCostMilestones,
 				header: viHeader,
+				match: viMatch,
 				permissions: viPermissions,
 				profile: viProfile,
 				"staff-roles": viStaffRoles,

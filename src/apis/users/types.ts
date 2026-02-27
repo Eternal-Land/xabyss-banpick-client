@@ -19,3 +19,10 @@ export const userQuerySchema = z.object({
 });
 
 export type UserQuery = z.infer<typeof userQuerySchema>;
+
+export const searchUsersQuerySchema = z.object({
+	...paginationQuerySchema.shape,
+	search: z.string().optional(),
+});
+
+export type SearchUsersQuery = z.infer<typeof searchUsersQuerySchema>;
