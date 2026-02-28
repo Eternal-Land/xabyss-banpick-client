@@ -6,6 +6,7 @@ export const i18nNamespaces = [
 	"characters",
 	"cost-milestones",
 	"header",
+	"match",
 	"permissions",
 	"profile",
 	"staff-roles",

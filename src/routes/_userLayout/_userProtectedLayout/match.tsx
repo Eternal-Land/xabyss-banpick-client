@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import PlayerSideBackground from "@/components/player-side/background";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_userLayout/_userProtectedLayout/match")(
 	{
@@ -6,15 +7,15 @@ export const Route = createFileRoute("/_userLayout/_userProtectedLayout/match")(
 	},
 );
 
-function RouteComponent() {
-	return (
-		<div className="flex-1 flex items-center justify-center">
-			<div className="fade-in text-center text-white">
-				<h1 className="text-3xl font-semibold">Match Lobby</h1>
-				<p className="mt-2 text-sm text-white/75">
-					Match setup is coming soon.
-				</p>
-			</div>
-		</div>
-	);
+function RouteComponent() {  
+  return (
+    <>
+      <div className="relative min-h-screen overflow-hidden">
+        <PlayerSideBackground />
+        <div className="mx-auto relative z-10 flex flex-col max-w-6xl w-full">
+          <Outlet />
+        </div>
+      </div>
+    </>
+  );
 }

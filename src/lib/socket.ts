@@ -10,7 +10,6 @@ export const socket = io(SOCKET_URI, {
 
 socket.on("connect", () => {
 	console.log("Connected to socket server");
-	socket.emit("test");
 });
 
 socket.on("disconnect", (reason) => {

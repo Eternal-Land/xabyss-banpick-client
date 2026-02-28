@@ -1,6 +1,7 @@
 import { http } from "@/lib/http";
 import type { BaseApiResponse } from "@/lib/types";
-import type { UserQuery, UserResponse } from "./types";
+import type { ProfileResponse } from "@/apis/self/types";
+import type { SearchUsersQuery, UserQuery, UserResponse } from "./types";
 
 async function listUsers(query: UserQuery) {
 	const queryParams = new URLSearchParams();
@@ -21,6 +22,21 @@ async function listUsers(query: UserQuery) {
 	return response.data;
 }
 
+async function searchUsers(query: SearchUsersQuery) {
+	const queryParams = new URLSearchParams();
+	queryParams.append("page", query.page.toString());
+	queryParams.append("take", query.take.toString());
+	if (query.search) {
+		queryParams.append("search", query.search);
+	}
+
+	const response = await http.get<BaseApiResponse<ProfileResponse[]>>(
+		`/api/user/search?${queryParams.toString()}`,
+	);
+	return response.data;
+}
+
 export const usersApi = {
 	listUsers,
+	searchUsers,
 } as const;

@@ -2,6 +2,7 @@ import { matchApi } from "@/apis/match";
 import MatchDialogForm, {
 	type MatchDialogFormValues,
 } from "@/components/match/MatchDialogForm";
+import MatchInviteDialog from "@/components/match/MatchInviteDialog";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DateFormat } from "@/lib/constants";
@@ -94,11 +95,25 @@ function RouteComponent() {
 											</Button>
 										</div>
 									) : (
-										<Button>Invite</Button>
+										<MatchInviteDialog matchId={matchId} />
 									)}
 								</div>
 								<div className="flex-1">
-									<Button>Invite</Button>
+									{match.participants?.[1] ? (
+										<div className="flex items-center gap-2">
+											<div className="flex items-center gap-2">
+												<Avatar>
+													<AvatarImage src={match.participants[1].avatar} />
+												</Avatar>
+												<p>{match.participants[1].displayName}</p>
+											</div>
+											<Button size="icon-sm" variant="destructive">
+												<XIcon />
+											</Button>
+										</div>
+									) : (
+										<MatchInviteDialog matchId={matchId} />
+									)}
 								</div>
 							</div>
 						</div>
