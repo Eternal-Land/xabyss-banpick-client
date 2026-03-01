@@ -1,4 +1,3 @@
-import { ChevronsUpDownIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import {
 	Dialog,
@@ -9,54 +8,19 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "../ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from "../ui/command";
 import { useState } from "react";
 import type { ProfileResponse } from "@/apis/self/types";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useQuery } from "@tanstack/react-query";
 import { http } from "@/lib/http";
 import type { BaseApiResponse } from "@/lib/types";
+import SelectInput from "../select-input";
 
 export interface MatchInviteDialogProps {
 	matchId: string;
 }
 
 export default function MatchInviteDialog({ matchId }: MatchInviteDialogProps) {
-	const [search, setSearch] = useState("");
-
-	const searchUserQuery = useQuery({
-		queryKey: ["searchUser"],
-		queryFn: async () => {
-			if (!search.trim()) return undefined;
-			const response = await http.get<BaseApiResponse<ProfileResponse>>(
-				`/api/user/find-by-unique-key?key=${search}`,
-			);
-			return response.data;
-		},
-		enabled: false,
-	});
-
-	const triggerSearchQuery = useDebounce(() => {
-		searchUserQuery.refetch();
-	}, 500);
-
-	const handleSearchChange = (value: string) => {
-		setSearch(value);
-		triggerSearchQuery();
-	};
-
-	const foundUser = searchUserQuery.data?.data;
-
-	console.log("MatchID:", matchId);
-
 	return (
 		<Dialog>
 			<DialogTrigger asChild>
@@ -69,38 +33,13 @@ export default function MatchInviteDialog({ matchId }: MatchInviteDialogProps) {
 				</DialogHeader>
 
 				<div>
-					<Popover>
-						<PopoverTrigger asChild>
-							<Button
-								variant="outline"
-								className="w-full justify-between"
-								aria-label="Select player"
-							>
-								<span>Select player</span>
-								<ChevronsUpDownIcon className="opacity-50" />
-							</Button>
-						</PopoverTrigger>
-
-						<PopoverContent align="start">
-							<Command>
-								<CommandInput
-									placeholder="Input uuid or email"
-									value={search}
-									onValueChange={handleSearchChange}
-								/>
-								<CommandList>
-									<CommandEmpty>No player found.</CommandEmpty>
-									{foundUser && (
-										<CommandGroup>
-											<CommandItem value={foundUser.ingameUuid}>
-												{foundUser.displayName}
-											</CommandItem>
-										</CommandGroup>
-									)}
-								</CommandList>
-							</Command>
-						</PopoverContent>
-					</Popover>
+					<SelectInput
+						options={[
+							{ label: "User 1", value: "1" },
+							{ label: "User 2", value: "2" },
+							{ label: "User 3", value: "3" },
+						]}
+					/>
 				</div>
 
 				<DialogFooter>
