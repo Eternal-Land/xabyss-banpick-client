@@ -1,6 +1,7 @@
 import { http } from "@/lib/http";
 import type {
 	CreateMatchInput,
+	InviteToMatchInput,
 	ListMatchesQuery,
 	MatchResponse,
 	UpdateMatchInput,
@@ -46,10 +47,19 @@ async function getMatch(matchId: string) {
 	return response.data;
 }
 
+async function inviteToMatch(input: InviteToMatchInput) {
+	const response = await http.post<BaseApiResponse>(
+		`/api/user/match/invite`,
+		input,
+	);
+	return response.data;
+}
+
 export const matchApi = {
 	listMatches,
 	createMatch,
 	getMatch,
 	updateMatch,
 	deleteMatch,
+	inviteToMatch,
 } as const;

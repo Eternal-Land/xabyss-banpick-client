@@ -38,6 +38,11 @@ export const updateMatchInputSchema = z.object({
 	name: z.string(),
 });
 
-export interface UpdateMatchInput extends z.infer<
-	typeof updateMatchInputSchema
-> {}
+export type UpdateMatchInput = z.infer<typeof updateMatchInputSchema>;
+
+const inviteToMatchSchema = z.object({
+	accountId: z.string(),
+	matchId: z.string(),
+});
+
+export type InviteToMatchInput = z.infer<typeof inviteToMatchSchema>;
