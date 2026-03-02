@@ -26,10 +26,12 @@ import { toast } from "sonner";
 
 export interface MatchInviteDialogProps {
 	matchId: string;
+	onInvited?: () => void;
 }
 
 export default function MatchInviteDialog({
 	matchId: _matchId,
+	onInvited,
 }: MatchInviteDialogProps) {
 	const [open, setOpen] = useState(false);
 	const [searchValue, setSearchValue] = useState("");
@@ -92,6 +94,7 @@ export default function MatchInviteDialog({
 		mutationFn: matchApi.inviteToMatch,
 		onSuccess: () => {
 			toast.success("Invite sent successfully");
+			onInvited?.();
 		},
 		onError: (error) => {
 			toast.error(error.message || "Failed to send invite");
@@ -161,7 +164,12 @@ export default function MatchInviteDialog({
 					<DialogClose asChild>
 						<Button variant="outline">Cancel</Button>
 					</DialogClose>
-					<Button onClick={handleSendInvite}>Send</Button>
+					<Button
+						onClick={handleSendInvite}
+						disabled={inviteToMatchMutation.isPending}
+					>
+						Send
+					</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

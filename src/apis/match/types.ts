@@ -2,6 +2,13 @@ import z from "zod";
 import type { ProfileResponse } from "../self/types";
 import { paginationQuerySchema } from "@/lib/types";
 
+export interface MatchInvitationResponse {
+	invitationId: string;
+	matchName: string;
+	inviterDisplayName: string;
+	inviterAvatarUrl: string;
+}
+
 export interface MatchResponse {
 	id: string;
 	name: string;
@@ -9,6 +16,7 @@ export interface MatchResponse {
 	sessionCount: number;
 	createdAt: string;
 	participants?: ProfileResponse[];
+	invitations?: MatchInvitationResponse[];
 }
 
 export const listMatchesQuerySchema = z.object({
