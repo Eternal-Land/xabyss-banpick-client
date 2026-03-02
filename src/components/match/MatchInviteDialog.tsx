@@ -9,7 +9,6 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "../ui/dialog";
-import { Input } from "../ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import {
 	Command,
@@ -23,7 +22,6 @@ import { useState } from "react";
 import type { ProfileResponse } from "@/apis/self/types";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useQuery } from "@tanstack/react-query";
-import { usersApi } from "@/apis/users";
 import { http } from "@/lib/http";
 import type { BaseApiResponse } from "@/lib/types";
 
@@ -56,6 +54,8 @@ export default function MatchInviteDialog({ matchId }: MatchInviteDialogProps) {
 	};
 
 	const foundUser = searchUserQuery.data?.data;
+
+	console.log("MatchID:", matchId);
 
 	return (
 		<Dialog>

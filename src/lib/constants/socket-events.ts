@@ -1,5 +1,5 @@
 export const SocketEvent = {
-    NOTIFICATION: "notification",
+	NOTIFICATION: "notification",
 } as const;
 
-export type SocketEventEnum = typeof SocketEvent[keyof typeof SocketEvent];
+export type SocketEventEnum = (typeof SocketEvent)[keyof typeof SocketEvent];
