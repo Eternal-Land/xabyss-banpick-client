@@ -53,7 +53,13 @@ function RouteComponent() {
 		const profile = response.data;
 		dispatch(setProfile(profile!));
 		if (profile?.role === AccountRole.USER) {
-			navigate({ to: "/match" });
+			navigate({
+				to: "/match",
+				search: {
+					page: 1,
+					take: 10,
+				},
+			});
 		} else {
 			navigate({ to: "/admin" });
 		}

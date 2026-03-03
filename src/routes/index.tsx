@@ -13,7 +13,13 @@ function RouteComponent() {
 
 	const handleStart = () => {
 		if (profile) {
-			navigate({ to: "/match" });
+			navigate({
+				to: "/match",
+				search: {
+					page: 1,
+					take: 10,
+				},
+			});
 			return;
 		}
 

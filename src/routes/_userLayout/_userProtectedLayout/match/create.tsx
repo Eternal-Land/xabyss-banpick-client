@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
+import { AxiosError } from "axios";
+import { matchApi } from "@/apis/match";
 import { usersApi } from "@/apis/users";
 import type { ProfileResponse } from "@/apis/self/types";
 import {
@@ -31,10 +33,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useAppSelector } from "@/hooks/use-app-selector";
 import { matchLocaleKeys } from "@/i18n/keys";
 import { getTranslationToken } from "@/i18n/namespaces";
 import { useTranslation } from "react-i18next";
+import { selectAuthProfile } from "@/lib/redux/auth.slice";
+import type { BaseApiResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const Route = createFileRoute(
   '/_userLayout/_userProtectedLayout/match/create',
@@ -45,6 +51,8 @@ export const Route = createFileRoute(
 function RouteComponent() {
   const MIN_PLAYER_SEARCH_LENGTH = 4;
   const { t } = useTranslation();
+  const navigate = Route.useNavigate();
+  const profile = useAppSelector(selectAuthProfile);
   const tMatch = (key: string) => t(getTranslationToken("match", key));
   const [playerSearchA, setPlayerSearchA] = useState("");
   const [playerSearchB, setPlayerSearchB] = useState("");
@@ -60,6 +68,7 @@ function RouteComponent() {
   const [selectedPlayerB, setSelectedPlayerB] = useState<
     ProfileResponse | null
   >(null);
+  const [sessionCount, setSessionCount] = useState<number | undefined>(undefined);
 
   const triggerSearchA = useDebounce((value: string) => {
     setPlayerQueryA(value.trim());
@@ -246,7 +255,7 @@ function RouteComponent() {
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-(--radix-popper-anchor-width) p-0">
-          <Command>
+          <Command shouldFilter={false}>
             <CommandInput
               placeholder={tMatch(matchLocaleKeys.match_player_search_placeholder)}
               value={config.search}
@@ -282,18 +291,62 @@ function RouteComponent() {
 
   const sessionOptions = [
     {
-      value: "bo1",
+      value: 1,
       label: tMatch(matchLocaleKeys.match_session_bo1),
     },
     {
-      value: "bo3",
+      value: 3,
       label: tMatch(matchLocaleKeys.match_session_bo3),
     },
     {
-      value: "bo5",
+      value: 5,
       label: tMatch(matchLocaleKeys.match_session_bo5),
     },
   ];
+
+  const createMatchMutation = useMutation({
+    mutationFn: () => {
+      const left = selectedPlayerA;
+      const right = selectedPlayerB;
+
+      if (!left || !right || !sessionCount) {
+        throw new Error("Missing create match payload");
+      }
+
+      const isParticipant =
+        left.id === profile?.id ||
+        right.id === profile?.id ||
+        (!!profile?.ingameUuid &&
+          (left.ingameUuid === profile.ingameUuid ||
+            right.ingameUuid === profile.ingameUuid));
+
+      return matchApi.createMatch({
+        name: `${left.displayName} vs ${right.displayName}`,
+        sessionCount,
+        isParticipant,
+      });
+    },
+    onSuccess: (response) => {
+      toast.success("Match created successfully");
+      navigate({
+        to: "/room/$roomId/waiting",
+        params: {
+          roomId: response.data?.id || "",
+        },
+      });
+    },
+    onError: (error: AxiosError<BaseApiResponse> | Error) => {
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data?.message ?? "Failed to create match");
+        return;
+      }
+
+      toast.error(error.message || "Failed to create match");
+    },
+  });
+
+  const canCreate =
+    !!selectedPlayerA && !!selectedPlayerB && !!sessionCount && !createMatchMutation.isPending;
 
   return (
     <div className="flex flex-col items-center justify-center gap-12">
@@ -316,7 +369,10 @@ function RouteComponent() {
           </SelectContent>
         </Select>
 
-        <Select>
+        <Select
+          value={sessionCount ? String(sessionCount) : undefined}
+          onValueChange={(value) => setSessionCount(Number(value))}
+        >
           <SelectTrigger className="w-full max-w-[25vw] min-w-[10vw]">
             <SelectValue
               placeholder={tMatch(matchLocaleKeys.match_sessions_placeholder)}
@@ -324,7 +380,7 @@ function RouteComponent() {
           </SelectTrigger>
           <SelectContent>
             {sessionOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
+              <SelectItem key={option.value} value={String(option.value)}>
                 {option.label}
               </SelectItem>
             ))}
@@ -376,7 +432,12 @@ function RouteComponent() {
         })}
       </div>
 
-      <Button type="button" className="w-full max-w-[10vw]">
+      <Button
+        type="button"
+        className="w-full max-w-[10vw]"
+        onClick={() => createMatchMutation.mutate()}
+        disabled={!canCreate}
+      >
         {tMatch(matchLocaleKeys.match_create_button)}
       </Button>
     </div>
