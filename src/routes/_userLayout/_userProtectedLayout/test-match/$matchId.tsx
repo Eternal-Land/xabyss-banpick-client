@@ -7,8 +7,19 @@ import MatchDialogForm, {
 import MatchInviteDialog from "@/components/match/MatchInviteDialog";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { useMatchTypeLabel } from "@/hooks/use-match-type-label";
+import { useAppSelector } from "@/hooks/use-app-selector";
 import { useSocketEvent } from "@/hooks/use-socket-event";
 import { DateFormat, SocketEvent } from "@/lib/constants";
+import { selectAuthProfile } from "@/lib/redux/auth.slice";
 import { socket } from "@/lib/socket";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -25,6 +36,8 @@ export const Route = createFileRoute(
 
 function RouteComponent() {
 	const { matchId } = Route.useParams();
+	const profile = useAppSelector(selectAuthProfile);
+	const matchTypeLabels = useMatchTypeLabel();
 
 	useEffect(() => {
 		socket.emit(SocketEvent.JOIN_MATCH_ROOM, matchId);
@@ -39,43 +52,65 @@ function RouteComponent() {
 	useSocketEvent(
 		SocketEvent.INVITATION_ACCEPTED,
 		(payload?: ProfileResponse) => {
-			if (payload?.matchId && payload.matchId !== matchId) {
-				return;
-			}
-
 			getMatchQuery.refetch();
 			toast.success(
-				payload?.message ??
-					(payload?.displayName
-						? `${payload.displayName} accepted your invitation`
-						: "Invitation accepted"),
+				payload?.displayName
+					? `${payload.displayName} accepted your invitation`
+					: "Invitation accepted",
 			);
 		},
 	);
 
-	useSocketEvent(SocketEvent.INVITATION_DENIED, (payload?: ProfileResponse) => {
-		if (payload?.matchId && payload.matchId !== matchId) {
-			return;
-		}
+	useSocketEvent(SocketEvent.MATCH_INFO_UPDATED, () => {
+		getMatchQuery.refetch();
+	});
 
+	useSocketEvent(SocketEvent.MATCH_DELETED, () => {
+		toast.info("The match has been deleted");
+		window.location.href = "/test-match";
+	});
+
+	useSocketEvent(SocketEvent.INVITATION_DENIED, (payload?: ProfileResponse) => {
 		getMatchQuery.refetch();
 		toast.info(
-			payload?.message ??
-				(payload?.displayName
-					? `${payload.displayName} denied your invitation`
-					: "Invitation denied"),
+			payload?.displayName
+				? `${payload.displayName} denied your invitation`
+				: "Invitation denied",
 		);
 	});
 
+	useSocketEvent(SocketEvent.PARTICIPANT_REMOVED, (participantId: string) => {
+		if (participantId === profile?.id) {
+			toast.error("You have been removed from the match");
+			window.location.href = "/test-match";
+			return;
+		}
+		getMatchQuery.refetch();
+	});
+
+	useSocketEvent(SocketEvent.PARTICIPANT_JOINED, () => {
+		getMatchQuery.refetch();
+	});
+
+	useSocketEvent(SocketEvent.PARTICIPANT_LEFT, () => {
+		getMatchQuery.refetch();
+	});
+
 	const match = getMatchQuery.data?.data;
+	const isHost = profile?.id === match?.host?.id;
 	const invitations = match?.invitations ?? [];
 	const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+	const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+	const [selectedParticipant, setSelectedParticipant] = useState<
+		ProfileResponse | undefined
+	>(undefined);
 
 	const updateMatchMutation = useMutation({
 		mutationFn: (values: MatchDialogFormValues) =>
 			matchApi.updateMatch(match!.id, {
 				name: values.name,
 				sessionCount: values.sessionCount,
+				type: values.type,
 			}),
 		onSuccess: () => {
 			getMatchQuery.refetch();
@@ -89,9 +124,58 @@ function RouteComponent() {
 		},
 	});
 
+	const removeParticipantMutation = useMutation({
+		mutationFn: (participantId: string) =>
+			matchApi.removeParticipant(match!.id, participantId),
+		onSuccess: () => {
+			getMatchQuery.refetch();
+			toast.success("Participant removed successfully");
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to remove participant");
+		},
+		onSettled: () => {
+			setRemoveDialogOpen(false);
+			setSelectedParticipant(undefined);
+		},
+	});
+
+	const joinAsParticipantMutation = useMutation({
+		mutationFn: () => matchApi.joinAsParticipant(match!.id),
+		onError: (error) => {
+			toast.error(error.message || "Failed to join match");
+		},
+	});
+
+	const leaveMatchMutation = useMutation({
+		mutationFn: () => matchApi.leaveMatch(match!.id),
+		onSuccess: () => {
+			toast.success("You have left the match");
+			if (!isHost) {
+				window.location.href = "/test-match";
+			}
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to leave match");
+		},
+	});
+
+	const onRemoveParticipantClick = (participant: ProfileResponse) => {
+		setSelectedParticipant(participant);
+		setRemoveDialogOpen(true);
+	};
+
+	const onConfirmRemoveParticipant = () => {
+		if (!selectedParticipant) {
+			return;
+		}
+		removeParticipantMutation.mutate(selectedParticipant.id);
+	};
+
 	const renderParticipantSlot = (
 		participantIndex: number,
 		invitation?: MatchInvitationResponse,
+		isHost: boolean = false,
 	) => {
 		const participant = match?.participants?.[participantIndex];
 
@@ -104,9 +188,24 @@ function RouteComponent() {
 						</Avatar>
 						<p>{participant.displayName}</p>
 					</div>
-					<Button size="icon-sm" variant="destructive">
-						<XIcon />
-					</Button>
+					{participant.id === profile?.id && (
+						<Button
+							variant="outline"
+							onClick={() => leaveMatchMutation.mutate()}
+							disabled={leaveMatchMutation.isPending}
+						>
+							Leave
+						</Button>
+					)}
+					{isHost && participant.id !== profile?.id && (
+						<Button
+							size="icon-sm"
+							variant="destructive"
+							onClick={() => onRemoveParticipantClick(participant)}
+						>
+							<XIcon />
+						</Button>
+					)}
 				</div>
 			);
 		}
@@ -126,7 +225,17 @@ function RouteComponent() {
 		}
 
 		return (
-			<MatchInviteDialog matchId={matchId} onInvited={getMatchQuery.refetch} />
+			isHost && (
+				<div className="flex gap-2">
+					<MatchInviteDialog
+						matchId={matchId}
+						onInvited={getMatchQuery.refetch}
+					/>
+					<Button onClick={() => joinAsParticipantMutation.mutate()}>
+						Join
+					</Button>
+				</div>
+			)
 		);
 	};
 
@@ -155,20 +264,26 @@ function RouteComponent() {
 										</span>
 										{match.sessionCount}
 									</p>
+									<p>
+										<span className="text-gray-400 italic">Type: </span>
+										{matchTypeLabels[match.type]}
+									</p>
 								</div>
-								<Button size="icon" onClick={() => setUpdateDialogOpen(true)}>
-									<EditIcon />
-								</Button>
+								{isHost && (
+									<Button size="icon" onClick={() => setUpdateDialogOpen(true)}>
+										<EditIcon />
+									</Button>
+								)}
 							</div>
 						</div>
 						<div>
 							<h1 className="text-2xl mb-2">Participants</h1>
 							<div className="flex gap-2">
 								<div className="flex-1">
-									{renderParticipantSlot(0, invitations[0])}
+									{renderParticipantSlot(0, invitations[0], isHost)}
 								</div>
 								<div className="flex-1">
-									{renderParticipantSlot(1, invitations[1])}
+									{renderParticipantSlot(1, invitations[1], isHost)}
 								</div>
 							</div>
 						</div>
@@ -182,6 +297,7 @@ function RouteComponent() {
 					match && {
 						name: match.name,
 						sessionCount: match.sessionCount,
+						type: match.type,
 					}
 				}
 				open={updateDialogOpen}
@@ -189,6 +305,36 @@ function RouteComponent() {
 				onSubmit={updateMatchMutation.mutate}
 				isLoading={updateMatchMutation.isPending}
 			/>
+
+			<Dialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Remove participant</DialogTitle>
+						<DialogDescription>
+							Are you sure you want to remove
+							{selectedParticipant?.displayName
+								? ` ${selectedParticipant.displayName}`
+								: " this participant"}{" "}
+							from this match?
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setRemoveDialogOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={onConfirmRemoveParticipant}
+							disabled={removeParticipantMutation.isPending}
+						>
+							Remove
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 }

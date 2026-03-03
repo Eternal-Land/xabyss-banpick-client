@@ -13,12 +13,23 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "../ui/field";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useTranslation } from "react-i18next";
-import { commonLocaleKeys } from "@/i18n/keys";
+import { commonLocaleKeys, matchLocaleKeys } from "@/i18n/keys";
 import { Checkbox } from "../ui/checkbox";
+import { MatchType } from "@/lib/constants";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "../ui/select";
+import { useMatchTypeOptions } from "@/hooks/use-match-type-label";
+import { getTranslationToken } from "@/i18n/namespaces";
 
 const matchDialogFormSchema = z.object({
 	name: z.string().min(1, "Name is required"),
 	sessionCount: z.number().min(1, "Session count must be at least 1"),
+	type: z.enum(MatchType),
 	isParticipant: z.boolean().optional(),
 });
 
@@ -46,12 +57,14 @@ export default function MatchDialogForm({
 	onSubmit,
 }: MatchDialogFormProps) {
 	const { t } = useTranslation();
+	const matchTypeOptions = useMatchTypeOptions();
 
 	const form = useForm<MatchDialogFormValues>({
 		resolver: zodResolver(matchDialogFormSchema),
 		defaultValues: {
 			name: values?.name || "New Match",
 			sessionCount: values?.sessionCount || 1,
+			type: values?.type ?? MatchType.REALTIME,
 			isParticipant: values?.isParticipant || false,
 		},
 	});
@@ -115,6 +128,48 @@ export default function MatchDialogForm({
 										value={field.value}
 										onChange={(e) => field.onChange(Number(e.target.value))}
 									/>
+									{fieldState.invalid && (
+										<FieldError errors={[fieldState.error]} />
+									)}
+								</Field>
+							)}
+						/>
+
+						<Controller
+							name="type"
+							control={form.control}
+							render={({ field, fieldState }) => (
+								<Field data-invalid={fieldState.invalid}>
+									<FieldLabel htmlFor="match-type-input">Type</FieldLabel>
+									<Select
+										name={field.name}
+										value={String(field.value)}
+										onValueChange={(value) => field.onChange(Number(value))}
+									>
+										<SelectTrigger
+											id="match-type-input"
+											aria-invalid={fieldState.invalid}
+										>
+											<SelectValue
+												placeholder={t(
+													getTranslationToken(
+														"match",
+														matchLocaleKeys.match_type_placeholder,
+													),
+												)}
+											/>
+										</SelectTrigger>
+										<SelectContent>
+											{matchTypeOptions.map((option) => (
+												<SelectItem
+													key={option.value}
+													value={String(option.value)}
+												>
+													{option.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
 									{fieldState.invalid && (
 										<FieldError errors={[fieldState.error]} />
 									)}

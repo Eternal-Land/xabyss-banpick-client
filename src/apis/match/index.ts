@@ -55,6 +55,41 @@ async function inviteToMatch(input: InviteToMatchInput) {
 	return response.data;
 }
 
+async function acceptMatchInvitation(invitationId: string) {
+	const response = await http.post<BaseApiResponse>(
+		`/api/user/match/accept-invitation/${invitationId}`,
+	);
+	return response.data;
+}
+
+async function denyMatchInvitation(invitationId: string) {
+	const response = await http.post<BaseApiResponse>(
+		`/api/user/match/deny-invitation/${invitationId}`,
+	);
+	return response.data;
+}
+
+async function removeParticipant(matchId: string, participantId: string) {
+	const response = await http.post<BaseApiResponse>(
+		`/api/user/match/${matchId}/remove-participant/${participantId}`,
+	);
+	return response.data;
+}
+
+async function joinAsParticipant(matchId: string) {
+	const response = await http.post<BaseApiResponse>(
+		`/api/user/match/${matchId}/join`,
+	);
+	return response.data;
+}
+
+async function leaveMatch(matchId: string) {
+	const response = await http.post<BaseApiResponse>(
+		`/api/user/match/${matchId}/leave`,
+	);
+	return response.data;
+}
+
 export const matchApi = {
 	listMatches,
 	createMatch,
@@ -62,4 +97,9 @@ export const matchApi = {
 	updateMatch,
 	deleteMatch,
 	inviteToMatch,
+	acceptMatchInvitation,
+	denyMatchInvitation,
+	removeParticipant,
+	joinAsParticipant,
+	leaveMatch,
 } as const;
