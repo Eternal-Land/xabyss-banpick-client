@@ -1,6 +1,7 @@
 import { http } from "@/lib/http";
 import type {
 	CreateMatchInput,
+	InviteToMatchInput,
 	ListMatchesQuery,
 	MatchResponse,
 	UpdateMatchInput,
@@ -46,10 +47,59 @@ async function getMatch(matchId: string) {
 	return response.data;
 }
 
+async function inviteToMatch(input: InviteToMatchInput) {
+	const response = await http.post<BaseApiResponse>(
+		`/api/user/match/invite`,
+		input,
+	);
+	return response.data;
+}
+
+async function acceptMatchInvitation(invitationId: string) {
+	const response = await http.post<BaseApiResponse>(
+		`/api/user/match/accept-invitation/${invitationId}`,
+	);
+	return response.data;
+}
+
+async function denyMatchInvitation(invitationId: string) {
+	const response = await http.post<BaseApiResponse>(
+		`/api/user/match/deny-invitation/${invitationId}`,
+	);
+	return response.data;
+}
+
+async function removeParticipant(matchId: string, participantId: string) {
+	const response = await http.post<BaseApiResponse>(
+		`/api/user/match/${matchId}/remove-participant/${participantId}`,
+	);
+	return response.data;
+}
+
+async function joinAsParticipant(matchId: string) {
+	const response = await http.post<BaseApiResponse>(
+		`/api/user/match/${matchId}/join`,
+	);
+	return response.data;
+}
+
+async function leaveMatch(matchId: string) {
+	const response = await http.post<BaseApiResponse>(
+		`/api/user/match/${matchId}/leave`,
+	);
+	return response.data;
+}
+
 export const matchApi = {
 	listMatches,
 	createMatch,
 	getMatch,
 	updateMatch,
 	deleteMatch,
+	inviteToMatch,
+	acceptMatchInvitation,
+	denyMatchInvitation,
+	removeParticipant,
+	joinAsParticipant,
+	leaveMatch,
 } as const;

@@ -5,6 +5,7 @@ import MatchDialogForm, {
 } from "@/components/match/MatchDialogForm";
 import { Button } from "@/components/ui/button";
 import { useAppSelector } from "@/hooks/use-app-selector";
+import { useMatchTypeLabel } from "@/hooks/use-match-type-label";
 import { DateFormat } from "@/lib/constants";
 import { selectAuthProfile } from "@/lib/redux/auth.slice";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -26,6 +27,7 @@ function RouteComponent() {
 	const profile = useAppSelector(selectAuthProfile);
 	const navigate = Route.useNavigate();
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
+	const matchTypeLabels = useMatchTypeLabel();
 
 	const listMatchesQuery = useQuery({
 		queryKey: ["matches", searchParams],
@@ -45,6 +47,7 @@ function RouteComponent() {
 				name: values.name,
 				sessionCount: values.sessionCount,
 				isParticipant: values.isParticipant ?? false,
+				type: values.type,
 			}),
 		onSuccess: (response) => {
 			toast.success("Match created successfully");
@@ -72,6 +75,7 @@ function RouteComponent() {
 					{listMatchesQuery.data?.data?.map((match) => (
 						<div key={match.id} className="border rounded p-4 w-fit">
 							<p>{match.name}</p>
+							<p>{matchTypeLabels[match.type]}</p>
 							<p>{dayjs(match.createdAt).format(DateFormat.DEFAULT)}</p>
 							<Button
 								onClick={() => {

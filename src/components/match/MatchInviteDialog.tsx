@@ -1,64 +1,124 @@
-import { ChevronsUpDownIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import {
 	Dialog,
 	DialogClose,
 	DialogContent,
+	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
 } from "../ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from "../ui/command";
-import { useState } from "react";
-import type { ProfileResponse } from "@/apis/self/types";
-import { useDebounce } from "@/hooks/use-debounce";
-import { useQuery } from "@tanstack/react-query";
+	SelectInput,
+	SelectInputContent,
+	SelectInputEmpty,
+	SelectInputOption,
+} from "../select-input";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { http } from "@/lib/http";
 import type { BaseApiResponse } from "@/lib/types";
+import type { ProfileResponse } from "@/apis/self/types";
+import { Avatar, AvatarImage } from "../ui/avatar";
+import { matchApi } from "@/apis/match";
+import { toast } from "sonner";
 
 export interface MatchInviteDialogProps {
 	matchId: string;
+	onInvited?: () => void;
 }
 
-export default function MatchInviteDialog({ matchId }: MatchInviteDialogProps) {
-	const [search, setSearch] = useState("");
+export default function MatchInviteDialog({
+	matchId: _matchId,
+	onInvited,
+}: MatchInviteDialogProps) {
+	const [open, setOpen] = useState(false);
+	const [searchValue, setSearchValue] = useState("");
+	const [debouncedSearchValue, setDebouncedSearchValue] = useState("");
+	const [selectedUser, setSelectedUser] = useState<ProfileResponse | null>(
+		null,
+	);
+	const [errorMsg, setErrorMsg] = useState("");
 
-	const searchUserQuery = useQuery({
-		queryKey: ["searchUser"],
+	useEffect(() => {
+		const timeoutId = window.setTimeout(() => {
+			setDebouncedSearchValue(searchValue.trim());
+		}, 500);
+
+		return () => {
+			window.clearTimeout(timeoutId);
+		};
+	}, [searchValue]);
+
+	const findUserByUniqueKeyQuery = useQuery({
+		queryKey: ["findUserByUniqueKey", debouncedSearchValue],
 		queryFn: async () => {
-			if (!search.trim()) return undefined;
-			const response = await http.get<BaseApiResponse<ProfileResponse>>(
-				`/api/user/find-by-unique-key?key=${search}`,
+			if (!debouncedSearchValue) return null;
+			const res = await http.get<BaseApiResponse<ProfileResponse>>(
+				"/api/user/find-by-unique-key?key=" +
+					encodeURIComponent(debouncedSearchValue),
 			);
-			return response.data;
+			return res.data.data ?? null;
 		},
-		enabled: false,
+		enabled: Boolean(debouncedSearchValue),
+		retry: 0,
+		staleTime: 30_000,
 	});
-
-	const triggerSearchQuery = useDebounce(() => {
-		searchUserQuery.refetch();
-	}, 500);
+	const foundUser = findUserByUniqueKeyQuery.data;
 
 	const handleSearchChange = (value: string) => {
-		setSearch(value);
-		triggerSearchQuery();
+		setSearchValue(value);
+		setErrorMsg("");
+
+		if (
+			selectedUser &&
+			value !== selectedUser.displayName &&
+			value !== selectedUser.ingameUuid
+		) {
+			setSelectedUser(null);
+		}
 	};
 
-	const foundUser = searchUserQuery.data?.data;
+	const handleSelectUser = () => {
+		if (!foundUser) {
+			return;
+		}
 
-	console.log("MatchID:", matchId);
+		setSelectedUser(foundUser);
+		setSearchValue(foundUser.displayName);
+		setErrorMsg("");
+	};
+
+	const inviteToMatchMutation = useMutation({
+		mutationFn: matchApi.inviteToMatch,
+		onSuccess: () => {
+			toast.success("Invite sent successfully");
+			onInvited?.();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to send invite");
+		},
+		onSettled: () => {
+			setOpen(false);
+		},
+	});
+	const handleSendInvite = async () => {
+		const inviteTargetUser = selectedUser ?? foundUser;
+
+		if (!inviteTargetUser) {
+			setErrorMsg("User not found");
+			return;
+		}
+		inviteToMatchMutation.mutate({
+			accountId: inviteTargetUser.id,
+			matchId: _matchId,
+		});
+		setErrorMsg("");
+	};
 
 	return (
-		<Dialog>
+		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
 				<Button>Invite</Button>
 			</DialogTrigger>
@@ -66,48 +126,50 @@ export default function MatchInviteDialog({ matchId }: MatchInviteDialogProps) {
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>Invite Player</DialogTitle>
+					{errorMsg && (
+						<DialogDescription className="text-destructive">
+							{errorMsg}
+						</DialogDescription>
+					)}
 				</DialogHeader>
 
 				<div>
-					<Popover>
-						<PopoverTrigger asChild>
-							<Button
-								variant="outline"
-								className="w-full justify-between"
-								aria-label="Select player"
-							>
-								<span>Select player</span>
-								<ChevronsUpDownIcon className="opacity-50" />
-							</Button>
-						</PopoverTrigger>
-
-						<PopoverContent align="start">
-							<Command>
-								<CommandInput
-									placeholder="Input uuid or email"
-									value={search}
-									onValueChange={handleSearchChange}
-								/>
-								<CommandList>
-									<CommandEmpty>No player found.</CommandEmpty>
-									{foundUser && (
-										<CommandGroup>
-											<CommandItem value={foundUser.ingameUuid}>
-												{foundUser.displayName}
-											</CommandItem>
-										</CommandGroup>
-									)}
-								</CommandList>
-							</Command>
-						</PopoverContent>
-					</Popover>
+					<SelectInput
+						value={searchValue}
+						onValueChange={handleSearchChange}
+						placeholder="Search player..."
+					>
+						<SelectInputContent>
+							{findUserByUniqueKeyQuery.isFetching ? (
+								<SelectInputEmpty title="Searching..." />
+							) : foundUser ? (
+								<SelectInputOption
+									value={foundUser.id}
+									onSelect={handleSelectUser}
+									className="flex gap-2 items-center"
+								>
+									<Avatar size="sm">
+										<AvatarImage src={foundUser.avatar} />
+									</Avatar>
+									<span>{foundUser.displayName}</span>
+								</SelectInputOption>
+							) : debouncedSearchValue ? (
+								<SelectInputEmpty />
+							) : null}
+						</SelectInputContent>
+					</SelectInput>
 				</div>
 
 				<DialogFooter>
 					<DialogClose asChild>
 						<Button variant="outline">Cancel</Button>
 					</DialogClose>
-					<Button>Send</Button>
+					<Button
+						onClick={handleSendInvite}
+						disabled={inviteToMatchMutation.isPending}
+					>
+						Send
+					</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
