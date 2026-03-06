@@ -8,6 +8,7 @@ export interface AccountCharacterResponse {
 	characterId: number;
 	activatedConstellation: number;
 	characterLevel: number;
+	characterCost: number;
 	isOwned: boolean;
 	notes?: string;
 	createdAt: string;

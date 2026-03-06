@@ -165,12 +165,12 @@ function RouteComponent() {
 		onError: (error) => {
 			toast.error(
 				error.response?.data.message ||
-					t(
-						getTranslationToken(
-							"profile",
-							profileLocaleKeys.profile_hoyolab_sync_error,
-						),
+				t(
+					getTranslationToken(
+						"profile",
+						profileLocaleKeys.profile_hoyolab_sync_error,
 					),
+				),
 			);
 			setIsSyncConfirmOpen(false);
 			setSyncResult("error");
@@ -210,12 +210,12 @@ function RouteComponent() {
 		onError: (error) => {
 			toast.error(
 				error.response?.data.message ||
-					t(
-						getTranslationToken(
-							"profile",
-							profileLocaleKeys.profile_add_character_error,
-						),
+				t(
+					getTranslationToken(
+						"profile",
+						profileLocaleKeys.profile_add_character_error,
 					),
+				),
 			);
 		},
 	});
@@ -243,12 +243,12 @@ function RouteComponent() {
 		onError: (error) => {
 			toast.error(
 				error.response?.data.message ||
-					t(
-						getTranslationToken(
-							"profile",
-							profileLocaleKeys.profile_edit_character_error,
-						),
+				t(
+					getTranslationToken(
+						"profile",
+						profileLocaleKeys.profile_edit_character_error,
 					),
+				),
 			);
 		},
 	});
@@ -275,12 +275,12 @@ function RouteComponent() {
 		onError: (error) => {
 			toast.error(
 				error.response?.data.message ||
-					t(
-						getTranslationToken(
-							"profile",
-							profileLocaleKeys.profile_remove_character_error,
-						),
+				t(
+					getTranslationToken(
+						"profile",
+						profileLocaleKeys.profile_remove_character_error,
 					),
+				),
 			);
 		},
 	});
@@ -489,43 +489,47 @@ function RouteComponent() {
 						const accountCharacter = accountCharacterItems[index];
 
 						return (
-							<div
-								key={`${character.name}-${character.element}`}
-								className={`group relative ${accountCharacter ? "cursor-pointer" : ""}`}
-								role={accountCharacter ? "button" : undefined}
-								tabIndex={accountCharacter ? 0 : -1}
-								onClick={
-									accountCharacter
-										? () => handleEditCharacterOpen(accountCharacter)
-										: undefined
-								}
-								onKeyDown={
-									accountCharacter
-										? (event) => {
+							<div className="flex flex-col gap-2 items-center" key={`${character.name}-${character.element}`}>
+								<div
+									className={`group relative ${accountCharacter ? "cursor-pointer" : ""}`}
+									role={accountCharacter ? "button" : undefined}
+									tabIndex={accountCharacter ? 0 : -1}
+									onClick={
+										accountCharacter
+											? () => handleEditCharacterOpen(accountCharacter)
+											: undefined
+									}
+									onKeyDown={
+										accountCharacter
+											? (event) => {
 												if (event.key === "Enter" || event.key === " ") {
 													event.preventDefault();
 													handleEditCharacterOpen(accountCharacter);
 												}
 											}
-										: undefined
-								}
-							>
-								<CharacterContainer {...character} />
-								{accountCharacter ? (
-									<div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 z-20">
-										<Button
-											size="icon"
-											variant="destructive"
-											className="h-7 w-7"
-											onClick={(event) => {
-												event.stopPropagation();
-												handleRemoveCharacterOpen(accountCharacter);
-											}}
-										>
-											<Trash2 className="h-3.5 w-3.5" />
-										</Button>
-									</div>
-								) : null}
+											: undefined
+									}
+								>
+									<CharacterContainer {...character} />
+									{accountCharacter ? (
+										<div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 z-20">
+											<Button
+												size="icon"
+												variant="destructive"
+												className="h-7 w-7"
+												onClick={(event) => {
+													event.stopPropagation();
+													handleRemoveCharacterOpen(accountCharacter);
+												}}
+											>
+												<Trash2 className="h-3.5 w-3.5" />
+											</Button>
+										</div>
+									) : null}
+								</div>
+								<span className="text-sm text-muted-foreground">
+									Cost: {accountCharacter.characterCost}
+								</span>
 							</div>
 						);
 					})}
