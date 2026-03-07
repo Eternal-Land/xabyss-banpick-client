@@ -5,9 +5,14 @@ import Providers from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { store } from "@/lib/redux";
 import { setProfile } from "@/lib/redux/auth.slice";
-import { Outlet, createRootRoute } from "@tanstack/react-router";
+import type { QueryClient } from "@tanstack/react-query";
+import { Outlet, createRootRouteWithContext } from "@tanstack/react-router";
 
-export const Route = createRootRoute({
+export interface RootRouteContext {
+	queryClient: QueryClient;
+}
+
+export const Route = createRootRouteWithContext<RootRouteContext>()({
 	component: RootComponent,
 	beforeLoad: async () => {
 		const { profile } = store.getState().auth;

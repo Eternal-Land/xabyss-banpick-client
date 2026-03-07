@@ -24,7 +24,7 @@ import {
 import { AxiosError, type AxiosProgressEvent } from "axios";
 import { toast } from "sonner";
 import { useState } from "react";
-import { CheckIcon, EyeIcon, EyeOffIcon, XIcon } from "lucide-react";
+import { CheckIcon, XIcon } from "lucide-react";
 import { filesApi } from "@/apis/files";
 import { Progress } from "@/components/ui/progress";
 import { useTranslation } from "react-i18next";
@@ -81,7 +81,6 @@ function RouteComponent() {
 	const [fileNeedUpload, setFileNeedUpload] = useState<File | null>(null);
 	const [errorMsg, setErrorMsg] = useState<string | null>(null);
 	const [progress, setProgress] = useState<number>(0);
-	const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 	const form = useForm<RegisterInput>({
 		resolver: zodResolver(registerSchema),
 		defaultValues: {
@@ -362,48 +361,20 @@ function RouteComponent() {
 											),
 										)}
 									</FieldLabel>
-									<div className="relative">
-										<Input
-											{...field}
-											id={field.name}
-											type={isPasswordVisible ? "text" : "password"}
-											aria-invalid={fieldState.invalid}
-											placeholder={t(
-												getTranslationToken(
-													"auth",
-													authLocaleKeys.register_password_placeholder,
-												),
-											)}
-											autoComplete="new-password"
-											className="pr-9"
-											disabled={registerMutation.isPending}
-										/>
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon"
-											onClick={() => setIsPasswordVisible((prev) => !prev)}
-											className="text-muted-foreground focus-visible:ring-ring/50 absolute inset-y-0 right-0 rounded-l-none hover:bg-transparent"
-											disabled={registerMutation.isPending}
-										>
-											{isPasswordVisible ? <EyeOffIcon /> : <EyeIcon />}
-											<span className="sr-only">
-												{isPasswordVisible
-													? t(
-															getTranslationToken(
-																"auth",
-																authLocaleKeys.register_password_toggle_hide,
-															),
-														)
-													: t(
-															getTranslationToken(
-																"auth",
-																authLocaleKeys.register_password_toggle_show,
-															),
-														)}
-											</span>
-										</Button>
-									</div>
+									<Input
+										{...field}
+										id={field.name}
+										type="password"
+										aria-invalid={fieldState.invalid}
+										placeholder={t(
+											getTranslationToken(
+												"auth",
+												authLocaleKeys.register_password_placeholder,
+											),
+										)}
+										autoComplete="new-password"
+										disabled={registerMutation.isPending}
+									/>
 									<div className="mb-2 mt-3 flex h-1 w-full gap-1">
 										{Array.from({ length: 5 }).map((_, index) => (
 											<span

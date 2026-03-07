@@ -19,7 +19,7 @@ import { useMemo, useState } from 'react'
 import { Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export const Route = createFileRoute('/_userLayout/room_/$roomId/ban-pick')({
+export const Route = createFileRoute('/_userLayout/room/$roomId/ban-pick')({
     component: RouteComponent,
 })
 

@@ -9,7 +9,6 @@ interface PlayerInfo {
 interface MatchContainerProps {
     player1: PlayerInfo;
     player2: PlayerInfo;
-    matchTitle: string;
     onClick?: () => void;
 }
 
@@ -26,7 +25,7 @@ const PlayerContainer = ({ player, isOpponent = false }: { player: PlayerInfo; i
     )
 }
 
-const MatchContainer = ({ player1, player2, matchTitle, onClick }: MatchContainerProps) => {
+const MatchContainer = ({ player1, player2, onClick }: MatchContainerProps) => {
     return (
         <div
             className={cn(
@@ -39,7 +38,7 @@ const MatchContainer = ({ player1, player2, matchTitle, onClick }: MatchContaine
             )}
             onClick={onClick}
         >
-            <div className="text-xl font-bold">{matchTitle}</div>
+            <div className="text-xl font-bold">{player1.name} VS {player2.name}</div>
             <div className="flex justify-between items-center w-full">
                 <PlayerContainer player={player1} isOpponent={false} />
                 <PlayerContainer player={player2} isOpponent={true} />

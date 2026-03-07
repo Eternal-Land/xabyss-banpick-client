@@ -4,12 +4,32 @@ import { RouterProvider, createRouter } from "@tanstack/react-router";
 import "./index.css";
 import "./i18n";
 import "./lib/socket";
+import { QueryClient } from "@tanstack/react-query";
+import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen";
 
-// Create a new router instance
-const router = createRouter({ routeTree });
+function setupRouter() {
+	const queryClient = new QueryClient();
+	const router = createRouter({
+		routeTree,
+		context: {
+			queryClient,
+		},
+		scrollRestoration: true,
+		defaultPreload: 'intent',
+	});
+
+	setupRouterSsrQueryIntegration({
+		router,
+		queryClient,
+	});
+
+	return router;
+}
+
+const router = setupRouter();
 
 // Register the router instance for type safety
 declare module "@tanstack/react-router" {

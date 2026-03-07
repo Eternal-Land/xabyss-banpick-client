@@ -97,7 +97,6 @@ function RouteComponent() {
       {listMatchesQuery.data?.data?.map((match) => (
         <MatchContainer
           key={match.id}
-          matchTitle={match.name}
           player1={{
             name: match.participants?.[0]?.displayName || tMatch(matchLocaleKeys.match_list_waiting_player),
             uid: match.participants?.[0]?.ingameUuid || "-",

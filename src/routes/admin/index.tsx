@@ -1,5 +1,3 @@
-import { useAppSelector } from "@/hooks/use-app-selector";
-import { selectAuthProfile } from "@/lib/redux/auth.slice";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/admin/")({
@@ -7,7 +5,5 @@ export const Route = createFileRoute("/admin/")({
 });
 
 function RouteComponent() {
-  const profile = useAppSelector(selectAuthProfile);
-
-  return <div>Hello {profile?.ingameUuid || "Admin"}!</div>;
+  return <div></div>;
 }

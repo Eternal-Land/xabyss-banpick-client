@@ -29,15 +29,13 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useAppSelector } from "@/hooks/use-app-selector";
 import { matchLocaleKeys } from "@/i18n/keys";
 import { getTranslationToken } from "@/i18n/namespaces";
 import { useTranslation } from "react-i18next";
-import { selectAuthProfile } from "@/lib/redux/auth.slice";
 import type { BaseApiResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { MatchType } from "@/lib/constants";
+import { MatchType, type MatchTypeEnum } from "@/lib/constants";
 
 export const Route = createFileRoute(
 	"/_userLayout/_userProtectedLayout/match/create",
@@ -49,7 +47,6 @@ function RouteComponent() {
 	const MIN_PLAYER_SEARCH_LENGTH = 4;
 	const { t } = useTranslation();
 	const navigate = Route.useNavigate();
-	const profile = useAppSelector(selectAuthProfile);
 	const tMatch = (key: string) => t(getTranslationToken("match", key));
 	const [playerSearchA, setPlayerSearchA] = useState("");
 	const [playerSearchB, setPlayerSearchB] = useState("");
@@ -64,6 +61,9 @@ function RouteComponent() {
 	const [selectedPlayerB, setSelectedPlayerB] =
 		useState<ProfileResponse | null>(null);
 	const [sessionCount, setSessionCount] = useState<number | undefined>(
+		undefined,
+	);
+	const [matchType, setMatchType] = useState<MatchTypeEnum | undefined>(
 		undefined,
 	);
 
@@ -283,11 +283,11 @@ function RouteComponent() {
 
 	const matchTypeOptions = [
 		{
-			value: "1v1",
+			value: String(MatchType.TURN_BASED),
 			label: tMatch(matchLocaleKeys.match_type_turn_based),
 		},
 		{
-			value: "2v2",
+			value: String(MatchType.REALTIME),
 			label: tMatch(matchLocaleKeys.match_type_real_time),
 		},
 	];
@@ -312,22 +312,14 @@ function RouteComponent() {
 			const left = selectedPlayerA;
 			const right = selectedPlayerB;
 
-			if (!left || !right || !sessionCount) {
+			if (!left || !right || !sessionCount || matchType === undefined) {
 				throw new Error("Missing create match payload");
 			}
 
-			const isParticipant =
-				left.id === profile?.id ||
-				right.id === profile?.id ||
-				(!!profile?.ingameUuid &&
-					(left.ingameUuid === profile.ingameUuid ||
-						right.ingameUuid === profile.ingameUuid));
-
 			return matchApi.createMatch({
-				name: `${left.displayName} vs ${right.displayName}`,
 				sessionCount,
-				isParticipant,
-				type: MatchType.REALTIME,
+				type: matchType,
+				participants: [left.id, right.id],
 			});
 		},
 		onSuccess: (response) => {
@@ -353,6 +345,7 @@ function RouteComponent() {
 		!!selectedPlayerA &&
 		!!selectedPlayerB &&
 		!!sessionCount &&
+		matchType !== undefined &&
 		!createMatchMutation.isPending;
 
 	return (
@@ -361,7 +354,12 @@ function RouteComponent() {
 				{tMatch(matchLocaleKeys.match_create_title)}
 			</h1>
 			<div className="flex gap-6">
-				<Select>
+				<Select
+					value={matchType !== undefined ? String(matchType) : undefined}
+					onValueChange={(value) =>
+						setMatchType(Number(value) as MatchTypeEnum)
+					}
+				>
 					<SelectTrigger className="w-full max-w-[25vw] min-w-[10vw]">
 						<SelectValue
 							placeholder={tMatch(matchLocaleKeys.match_type_placeholder)}

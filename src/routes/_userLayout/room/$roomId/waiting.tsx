@@ -1,15 +1,13 @@
-import { matchApi } from '@/apis/match'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { matchLocaleKeys } from '@/i18n/keys'
 import { getTranslationToken } from '@/i18n/namespaces'
 import { IconAssets } from '@/lib/constants/icon-assets'
-import { useQuery } from '@tanstack/react-query'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useLoaderData } from '@tanstack/react-router'
 import { Copy } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-export const Route = createFileRoute('/_userLayout/room_/$roomId/waiting')({
+export const Route = createFileRoute('/_userLayout/room/$roomId/waiting')({
   component: RouteComponent,
 })
 
@@ -25,7 +23,7 @@ function RouteComponent() {
   const { t } = useTranslation()
   const tMatch = (key: string, options?: Record<string, string | number>) =>
     t(getTranslationToken('match', key), options)
-  const { roomId } = Route.useParams()
+  const matchData = useLoaderData({ from: "/_userLayout/room/$roomId" })
 
   const COPY_LINKS = [
     tMatch(matchLocaleKeys.match_waiting_copy_opponent_link),
@@ -33,18 +31,12 @@ function RouteComponent() {
     tMatch(matchLocaleKeys.match_waiting_copy_staff_link),
   ] as const
 
-  const getMatchQuery = useQuery({
-    queryKey: ['match', roomId],
-    queryFn: () => matchApi.getMatch(roomId),
-    enabled: !!roomId,
-  })
-
-  const match = getMatchQuery.data?.data
+  const match = matchData?.data
   const bluePlayer = match?.participants?.[0]
   const redPlayer = match?.participants?.[1]
   const waitingPlayers = Math.max(0, 2 - (match?.participants?.length ?? 0))
 
-  if (getMatchQuery.isLoading) {
+  if (!match) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center gap-3 text-xl">
         {tMatch(matchLocaleKeys.match_waiting_loading)} <Spinner className="size-6" />
@@ -52,7 +44,7 @@ function RouteComponent() {
     )
   }
 
-  if (getMatchQuery.isError || !match) {
+  if (!match) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center text-xl text-red-500">
         {tMatch(matchLocaleKeys.match_waiting_load_error)}
@@ -86,7 +78,7 @@ function RouteComponent() {
               <img src={IconAssets.EMPTY_CHARACTER_ICON} alt="Host Avatar" className="w-20 h-20 rounded-full object-cover" />
             )}
             <div className="flex flex-col gap-2">
-              <h2 className="text-2xl font-semibold">{match.name}</h2>
+              <h2 className="text-2xl font-semibold">{match.participants?.[0]?.displayName} VS {match.participants?.[1]?.displayName}</h2>
               <p className="text-gray-500">
                 {tMatch(matchLocaleKeys.match_waiting_session_label, {
                   sessionCount: match.sessionCount,
