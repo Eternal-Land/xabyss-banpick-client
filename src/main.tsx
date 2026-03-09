@@ -18,7 +18,7 @@ function setupRouter() {
 			queryClient,
 		},
 		scrollRestoration: true,
-		defaultPreload: 'intent',
+		defaultPreload: "intent",
 	});
 
 	setupRouterSsrQueryIntegration({
@@ -44,7 +44,7 @@ if (!rootElement.innerHTML) {
 	const root = ReactDOM.createRoot(rootElement);
 	root.render(
 		<StrictMode>
-			<RouterProvider router={router} />
+			<RouterProvider router={router} />,
 		</StrictMode>,
 	);
 }
