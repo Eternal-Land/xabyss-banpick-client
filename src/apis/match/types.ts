@@ -8,14 +8,14 @@ export interface MatchResponse {
 	host?: ProfileResponse;
 	sessionCount: number;
 	createdAt: string;
-	participants?: ProfileResponse[];
+	redPlayer?: ProfileResponse;
+	bluePlayer?: ProfileResponse;
 	type: MatchTypeEnum;
 }
 
 export const listMatchesQuerySchema = z.object({
 	...paginationQuerySchema.shape,
 	accountId: z.string().optional(),
-	search: z.string().optional(),
 });
 
 export type ListMatchesQuery = z.infer<typeof listMatchesQuerySchema>;
@@ -26,7 +26,8 @@ export const createMatchInputSchema = z.object({
 		.min(1, "Session count must be at least 1")
 		.max(5, "Session count must be at most 5"),
 	type: z.enum(MatchType).default(MatchType.REALTIME),
-	participants: z.array(z.string()).min(2).max(2),
+	redPlayerId: z.string(),
+	bluePlayerId: z.string(),
 });
 
 export type CreateMatchInput = z.infer<typeof createMatchInputSchema>;

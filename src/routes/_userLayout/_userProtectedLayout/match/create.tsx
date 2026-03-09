@@ -319,7 +319,8 @@ function RouteComponent() {
 			return matchApi.createMatch({
 				sessionCount,
 				type: matchType,
-				participants: [left.id, right.id],
+				bluePlayerId: left.id,
+				redPlayerId: right.id,
 			});
 		},
 		onSuccess: (response) => {
