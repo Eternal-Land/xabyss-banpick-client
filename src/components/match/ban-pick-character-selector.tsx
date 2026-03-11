@@ -66,7 +66,7 @@ export default function BanPickCharacterSelector({
                             onClick={() => onSelectCharacter(character)}
                             disabled={isDisabled}
                             className={cn(
-                                'text-left',
+                                'text-left flex flex-col items-center gap-2',
                                 pendingCharacter?.name === character.name && activeRingClass,
                                 isDisabled
                                     ? 'cursor-not-allowed opacity-60 grayscale'
@@ -81,6 +81,7 @@ export default function BanPickCharacterSelector({
                                 name={character.name}
                                 rarity={character.rarity}
                             />
+                            <span>Cost: {character.cost}</span>
                         </button>
                     )
                 })}

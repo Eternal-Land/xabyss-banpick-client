@@ -44,6 +44,7 @@ export const accountCharacterQuerySchema = z.object({
 	...paginationQuerySchema.shape,
 	characterId: z.number().int().optional(),
 	isOwned: z.boolean().optional(),
+	accountId: z.string().optional(),
 });
 
 export type AccountCharacterQuery = z.infer<typeof accountCharacterQuerySchema>;
