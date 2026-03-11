@@ -12,6 +12,7 @@ import { createFileRoute, useLoaderData } from "@tanstack/react-router";
 import { Copy } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_userLayout/room/$roomId/waiting")({
 	component: RouteComponent,
@@ -19,11 +20,28 @@ export const Route = createFileRoute("/_userLayout/room/$roomId/waiting")({
 
 interface CopyLinkButtonProps {
 	link: string;
+	onCopySuccess: string;
+	onCopyError: string;
 }
 
-function CopyLinkButton({ link }: CopyLinkButtonProps) {
+function CopyLinkButton({
+	link,
+	onCopySuccess,
+	onCopyError,
+}: CopyLinkButtonProps) {
 	return (
-		<Button variant="ghost" onClick={() => navigator.clipboard.writeText(link)}>
+		<Button
+			variant="ghost"
+			onClick={async () => {
+				try {
+					await navigator.clipboard.writeText(link);
+					toast.info(onCopySuccess);
+				} catch (err) {
+					toast.error(onCopyError);
+				}
+			}}
+			size="icon"
+		>
 			<Copy className="size-4" />
 		</Button>
 	);
@@ -49,7 +67,14 @@ function RouteComponent() {
 	const connectedPlayerCount = Number(isBlueJoined) + Number(isRedJoined);
 	const waitingPlayers = Math.max(0, 2 - connectedPlayerCount);
 	const canStartGame = isHostJoined && isBlueJoined && isRedJoined;
-	const isHost = match?.host?.id === profile?.id;
+	const isHost = match?.host?.id == profile?.id;
+
+	useSocketEvent(
+		SocketEvent.UPDATE_MATCH_STATE,
+		(matchState: MatchStateResponse) => {
+			setPageMatchState(matchState);
+		},
+	);
 
 	if (!match) {
 		return (
@@ -58,13 +83,6 @@ function RouteComponent() {
 			</div>
 		);
 	}
-
-	useSocketEvent(
-		SocketEvent.UPDATE_MATCH_STATE,
-		(matchState: MatchStateResponse) => {
-			setPageMatchState(matchState);
-		},
-	);
 
 	return (
 		<div className="min-h-screen max-w-screen">
@@ -81,13 +99,13 @@ function RouteComponent() {
 						{bluePlayer?.avatar ? (
 							<img
 								src={bluePlayer.avatar}
-								alt="Blue Player Avatar"
+								alt={tMatch(matchLocaleKeys.match_waiting_blue_avatar_alt)}
 								className="w-full h-full"
 							/>
 						) : (
 							<img
 								src={IconAssets.EMPTY_CHARACTER_ICON}
-								alt="Blue Player Avatar"
+								alt={tMatch(matchLocaleKeys.match_waiting_blue_avatar_alt)}
 								className="w-12 h-12"
 							/>
 						)}
@@ -109,13 +127,13 @@ function RouteComponent() {
 						{match.host?.avatar ? (
 							<img
 								src={match.host.avatar}
-								alt="Host Avatar"
+								alt={tMatch(matchLocaleKeys.match_waiting_host_avatar_alt)}
 								className="w-20 h-20 rounded-full object-cover"
 							/>
 						) : (
 							<img
 								src={IconAssets.EMPTY_CHARACTER_ICON}
-								alt="Host Avatar"
+								alt={tMatch(matchLocaleKeys.match_waiting_host_avatar_alt)}
 								className="w-20 h-20 rounded-full object-cover"
 							/>
 						)}
@@ -153,7 +171,13 @@ function RouteComponent() {
 								<h1 className="text-gray-400">
 									{tMatch(matchLocaleKeys.match_waiting_copy_link)}
 								</h1>
-								<CopyLinkButton link={window.location.href} />
+								<CopyLinkButton
+									link={window.location.href}
+									onCopySuccess={tMatch(
+										matchLocaleKeys.match_waiting_copy_success,
+									)}
+									onCopyError={tMatch(matchLocaleKeys.match_waiting_copy_error)}
+								/>
 							</div>
 						</div>
 					</div>
@@ -181,13 +205,13 @@ function RouteComponent() {
 						{redPlayer?.avatar ? (
 							<img
 								src={redPlayer.avatar}
-								alt="Red Player Avatar"
+								alt={tMatch(matchLocaleKeys.match_waiting_red_avatar_alt)}
 								className="w-full h-full"
 							/>
 						) : (
 							<img
 								src={IconAssets.EMPTY_CHARACTER_ICON}
-								alt="Red Player Avatar"
+								alt={tMatch(matchLocaleKeys.match_waiting_red_avatar_alt)}
 								className="w-12 h-12"
 							/>
 						)}
