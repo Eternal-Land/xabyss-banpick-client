@@ -39,6 +39,14 @@ export default function BanPickCharacterSelector({
             ? 'rounded-sm ring-2 ring-sky-400 ring-offset-2 ring-offset-transparent'
             : 'rounded-sm ring-2 ring-red-600 ring-offset-2 ring-offset-transparent'
 
+    const selectableSide = currentAction
+        ? currentAction.type === 'ban'
+            ? currentAction.side === 'blue'
+                ? 'red'
+                : 'blue'
+            : currentAction.side
+        : undefined
+
     return (
         <div className="flex flex-col gap-4 h-full">
             <div className="flex items-center justify-between gap-2">
@@ -56,7 +64,7 @@ export default function BanPickCharacterSelector({
                     const isSelectedInDraft = selectedCharacterNames.has(character.name)
                     const isDisabled =
                         isDraftCompleted ||
-                        currentAction?.side !== side ||
+                        selectableSide !== side ||
                         isSelectedInDraft
 
                     return (

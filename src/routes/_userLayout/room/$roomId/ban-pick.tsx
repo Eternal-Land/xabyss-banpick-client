@@ -38,8 +38,8 @@ const MOCK_PLAYERS = {
             'https://res.cloudinary.com/dphtvhtvf/image/upload/v1770611732/genshin-impact-banpick/upload/avatars/euhhui4znfpssjw8laps.jpg',
     },
     red: {
-        id: '78462613-e8e4-4f4c-a70f-8e663a24c01c',
-        accountId: '78462613-e8e4-4f4c-a70f-8e663a24c01c',
+        id: 'f5471397-5316-4051-a80f-faa6c201f9b7',
+        accountId: 'f5471397-5316-4051-a80f-faa6c201f9b7',
         name: 'Arisu Kaya',
         uid: '987654321',
         avatar:
@@ -163,6 +163,13 @@ function RouteComponent() {
     const blueCharacters = blueAccountCharactersResponse?.data ?? []
     const redCharacters = redAccountCharactersResponse?.data ?? []
 
+    const currentAction =
+        draftStep < MOCK_DRAFT_SEQUENCE.length
+            ? MOCK_DRAFT_SEQUENCE[draftStep]
+            : undefined
+
+    const isDraftCompleted = draftStep >= MOCK_DRAFT_SEQUENCE.length
+
     const selectedCharacterNames = useMemo(() => {
         const selected = new Set<string>()
 
@@ -235,13 +242,6 @@ function RouteComponent() {
                 : null,
         [pendingCharacter],
     )
-
-    const currentAction =
-        draftStep < MOCK_DRAFT_SEQUENCE.length
-            ? MOCK_DRAFT_SEQUENCE[draftStep]
-            : undefined
-
-    const isDraftCompleted = draftStep >= MOCK_DRAFT_SEQUENCE.length
 
     const onSelectCharacter = (character: AccountCharacterResponse) => {
         if (!currentAction || selectedCharacterNames.has(character.characters.name)) {
