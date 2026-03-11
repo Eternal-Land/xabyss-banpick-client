@@ -3,6 +3,7 @@ import type {
 	CreateMatchInput,
 	ListMatchesQuery,
 	MatchResponse,
+	MatchStateResponse,
 } from "./types";
 import type { BaseApiResponse } from "@/lib/types";
 import { buildSearchParams } from "@/lib/helpers";
@@ -37,9 +38,17 @@ async function getMatch(matchId: string) {
 	return response.data;
 }
 
+async function getMatchState(matchId: string) {
+	const response = await http.get<BaseApiResponse<MatchStateResponse>>(
+		`/api/user/match/${matchId}/state`,
+	);
+	return response.data;
+}
+
 export const matchApi = {
 	listMatches,
 	createMatch,
 	getMatch,
+	getMatchState,
 	deleteMatch,
 } as const;

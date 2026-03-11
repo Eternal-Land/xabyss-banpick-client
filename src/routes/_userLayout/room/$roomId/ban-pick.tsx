@@ -1,12 +1,16 @@
 import BanPickCharacterSelector from '@/components/match/ban-pick-character-selector'
 import BanPickDraftSlots from '@/components/match/ban-pick-draft-slots'
 import BanPickTeamBuild from '@/components/match/ban-pick-team-build'
+import { accountCharactersApi } from '@/apis/account-characters'
+import type {
+    AccountCharacterQuery,
+    AccountCharacterResponse,
+} from '@/apis/account-characters/types'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import type {
-    BanPickCharacter,
     DraftAction,
-    DraftState,
+    BanPickCharacter,
 } from '@/components/match/ban-pick.types'
 import {
     CharacterElement,
@@ -15,6 +19,7 @@ import {
 } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { createFileRoute } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -23,30 +28,57 @@ export const Route = createFileRoute('/_userLayout/room/$roomId/ban-pick')({
     component: RouteComponent,
 })
 
-const SAMPLE_PLAYER = {
-    name: 'Shirogane Toru',
-    uid: '123456789',
-    avatar:
-        'https://res.cloudinary.com/dphtvhtvf/image/upload/v1770611732/genshin-impact-banpick/upload/avatars/euhhui4znfpssjw8laps.jpg',
-}
+const MOCK_PLAYERS = {
+    blue: {
+        id: '8f465eae-cf20-4c59-904b-abfc5062d273',
+        accountId: '8f465eae-cf20-4c59-904b-abfc5062d273',
+        name: 'Shirogane Toru',
+        uid: '123456789',
+        avatar:
+            'https://res.cloudinary.com/dphtvhtvf/image/upload/v1770611732/genshin-impact-banpick/upload/avatars/euhhui4znfpssjw8laps.jpg',
+    },
+    red: {
+        id: '78462613-e8e4-4f4c-a70f-8e663a24c01c',
+        accountId: '78462613-e8e4-4f4c-a70f-8e663a24c01c',
+        name: 'Arisu Kaya',
+        uid: '987654321',
+        avatar:
+            'https://res.cloudinary.com/dphtvhtvf/image/upload/v1770611732/genshin-impact-banpick/upload/avatars/euhhui4znfpssjw8laps.jpg',
+    },
+} as const
 
 const ELEMENT_FILTER_ALL = 'all'
 const RARITY_FILTER_ALL = 'all'
 
 const ELEMENT_OPTIONS = Object.values(CharacterElement) as CharacterElementEnum[]
 
-const SAMPLE_CHARACTERS: BanPickCharacter[] = Array.from(
-    { length: 50 },
-    (_, index) => ({
-        name: `Character ${index + 1}`,
-        imageUrl:
-            'https://res.cloudinary.com/dphtvhtvf/image/upload/v1768877319/raiden-shogun_lxknci.png',
-        rarity: index % 2 === 0 ? 5 : 4,
-        level: 80 + (index % 21),
-        constellation: index % 7,
-        element: ELEMENT_OPTIONS[index % ELEMENT_OPTIONS.length],
-    }),
-)
+const MOCK_ACCOUNT_CHARACTER_QUERY: AccountCharacterQuery = {
+    page: 1,
+    take: 100,
+    isOwned: true,
+}
+
+const mapAccountCharacterToBanPickCharacter = (
+    accountCharacter: AccountCharacterResponse,
+): BanPickCharacter => ({
+    name: accountCharacter.characters.name,
+    imageUrl: accountCharacter.characters.iconUrl,
+    rarity: (accountCharacter.characters.rarity === 5 ? 5 : 4) as 4 | 5,
+    level: accountCharacter.characterLevel,
+    constellation: accountCharacter.activatedConstellation,
+    cost: accountCharacter.characterCost,
+    element: accountCharacter.characters.element,
+})
+
+interface AccountDraftSideState {
+    bans: AccountCharacterResponse[]
+    picks: AccountCharacterResponse[]
+}
+
+interface AccountDraftState {
+    blue: AccountDraftSideState
+    red: AccountDraftSideState
+}
 
 const MOCK_DRAFT_SEQUENCE: DraftAction[] = [
     { side: 'blue', type: 'ban' },
@@ -73,13 +105,13 @@ const MOCK_DRAFT_SEQUENCE: DraftAction[] = [
     { side: 'red', type: 'pick' },
 ]
 
-const INITIAL_DRAFT_STATE: DraftState = {
+const INITIAL_DRAFT_STATE: AccountDraftState = {
     blue: { bans: [], picks: [] },
     red: { bans: [], picks: [] },
 }
 
 function filterCharacters(
-    characters: BanPickCharacter[],
+    characters: AccountCharacterResponse[],
     search: string,
     elementFilter: string,
     rarityFilter: string,
@@ -89,15 +121,15 @@ function filterCharacters(
     return characters.filter((character) => {
         const matchesSearch =
             !normalizedSearch ||
-            character.name.toLowerCase().includes(normalizedSearch)
+            character.characters.name.toLowerCase().includes(normalizedSearch)
 
         const matchesElement =
             elementFilter === ELEMENT_FILTER_ALL ||
-            CharacterElementDetail[character.element].key === elementFilter
+            CharacterElementDetail[character.characters.element].key === elementFilter
 
         const matchesRarity =
             rarityFilter === RARITY_FILTER_ALL ||
-            character.rarity.toString() === rarityFilter
+            character.characters.rarity.toString() === rarityFilter
 
         return matchesSearch && matchesElement && matchesRarity
     })
@@ -111,10 +143,25 @@ function RouteComponent() {
 
     const [rightElementFilter, setRightElementFilter] = useState(ELEMENT_FILTER_ALL)
     const [rightRarityFilter, setRightRarityFilter] = useState(RARITY_FILTER_ALL)
-    const [draftState, setDraftState] = useState<DraftState>(INITIAL_DRAFT_STATE)
+    const [draftState, setDraftState] = useState<AccountDraftState>(INITIAL_DRAFT_STATE)
     const [draftStep, setDraftStep] = useState(0)
     const [pendingCharacter, setPendingCharacter] =
-        useState<BanPickCharacter | null>(null)
+        useState<AccountCharacterResponse | null>(null)
+
+    const { data: blueAccountCharactersResponse } = useQuery({
+        queryKey: ['account-characters', { ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: MOCK_PLAYERS.blue.accountId }],
+        queryFn: () =>
+            accountCharactersApi.listAccountCharacters({ ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: MOCK_PLAYERS.blue.accountId }),
+    })
+
+    const { data: redAccountCharactersResponse } = useQuery({
+        queryKey: ['account-characters', { ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: MOCK_PLAYERS.red.accountId }],
+        queryFn: () =>
+            accountCharactersApi.listAccountCharacters({ ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: MOCK_PLAYERS.red.accountId }),
+    })
+
+    const blueCharacters = blueAccountCharactersResponse?.data ?? []
+    const redCharacters = redAccountCharactersResponse?.data ?? []
 
     const selectedCharacterNames = useMemo(() => {
         const selected = new Set<string>()
@@ -124,7 +171,7 @@ function RouteComponent() {
                 ...draftState.blue.picks,
                 ...draftState.red.bans,
                 ...draftState.red.picks,
-            ].forEach((character) => selected.add(character.name))
+            ].forEach((character) => selected.add(character.characters.name))
 
         return selected
     }, [draftState])
@@ -132,23 +179,61 @@ function RouteComponent() {
     const leftFilteredCharacters = useMemo(
         () =>
             filterCharacters(
-                SAMPLE_CHARACTERS,
+                blueCharacters,
                 leftSearch,
                 leftElementFilter,
                 leftRarityFilter,
             ),
-        [leftSearch, leftElementFilter, leftRarityFilter],
+        [blueCharacters, leftSearch, leftElementFilter, leftRarityFilter],
     )
 
     const rightFilteredCharacters = useMemo(
         () =>
             filterCharacters(
-                SAMPLE_CHARACTERS,
+                redCharacters,
                 rightSearch,
                 rightElementFilter,
                 rightRarityFilter,
             ),
-        [rightSearch, rightElementFilter, rightRarityFilter],
+        [redCharacters, rightSearch, rightElementFilter, rightRarityFilter],
+    )
+
+    const leftFilteredBanPickCharacters = useMemo(
+        () => leftFilteredCharacters.map(mapAccountCharacterToBanPickCharacter),
+        [leftFilteredCharacters],
+    )
+
+    const rightFilteredBanPickCharacters = useMemo(
+        () => rightFilteredCharacters.map(mapAccountCharacterToBanPickCharacter),
+        [rightFilteredCharacters],
+    )
+
+    const blueBanPickBans = useMemo(
+        () => draftState.blue.bans.map(mapAccountCharacterToBanPickCharacter),
+        [draftState.blue.bans],
+    )
+
+    const blueBanPickPicks = useMemo(
+        () => draftState.blue.picks.map(mapAccountCharacterToBanPickCharacter),
+        [draftState.blue.picks],
+    )
+
+    const redBanPickBans = useMemo(
+        () => draftState.red.bans.map(mapAccountCharacterToBanPickCharacter),
+        [draftState.red.bans],
+    )
+
+    const redBanPickPicks = useMemo(
+        () => draftState.red.picks.map(mapAccountCharacterToBanPickCharacter),
+        [draftState.red.picks],
+    )
+
+    const pendingBanPickCharacter = useMemo(
+        () =>
+            pendingCharacter
+                ? mapAccountCharacterToBanPickCharacter(pendingCharacter)
+                : null,
+        [pendingCharacter],
     )
 
     const currentAction =
@@ -158,8 +243,8 @@ function RouteComponent() {
 
     const isDraftCompleted = draftStep >= MOCK_DRAFT_SEQUENCE.length
 
-    const onSelectCharacter = (character: BanPickCharacter) => {
-        if (!currentAction || selectedCharacterNames.has(character.name)) {
+    const onSelectCharacter = (character: AccountCharacterResponse) => {
+        if (!currentAction || selectedCharacterNames.has(character.characters.name)) {
             return
         }
 
@@ -170,13 +255,13 @@ function RouteComponent() {
         if (
             !currentAction ||
             !pendingCharacter ||
-            selectedCharacterNames.has(pendingCharacter.name)
+            selectedCharacterNames.has(pendingCharacter.characters.name)
         ) {
             return
         }
 
         setDraftState((prevState) => {
-            const nextState: DraftState = {
+            const nextState: AccountDraftState = {
                 blue: {
                     bans: [...prevState.blue.bans],
                     picks: [...prevState.blue.picks],
@@ -330,12 +415,12 @@ function RouteComponent() {
                                 <div className="col-span-3 flex flex-col items-center gap-4">
                                     <div className="flex h-full justify-center items-center gap-4">
                                         <div className="w-20 h-20 rounded-full object-cover mt-4 flex items-center justify-center overflow-hidden">
-                                            <img src={SAMPLE_PLAYER.avatar} alt="Blue Player Avatar" className="w-full h-full" />
+                                            <img src={MOCK_PLAYERS.blue.avatar} alt="Blue Player Avatar" className="w-full h-full" />
                                         </div>
 
                                         <div className="flex flex-col">
-                                            <span className="text-xl mt-2 text-sky-400">{SAMPLE_PLAYER.name}</span>
-                                            <span className="text-sm mt-2">UID: {SAMPLE_PLAYER.uid}</span>
+                                            <span className="text-xl mt-2 text-sky-400">{MOCK_PLAYERS.blue.name}</span>
+                                            <span className="text-sm mt-2">UID: {MOCK_PLAYERS.blue.uid}</span>
                                         </div>
                                     </div>
 
@@ -369,16 +454,16 @@ function RouteComponent() {
 
                                 <BanPickDraftSlots
                                     side="blue"
-                                    bans={draftState.blue.bans}
-                                    picks={draftState.blue.picks}
+                                    bans={blueBanPickBans}
+                                    picks={blueBanPickPicks}
                                     currentAction={currentAction}
                                     isDraftCompleted={isDraftCompleted}
-                                    pendingCharacter={pendingCharacter}
+                                    pendingCharacter={pendingBanPickCharacter}
                                 />
                             </div>
                             {isDraftCompleted ? (
                                 <BanPickTeamBuild
-                                    picks={draftState.blue.picks}
+                                    picks={blueBanPickPicks}
                                     titleClassName="text-sky-400"
                                     slotClassName="bg-sky-800/10 border-sky-400/50"
                                 />
@@ -395,12 +480,20 @@ function RouteComponent() {
                                         leftRarityFilter,
                                         setLeftRarityFilter,
                                     )}
-                                    characters={leftFilteredCharacters}
+                                    characters={leftFilteredBanPickCharacters}
                                     selectedCharacterNames={selectedCharacterNames}
-                                    pendingCharacter={pendingCharacter}
+                                    pendingCharacter={pendingBanPickCharacter}
                                     isDraftCompleted={isDraftCompleted}
                                     currentAction={currentAction}
-                                    onSelectCharacter={onSelectCharacter}
+                                    onSelectCharacter={(character) => {
+                                        const selected = leftFilteredCharacters.find(
+                                            (item) => item.characters.name === character.name,
+                                        )
+                                        if (!selected) {
+                                            return
+                                        }
+                                        onSelectCharacter(selected)
+                                    }}
                                 />
                             )}
 
@@ -458,22 +551,22 @@ function RouteComponent() {
                             <div className="grid grid-cols-7 gap-8">
                                 <BanPickDraftSlots
                                     side="red"
-                                    bans={draftState.red.bans}
-                                    picks={draftState.red.picks}
+                                    bans={redBanPickBans}
+                                    picks={redBanPickPicks}
                                     currentAction={currentAction}
                                     isDraftCompleted={isDraftCompleted}
-                                    pendingCharacter={pendingCharacter}
+                                    pendingCharacter={pendingBanPickCharacter}
                                 />
 
                                 <div className="col-span-3 flex flex-col items-center gap-4">
                                     <div className="flex h-full justify-center items-center gap-4">
                                         <div className="flex flex-col items-end">
-                                            <span className="text-xl mt-2 text-red-600">{SAMPLE_PLAYER.name}</span>
-                                            <span className="text-sm mt-2">UID: {SAMPLE_PLAYER.uid}</span>
+                                            <span className="text-xl mt-2 text-red-600">{MOCK_PLAYERS.red.name}</span>
+                                            <span className="text-sm mt-2">UID: {MOCK_PLAYERS.red.uid}</span>
                                         </div>
 
                                         <div className="w-20 h-20 rounded-full object-cover mt-4 flex items-center justify-center overflow-hidden">
-                                            <img src={SAMPLE_PLAYER.avatar} alt="Blue Player Avatar" className="w-full h-full" />
+                                            <img src={MOCK_PLAYERS.red.avatar} alt="Blue Player Avatar" className="w-full h-full" />
                                         </div>
 
 
@@ -510,7 +603,7 @@ function RouteComponent() {
 
                             {isDraftCompleted ? (
                                 <BanPickTeamBuild
-                                    picks={draftState.red.picks}
+                                    picks={redBanPickPicks}
                                     titleClassName="text-red-600"
                                     slotClassName="bg-red-800/10 border-red-600/50"
                                 />
@@ -527,12 +620,20 @@ function RouteComponent() {
                                         rightRarityFilter,
                                         setRightRarityFilter,
                                     )}
-                                    characters={rightFilteredCharacters}
+                                    characters={rightFilteredBanPickCharacters}
                                     selectedCharacterNames={selectedCharacterNames}
-                                    pendingCharacter={pendingCharacter}
+                                    pendingCharacter={pendingBanPickCharacter}
                                     isDraftCompleted={isDraftCompleted}
                                     currentAction={currentAction}
-                                    onSelectCharacter={onSelectCharacter}
+                                    onSelectCharacter={(character) => {
+                                        const selected = rightFilteredCharacters.find(
+                                            (item) => item.characters.name === character.name,
+                                        )
+                                        if (!selected) {
+                                            return
+                                        }
+                                        onSelectCharacter(selected)
+                                    }}
                                 />
                             )}
                         </div>

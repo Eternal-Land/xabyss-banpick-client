@@ -8,6 +8,7 @@ export interface BanPickCharacter {
 	rarity: CharacterRarity;
 	level: number;
 	constellation: number;
+	cost: number;
 	element: CharacterElementEnum;
 }
 

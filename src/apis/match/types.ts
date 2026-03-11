@@ -1,7 +1,11 @@
 import z from "zod";
 import type { ProfileResponse } from "../self/types";
 import { paginationQuerySchema } from "@/lib/types";
-import { MatchType, type MatchTypeEnum } from "@/lib/constants";
+import {
+	MatchType,
+	type MatchStatusEnum,
+	type MatchTypeEnum,
+} from "@/lib/constants";
 
 export interface MatchResponse {
 	id: string;
@@ -11,6 +15,13 @@ export interface MatchResponse {
 	redPlayer?: ProfileResponse;
 	bluePlayer?: ProfileResponse;
 	type: MatchTypeEnum;
+	status: MatchStatusEnum;
+}
+
+export interface MatchStateResponse {
+	hostJoined: boolean;
+	redPlayerJoined: boolean;
+	bluePlayerJoined: boolean;
 }
 
 export const listMatchesQuerySchema = z.object({
