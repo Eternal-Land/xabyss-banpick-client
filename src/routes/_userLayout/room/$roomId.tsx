@@ -8,20 +8,7 @@ export const Route = createFileRoute("/_userLayout/room/$roomId")({
 	component: RouteComponent,
 	beforeLoad: async ({ params }) => {
 		console.log("Joining room:", params.roomId);
-		try {
-			await socket
-				.timeout(30000)
-				.emitWithAck(SocketEvent.JOIN_MATCH_ROOM, params.roomId);
-		} catch (err) {
-			console.error("Failed to join match room:", err);
-			throw redirect({
-				to: "/match",
-				search: {
-					page: 1,
-					take: 10,
-				},
-			});
-		}
+		socket.emit(SocketEvent.JOIN_MATCH_ROOM, params.roomId);
 	},
 	loader: async ({ context, params }) => {
 		try {

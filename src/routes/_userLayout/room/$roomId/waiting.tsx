@@ -1,3 +1,4 @@
+import { matchApi } from "@/apis/match";
 import type { MatchStateResponse } from "@/apis/match/types";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -5,12 +6,13 @@ import { useAppSelector } from "@/hooks/use-app-selector";
 import { useSocketEvent } from "@/hooks/use-socket-event";
 import { matchLocaleKeys } from "@/i18n/keys";
 import { getTranslationToken } from "@/i18n/namespaces";
-import { SocketEvent } from "@/lib/constants";
+import { MatchStatus, SocketEvent } from "@/lib/constants";
 import { IconAssets } from "@/lib/constants/icon-assets";
 import { selectAuthProfile } from "@/lib/redux/auth.slice";
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, useLoaderData } from "@tanstack/react-router";
 import { Copy } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -49,16 +51,19 @@ function CopyLinkButton({
 
 function RouteComponent() {
 	const { t } = useTranslation();
+	const navigate = Route.useNavigate();
+	const { roomId } = Route.useParams();
 	const tMatch = (key: string, options?: Record<string, string | number>) =>
 		t(getTranslationToken("match", key), options);
 	const { match, matchState } = useLoaderData({
 		from: "/_userLayout/room/$roomId",
 	});
+	const profile = useAppSelector(selectAuthProfile);
+
 	const [pageMatchState, setPageMatchState] = useState<
 		MatchStateResponse | undefined
 	>(matchState);
 
-	const profile = useAppSelector(selectAuthProfile);
 	const bluePlayer = match?.bluePlayer;
 	const redPlayer = match?.redPlayer;
 	const isHostJoined = Boolean(pageMatchState?.hostJoined);
@@ -68,13 +73,69 @@ function RouteComponent() {
 	const waitingPlayers = Math.max(0, 2 - connectedPlayerCount);
 	const canStartGame = isHostJoined && isBlueJoined && isRedJoined;
 	const isHost = match?.host?.id == profile?.id;
+	const startMatchMutation = useMutation({
+		mutationFn: matchApi.startMatch,
+		onError: () => {
+			toast.error("Failed to start match");
+		},
+	});
 
 	useSocketEvent(
 		SocketEvent.UPDATE_MATCH_STATE,
-		(matchState: MatchStateResponse) => {
-			setPageMatchState(matchState);
+		(nextMatchState: MatchStateResponse) => {
+			setPageMatchState(nextMatchState);
 		},
 	);
+
+	useSocketEvent(SocketEvent.MATCH_STARTED, () => {
+		navigate({
+			to: "/room/$roomId/ban-pick",
+			params: {
+				roomId: roomId,
+			},
+		});
+	});
+
+	useEffect(() => {
+		setPageMatchState(matchState);
+	}, [matchState]);
+
+	useEffect(() => {
+		if (!match) {
+			navigate({
+				to: "/match",
+				search: {
+					page: 1,
+					take: 10,
+					accountId: profile?.id,
+				},
+			});
+			return;
+		}
+
+		if (match.status === MatchStatus.WAITING) {
+			return;
+		}
+
+		if (match.status === MatchStatus.LIVE) {
+			navigate({
+				to: "/room/$roomId/ban-pick",
+				params: {
+					roomId,
+				},
+			});
+			return;
+		}
+
+		navigate({
+			to: "/match",
+			search: {
+				page: 1,
+				take: 10,
+				accountId: profile?.id,
+			},
+		});
+	}, [match, navigate, profile?.id, roomId]);
 
 	if (!match) {
 		return (
@@ -187,6 +248,7 @@ function RouteComponent() {
 							<Button
 								className="p-4 text-lg text-gray-700 rounded cursor-pointer"
 								disabled={!canStartGame}
+								onClick={() => startMatchMutation.mutate(match.id)}
 							>
 								{tMatch(matchLocaleKeys.match_waiting_start_game)}
 							</Button>
