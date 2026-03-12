@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useAppSelector } from "@/hooks/use-app-selector";
 import { matchLocaleKeys } from "@/i18n/keys";
 import { getTranslationToken } from "@/i18n/namespaces";
+import { MatchStatus } from "@/lib/constants";
 import { selectAuthProfile } from "@/lib/redux/auth.slice";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -123,14 +124,23 @@ function RouteComponent() {
 							match.redPlayer?.avatar ||
 							"https://res.cloudinary.com/dphtvhtvf/image/upload/v1770611732/genshin-impact-banpick/upload/avatars/euhhui4znfpssjw8laps.jpg",
 					}}
-					onClick={() =>
-						navigate({
-							to: "/room/$roomId/waiting",
-							params: {
-								roomId: match.id,
-							},
-						})
-					}
+					onClick={() => {
+						if (match.status == MatchStatus.WAITING) {
+							navigate({
+								to: "/room/$roomId/waiting",
+								params: {
+									roomId: match.id,
+								},
+							});
+						} else if (match.status == MatchStatus.LIVE) {
+							navigate({
+								to: "/room/$roomId/ban-pick",
+								params: {
+									roomId: match.id,
+								},
+							});
+						}
+					}}
 				/>
 			))}
 		</div>

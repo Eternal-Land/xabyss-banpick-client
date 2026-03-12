@@ -45,10 +45,18 @@ async function getMatchState(matchId: string) {
 	return response.data;
 }
 
+async function startMatch(matchId: string) {
+	const response = await http.put<BaseApiResponse>(
+		`/api/user/match/${matchId}/start`,
+	);
+	return response.data;
+}
+
 export const matchApi = {
 	listMatches,
 	createMatch,
 	getMatch,
 	getMatchState,
 	deleteMatch,
+	startMatch,
 } as const;

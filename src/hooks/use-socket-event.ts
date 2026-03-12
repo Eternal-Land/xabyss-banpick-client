@@ -1,19 +1,26 @@
 import type { SocketEventEnum } from "@/lib/constants";
 import { socket } from "@/lib/socket";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export function useSocketEvent(
 	event: SocketEventEnum,
 	callback: (...args: any[]) => void,
 ) {
-	if (!socket.connected) {
-		return;
-	}
+	const callbackRef = useRef(callback);
 
 	useEffect(() => {
-		socket.on(event, callback);
-		return () => {
-			socket.off(event, callback);
+		callbackRef.current = callback;
+	}, [callback]);
+
+	useEffect(() => {
+		const listener = (...args: any[]) => {
+			callbackRef.current(...args);
 		};
-	}, [event, callback]);
+
+		socket.on(event, listener);
+
+		return () => {
+			socket.off(event, listener);
+		};
+	}, [event]);
 }
