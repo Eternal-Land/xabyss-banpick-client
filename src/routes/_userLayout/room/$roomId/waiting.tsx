@@ -60,24 +60,6 @@ function RouteComponent() {
 	});
 	const profile = useAppSelector(selectAuthProfile);
 
-	if (
-		match?.status != MatchStatus.WAITING &&
-		match?.status == MatchStatus.LIVE
-	) {
-		navigate({
-			to: "/room/$roomId/ban-pick",
-		});
-	} else {
-		navigate({
-			to: "/match",
-			search: {
-				page: 1,
-				take: 10,
-				accountId: profile?.id,
-			},
-		});
-	}
-
 	const [pageMatchState, setPageMatchState] = useState<
 		MatchStateResponse | undefined
 	>(matchState);
@@ -117,6 +99,43 @@ function RouteComponent() {
 	useEffect(() => {
 		setPageMatchState(matchState);
 	}, [matchState]);
+
+	useEffect(() => {
+		if (!match) {
+			navigate({
+				to: "/match",
+				search: {
+					page: 1,
+					take: 10,
+					accountId: profile?.id,
+				},
+			});
+			return;
+		}
+
+		if (match.status === MatchStatus.WAITING) {
+			return;
+		}
+
+		if (match.status === MatchStatus.LIVE) {
+			navigate({
+				to: "/room/$roomId/ban-pick",
+				params: {
+					roomId,
+				},
+			});
+			return;
+		}
+
+		navigate({
+			to: "/match",
+			search: {
+				page: 1,
+				take: 10,
+				accountId: profile?.id,
+			},
+		});
+	}, [match, navigate, profile?.id, roomId]);
 
 	if (!match) {
 		return (

@@ -3,6 +3,7 @@ import { listMatchesQuerySchema } from "@/apis/match/types";
 import MatchContainer from "@/components/match/MatchContainer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useMatchStatusLabel } from "@/hooks/use-match-status-label";
 import { useAppSelector } from "@/hooks/use-app-selector";
 import { matchLocaleKeys } from "@/i18n/keys";
 import { getTranslationToken } from "@/i18n/namespaces";
@@ -28,7 +29,23 @@ function RouteComponent() {
 	const navigate = Route.useNavigate();
 	const filter = Route.useSearch();
 	const profile = useAppSelector(selectAuthProfile);
+	const matchStatusLabels = useMatchStatusLabel();
 	const [search, setSearch] = useState("");
+
+	const getMatchStatusClassName = (status: number) => {
+		switch (status) {
+			case MatchStatus.WAITING:
+				return "border-amber-300/70 bg-amber-400/20 text-amber-100";
+			case MatchStatus.LIVE:
+				return "border-emerald-300/70 bg-emerald-400/20 text-emerald-100";
+			case MatchStatus.COMPLETED:
+				return "border-sky-300/70 bg-sky-400/20 text-sky-100";
+			case MatchStatus.CANCELED:
+				return "border-rose-300/70 bg-rose-400/20 text-rose-100";
+			default:
+				return "border-white/30 bg-black/30 text-white";
+		}
+	};
 
 	const listMatchesQuery = useQuery({
 		queryKey: ["matches", filter, profile?.id],
@@ -106,24 +123,12 @@ function RouteComponent() {
 			{filteredMatches.map((match) => (
 				<MatchContainer
 					key={match.id}
-					player1={{
-						name:
-							match.bluePlayer?.displayName ||
-							tMatch(matchLocaleKeys.match_list_waiting_player),
-						uid: match.bluePlayer?.ingameUuid || "-",
-						avatarUrl:
-							match.bluePlayer?.avatar ||
-							"https://res.cloudinary.com/dphtvhtvf/image/upload/v1770611732/genshin-impact-banpick/upload/avatars/euhhui4znfpssjw8laps.jpg",
-					}}
-					player2={{
-						name:
-							match.redPlayer?.displayName ||
-							tMatch(matchLocaleKeys.match_list_waiting_player),
-						uid: match.redPlayer?.ingameUuid || "-",
-						avatarUrl:
-							match.redPlayer?.avatar ||
-							"https://res.cloudinary.com/dphtvhtvf/image/upload/v1770611732/genshin-impact-banpick/upload/avatars/euhhui4znfpssjw8laps.jpg",
-					}}
+					statusLabel={
+						matchStatusLabels[match.status as keyof typeof matchStatusLabels]
+					}
+					statusClassName={getMatchStatusClassName(match.status)}
+					player1={match.bluePlayer!}
+					player2={match.redPlayer!}
 					onClick={() => {
 						if (match.status == MatchStatus.WAITING) {
 							navigate({
