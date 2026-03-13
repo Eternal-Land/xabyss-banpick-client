@@ -2,6 +2,7 @@ import BanPickCharacterSelector from '@/components/match/ban-pick-character-sele
 import BanPickDraftSlots from '@/components/match/ban-pick-draft-slots'
 import BanPickTeamBuild from '@/components/match/ban-pick-team-build'
 import { accountCharactersApi } from '@/apis/account-characters'
+import { userWeaponApis } from '@/apis/user-weapons'
 import type {
     AccountCharacterQuery,
     AccountCharacterResponse,
@@ -15,40 +16,27 @@ import type {
 import {
     CharacterElement,
     CharacterElementDetail,
+    MatchType,
     type CharacterElementEnum,
 } from '@/lib/constants'
+import { selectAuthProfile } from '@/lib/redux/auth.slice'
+import { IconAssets } from '@/lib/constants/icon-assets'
 import { cn } from '@/lib/utils'
-import { createFileRoute } from '@tanstack/react-router'
+import { useAppSelector } from '@/hooks/use-app-selector'
+import { createFileRoute, useLoaderData } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/_userLayout/room/$roomId/ban-pick')({
     component: RouteComponent,
 })
 
-const MOCK_PLAYERS = {
-    blue: {
-        id: '8f465eae-cf20-4c59-904b-abfc5062d273',
-        accountId: '8f465eae-cf20-4c59-904b-abfc5062d273',
-        name: 'Shirogane Toru',
-        uid: '123456789',
-        avatar:
-            'https://res.cloudinary.com/dphtvhtvf/image/upload/v1770611732/genshin-impact-banpick/upload/avatars/euhhui4znfpssjw8laps.jpg',
-    },
-    red: {
-        id: 'f5471397-5316-4051-a80f-faa6c201f9b7',
-        accountId: 'f5471397-5316-4051-a80f-faa6c201f9b7',
-        name: 'Arisu Kaya',
-        uid: '987654321',
-        avatar:
-            'https://res.cloudinary.com/dphtvhtvf/image/upload/v1770611732/genshin-impact-banpick/upload/avatars/euhhui4znfpssjw8laps.jpg',
-    },
-} as const
-
 const ELEMENT_FILTER_ALL = 'all'
 const RARITY_FILTER_ALL = 'all'
+const TURN_DURATION_SECONDS = 30
 
 const ELEMENT_OPTIONS = Object.values(CharacterElement) as CharacterElementEnum[]
 
@@ -68,6 +56,7 @@ const mapAccountCharacterToBanPickCharacter = (
     constellation: accountCharacter.activatedConstellation,
     cost: accountCharacter.characterCost,
     element: accountCharacter.characters.element,
+    weaponType: accountCharacter.characters.weaponType,
 })
 
 interface AccountDraftSideState {
@@ -136,6 +125,14 @@ function filterCharacters(
 }
 
 function RouteComponent() {
+    const { match } = useLoaderData({ from: '/_userLayout/room/$roomId' })
+    const profile = useAppSelector(selectAuthProfile)
+    const bluePlayer = match?.bluePlayer
+    const redPlayer = match?.redPlayer
+    const isRealtimeMatch = match?.type === MatchType.REALTIME
+    const canReorderBlueTeam = profile?.id === bluePlayer?.id
+    const canReorderRedTeam = profile?.id === redPlayer?.id
+
     const [leftSearch, setLeftSearch] = useState('')
     const [rightSearch, setRightSearch] = useState('')
     const [leftElementFilter, setLeftElementFilter] = useState(ELEMENT_FILTER_ALL)
@@ -145,23 +142,35 @@ function RouteComponent() {
     const [rightRarityFilter, setRightRarityFilter] = useState(RARITY_FILTER_ALL)
     const [draftState, setDraftState] = useState<AccountDraftState>(INITIAL_DRAFT_STATE)
     const [draftStep, setDraftStep] = useState(0)
+    const [turnRemainingSeconds, setTurnRemainingSeconds] = useState(
+        TURN_DURATION_SECONDS,
+    )
     const [pendingCharacter, setPendingCharacter] =
         useState<AccountCharacterResponse | null>(null)
+    const autoResolvedStepRef = useRef<number | null>(null)
 
     const { data: blueAccountCharactersResponse } = useQuery({
-        queryKey: ['account-characters', { ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: MOCK_PLAYERS.blue.accountId }],
+        queryKey: ['account-characters', { ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: bluePlayer?.id }],
         queryFn: () =>
-            accountCharactersApi.listAccountCharacters({ ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: MOCK_PLAYERS.blue.accountId }),
+            accountCharactersApi.listAccountCharacters({ ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: bluePlayer?.id }),
+        enabled: Boolean(bluePlayer?.id),
     })
 
     const { data: redAccountCharactersResponse } = useQuery({
-        queryKey: ['account-characters', { ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: MOCK_PLAYERS.red.accountId }],
+        queryKey: ['account-characters', { ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: redPlayer?.id }],
         queryFn: () =>
-            accountCharactersApi.listAccountCharacters({ ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: MOCK_PLAYERS.red.accountId }),
+            accountCharactersApi.listAccountCharacters({ ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: redPlayer?.id }),
+        enabled: Boolean(redPlayer?.id),
+    })
+
+    const { data: userWeaponsResponse } = useQuery({
+        queryKey: ['user-weapons'],
+        queryFn: userWeaponApis.listUserWeapons,
     })
 
     const blueCharacters = blueAccountCharactersResponse?.data ?? []
     const redCharacters = redAccountCharactersResponse?.data ?? []
+    const weapons = userWeaponsResponse?.data ?? []
 
     const currentAction =
         draftStep < MOCK_DRAFT_SEQUENCE.length
@@ -169,6 +178,14 @@ function RouteComponent() {
             : undefined
 
     const isDraftCompleted = draftStep >= MOCK_DRAFT_SEQUENCE.length
+
+    const formattedTurnCountdown = useMemo(() => {
+        const totalSeconds = isDraftCompleted ? 0 : turnRemainingSeconds
+        const minutes = Math.floor(totalSeconds / 60)
+        const seconds = totalSeconds % 60
+
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    }, [isDraftCompleted, turnRemainingSeconds])
 
     const selectedCharacterNames = useMemo(() => {
         const selected = new Set<string>()
@@ -243,6 +260,80 @@ function RouteComponent() {
         [pendingCharacter],
     )
 
+    const applyCharacterToDraft = useCallback(
+        (character: AccountCharacterResponse | null) => {
+            if (
+                !currentAction ||
+                !character ||
+                selectedCharacterNames.has(character.characters.name)
+            ) {
+                return false
+            }
+
+            setDraftState((prevState) => {
+                const nextState: AccountDraftState = {
+                    blue: {
+                        bans: [...prevState.blue.bans],
+                        picks: [...prevState.blue.picks],
+                    },
+                    red: {
+                        bans: [...prevState.red.bans],
+                        picks: [...prevState.red.picks],
+                    },
+                }
+
+                const target = nextState[currentAction.side]
+
+                if (currentAction.type === 'ban') {
+                    target.bans.push(character)
+                } else {
+                    target.picks.push(character)
+                }
+
+                return nextState
+            })
+
+            setTurnRemainingSeconds(TURN_DURATION_SECONDS)
+            setDraftStep((prevStep) => prevStep + 1)
+
+            return true
+        },
+        [currentAction, selectedCharacterNames],
+    )
+
+    const getAvailableCharactersForAction = useCallback(() => {
+        if (!currentAction) {
+            return [] as AccountCharacterResponse[]
+        }
+
+        const openedListCharacters =
+            currentAction.side === 'blue'
+                ? leftFilteredCharacters
+                : rightFilteredCharacters
+
+        const availableOpenedListCharacters = openedListCharacters.filter(
+            (character) => !selectedCharacterNames.has(character.characters.name),
+        )
+
+        if (availableOpenedListCharacters.length > 0) {
+            return availableOpenedListCharacters
+        }
+
+        const fallbackCharacters =
+            currentAction.side === 'blue' ? blueCharacters : redCharacters
+
+        return fallbackCharacters.filter(
+            (character) => !selectedCharacterNames.has(character.characters.name),
+        )
+    }, [
+        blueCharacters,
+        currentAction,
+        leftFilteredCharacters,
+        redCharacters,
+        rightFilteredCharacters,
+        selectedCharacterNames,
+    ])
+
     const onSelectCharacter = (character: AccountCharacterResponse) => {
         if (!currentAction || selectedCharacterNames.has(character.characters.name)) {
             return
@@ -252,11 +343,25 @@ function RouteComponent() {
     }
 
     const onConfirmCharacter = () => {
-        if (
-            !currentAction ||
-            !pendingCharacter ||
-            selectedCharacterNames.has(pendingCharacter.characters.name)
-        ) {
+        const isConfirmed = applyCharacterToDraft(pendingCharacter)
+
+        if (!isConfirmed) {
+            return
+        }
+
+        setPendingCharacter(null)
+    }
+
+    const onResetDraft = () => {
+        setDraftState(INITIAL_DRAFT_STATE)
+        setDraftStep(0)
+        setTurnRemainingSeconds(TURN_DURATION_SECONDS)
+        setPendingCharacter(null)
+        autoResolvedStepRef.current = null
+    }
+
+    const onFastForwardDraft = () => {
+        if (isDraftCompleted) {
             return
         }
 
@@ -272,26 +377,105 @@ function RouteComponent() {
                 },
             }
 
-            const target = nextState[currentAction.side]
+            const selectedNames = new Set<string>()
 
-            if (currentAction.type === 'ban') {
-                target.bans.push(pendingCharacter)
-            } else {
-                target.picks.push(pendingCharacter)
+            ;[
+                ...nextState.blue.bans,
+                ...nextState.blue.picks,
+                ...nextState.red.bans,
+                ...nextState.red.picks,
+            ].forEach((character) => selectedNames.add(character.characters.name))
+
+            for (let step = draftStep; step < MOCK_DRAFT_SEQUENCE.length; step += 1) {
+                const action = MOCK_DRAFT_SEQUENCE[step]
+                const sidePool = action.side === 'blue' ? blueCharacters : redCharacters
+                const availablePool = sidePool.filter(
+                    (character) => !selectedNames.has(character.characters.name),
+                )
+
+                if (availablePool.length === 0) {
+                    continue
+                }
+
+                const randomCharacter =
+                    availablePool[Math.floor(Math.random() * availablePool.length)]
+                selectedNames.add(randomCharacter.characters.name)
+
+                if (action.type === 'ban') {
+                    nextState[action.side].bans.push(randomCharacter)
+                } else {
+                    nextState[action.side].picks.push(randomCharacter)
+                }
             }
 
             return nextState
         })
 
-        setDraftStep((prevStep) => prevStep + 1)
+        setDraftStep(MOCK_DRAFT_SEQUENCE.length)
+        setTurnRemainingSeconds(0)
         setPendingCharacter(null)
+        autoResolvedStepRef.current = null
+        toast.info('Draft fast-forwarded')
     }
 
-    const onResetDraft = () => {
-        setDraftState(INITIAL_DRAFT_STATE)
-        setDraftStep(0)
-        setPendingCharacter(null)
-    }
+    useEffect(() => {
+        if (isDraftCompleted) {
+            return
+        }
+
+        setTurnRemainingSeconds(TURN_DURATION_SECONDS)
+    }, [draftStep, isDraftCompleted])
+
+    useEffect(() => {
+        if (isDraftCompleted || turnRemainingSeconds <= 0) {
+            return
+        }
+
+        const timeout = setTimeout(() => {
+            setTurnRemainingSeconds((prev) => Math.max(0, prev - 1))
+        }, 1000)
+
+        return () => clearTimeout(timeout)
+    }, [isDraftCompleted, turnRemainingSeconds])
+
+    useEffect(() => {
+        if (isDraftCompleted || turnRemainingSeconds > 0 || !currentAction) {
+            return
+        }
+
+        if (autoResolvedStepRef.current === draftStep) {
+            return
+        }
+
+        autoResolvedStepRef.current = draftStep
+
+        const availableCharacters = getAvailableCharactersForAction()
+
+        if (availableCharacters.length === 0) {
+            toast.error('No character available for auto pick')
+            setTurnRemainingSeconds(TURN_DURATION_SECONDS)
+            setDraftStep((prevStep) => prevStep + 1)
+            setPendingCharacter(null)
+            return
+        }
+
+        const randomCharacter =
+            availableCharacters[Math.floor(Math.random() * availableCharacters.length)]
+
+        const isApplied = applyCharacterToDraft(randomCharacter)
+
+        if (isApplied) {
+            setPendingCharacter(null)
+            toast.info(`Time over. Auto selected ${randomCharacter.characters.name}`)
+        }
+    }, [
+        applyCharacterToDraft,
+        currentAction,
+        draftStep,
+        getAvailableCharactersForAction,
+        isDraftCompleted,
+        turnRemainingSeconds,
+    ])
 
 
     const renderElementFilter = (
@@ -382,6 +566,38 @@ function RouteComponent() {
         </div>
     )
 
+    const renderTimerInputs = () => {
+        if (isRealtimeMatch) {
+            return (
+                <Field>
+                    <FieldLabel>Time</FieldLabel>
+                    <Input placeholder="00:00" />
+                </Field>
+            )
+        }
+
+        return (
+            <>
+                <Field>
+                    <FieldLabel>Chamber 1</FieldLabel>
+                    <Input placeholder="00:00" />
+                </Field>
+                <Field>
+                    <FieldLabel>Chamber 2</FieldLabel>
+                    <Input placeholder="00:00" />
+                </Field>
+                <Field>
+                    <FieldLabel>Chamber 3</FieldLabel>
+                    <Input placeholder="00:00" />
+                </Field>
+                <Field>
+                    <FieldLabel>Reset</FieldLabel>
+                    <Input placeholder="00" />
+                </Field>
+            </>
+        )
+    }
+
     return (
         <>
             <div className="min-h-screen max-w-screen overflow-hidden">
@@ -392,22 +608,7 @@ function RouteComponent() {
 
                         {/* Timer */}
                         <div className="timer-side flex items-center gap-4">
-                            <Field>
-                                <FieldLabel>Chamber 1</FieldLabel>
-                                <Input placeholder="00:00" />
-                            </Field>
-                            <Field>
-                                <FieldLabel>Chamber 2</FieldLabel>
-                                <Input placeholder="00:00" />
-                            </Field>
-                            <Field>
-                                <FieldLabel>Chamber 3</FieldLabel>
-                                <Input placeholder="00:00" />
-                            </Field>
-                            <Field>
-                                <FieldLabel>Reset</FieldLabel>
-                                <Input placeholder="00" />
-                            </Field>
+                            {renderTimerInputs()}
                         </div>
 
                         <div className="grid grid-rows-2 gap-4 h-full overflow-hidden">
@@ -415,12 +616,16 @@ function RouteComponent() {
                                 <div className="col-span-3 flex flex-col items-center gap-4">
                                     <div className="flex h-full justify-center items-center gap-4">
                                         <div className="w-20 h-20 rounded-full object-cover mt-4 flex items-center justify-center overflow-hidden">
-                                            <img src={MOCK_PLAYERS.blue.avatar} alt="Blue Player Avatar" className="w-full h-full" />
+                                            <img
+                                                src={bluePlayer?.avatar ?? IconAssets.EMPTY_CHARACTER_ICON}
+                                                alt="Blue Player Avatar"
+                                                className="w-full h-full"
+                                            />
                                         </div>
 
                                         <div className="flex flex-col">
-                                            <span className="text-xl mt-2 text-sky-400">{MOCK_PLAYERS.blue.name}</span>
-                                            <span className="text-sm mt-2">UID: {MOCK_PLAYERS.blue.uid}</span>
+                                            <span className="text-xl mt-2 text-sky-400">{bluePlayer?.displayName ?? '-'}</span>
+                                            <span className="text-sm mt-2">UID: {bluePlayer?.ingameUuid ?? '-'}</span>
                                         </div>
                                     </div>
 
@@ -464,8 +669,10 @@ function RouteComponent() {
                             {isDraftCompleted ? (
                                 <BanPickTeamBuild
                                     picks={blueBanPickPicks}
+                                    weapons={weapons}
                                     titleClassName="text-sky-400"
                                     slotClassName="bg-sky-800/10 border-sky-400/50"
+                                    canReorder={canReorderBlueTeam}
                                 />
                             ) : (
                                 <BanPickCharacterSelector
@@ -502,7 +709,7 @@ function RouteComponent() {
 
                     <div className="col-span-1 flex flex-col items-center justify-between p-4">
                         <div className="w-full mt-4 rounded-md border border-white/30 bg-white/5 p-3 text-center">
-                            <h1 className='text-2xl'>10:00</h1>
+                            <h1 className='text-2xl'>{formattedTurnCountdown}</h1>
                             <p className="mt-3 text-xs text-white/80">
                                 {isDraftCompleted
                                     ? 'Draft completed'
@@ -514,6 +721,13 @@ function RouteComponent() {
                                 className="mt-3 h-8 w-full rounded-md border border-white/40 bg-white/10 text-xs hover:bg-white/20"
                             >
                                 Reset mock draft
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onFastForwardDraft}
+                                className="mt-2 h-8 w-full rounded-md border border-white/40 bg-white/10 text-xs hover:bg-white/20"
+                            >
+                                Fast forward draft
                             </button>
                         </div>
 
@@ -529,22 +743,7 @@ function RouteComponent() {
                         <div className="bg-transparent bg-radial from-red-400/50 from-0% to-white/0 to-70% fixed inset-0 z-[-2] left-[1500px] top-0 h-screen aspect-square rounded-full"></div>
 
                         <div className="timer-side flex items-center gap-4">
-                            <Field>
-                                <FieldLabel>Chamber 1</FieldLabel>
-                                <Input placeholder="00:00" />
-                            </Field>
-                            <Field>
-                                <FieldLabel>Chamber 2</FieldLabel>
-                                <Input placeholder="00:00" />
-                            </Field>
-                            <Field>
-                                <FieldLabel>Chamber 3</FieldLabel>
-                                <Input placeholder="00:00" />
-                            </Field>
-                            <Field>
-                                <FieldLabel>Reset</FieldLabel>
-                                <Input placeholder="00" />
-                            </Field>
+                            {renderTimerInputs()}
                         </div>
 
                         <div className="grid grid-rows-2 gap-4 h-full overflow-hidden">
@@ -561,12 +760,16 @@ function RouteComponent() {
                                 <div className="col-span-3 flex flex-col items-center gap-4">
                                     <div className="flex h-full justify-center items-center gap-4">
                                         <div className="flex flex-col items-end">
-                                            <span className="text-xl mt-2 text-red-600">{MOCK_PLAYERS.red.name}</span>
-                                            <span className="text-sm mt-2">UID: {MOCK_PLAYERS.red.uid}</span>
+                                            <span className="text-xl mt-2 text-red-600">{redPlayer?.displayName ?? '-'}</span>
+                                            <span className="text-sm mt-2">UID: {redPlayer?.ingameUuid ?? '-'}</span>
                                         </div>
 
                                         <div className="w-20 h-20 rounded-full object-cover mt-4 flex items-center justify-center overflow-hidden">
-                                            <img src={MOCK_PLAYERS.red.avatar} alt="Blue Player Avatar" className="w-full h-full" />
+                                            <img
+                                                src={redPlayer?.avatar ?? IconAssets.EMPTY_CHARACTER_ICON}
+                                                alt="Red Player Avatar"
+                                                className="w-full h-full"
+                                            />
                                         </div>
 
 
@@ -604,8 +807,10 @@ function RouteComponent() {
                             {isDraftCompleted ? (
                                 <BanPickTeamBuild
                                     picks={redBanPickPicks}
+                                    weapons={weapons}
                                     titleClassName="text-red-600"
                                     slotClassName="bg-red-800/10 border-red-600/50"
+                                    canReorder={canReorderRedTeam}
                                 />
                             ) : (
                                 <BanPickCharacterSelector

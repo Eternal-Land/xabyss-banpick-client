@@ -1,4 +1,4 @@
-import type { CharacterElementEnum } from "@/lib/constants";
+import type { CharacterElementEnum, WeaponTypeEnum } from "@/lib/constants";
 
 export type CharacterRarity = 4 | 5;
 
@@ -10,6 +10,7 @@ export interface BanPickCharacter {
 	constellation: number;
 	cost: number;
 	element: CharacterElementEnum;
+	weaponType: WeaponTypeEnum;
 }
 
 export interface SideDraftState {
