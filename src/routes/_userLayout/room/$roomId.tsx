@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_userLayout/room/$roomId")({
 	component: RouteComponent,
 	beforeLoad: async ({ params }) => {
 		console.log("Joining room:", params.roomId);
-		socket.emit(SocketEvent.JOIN_MATCH_ROOM, params.roomId);
+		await socket.emitWithAck(SocketEvent.JOIN_MATCH_ROOM, params.roomId);
 	},
 	loader: async ({ context, params }) => {
 		try {
