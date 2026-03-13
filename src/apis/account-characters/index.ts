@@ -17,6 +17,9 @@ async function listAccountCharacters(query: AccountCharacterQuery) {
 	if (query.isOwned !== undefined) {
 		searchParams.append("isOwned", query.isOwned.toString());
 	}
+	if (query.accountId !== undefined) {
+		searchParams.append("accountId", query.accountId);
+	}
 
 	const response = await http.get<BaseApiResponse<AccountCharacterResponse[]>>(
 		`/api/account-character?${searchParams.toString()}`,
