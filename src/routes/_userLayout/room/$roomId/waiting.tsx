@@ -64,7 +64,7 @@ function RouteComponent() {
 
 	const [pageMatchState, setPageMatchState] = useState<
 		MatchStateResponse | undefined
-	>(undefined);
+	>(matchState);
 
 	const bluePlayer = match?.bluePlayer;
 	const redPlayer = match?.redPlayer;
@@ -99,9 +99,7 @@ function RouteComponent() {
 	});
 
 	useEffect(() => {
-		if (!pageMatchState) {
-			setPageMatchState(matchState);
-		}
+		setPageMatchState(matchState);
 	}, [matchState]);
 
 	useEffect(() => {
