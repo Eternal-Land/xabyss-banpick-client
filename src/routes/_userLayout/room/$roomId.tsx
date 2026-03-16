@@ -8,19 +8,13 @@ export const Route = createFileRoute("/_userLayout/room/$roomId")({
 	component: RouteComponent,
 	beforeLoad: async ({ params }) => {
 		console.log("Joining room:", params.roomId);
-		socket.emit(SocketEvent.JOIN_MATCH_ROOM, params.roomId);
+		await socket.emitWithAck(SocketEvent.JOIN_MATCH_ROOM, params.roomId);
 	},
-	loader: async ({ context, params }) => {
+	loader: async ({ params }) => {
 		try {
 			const [matchResponse, matchStateResponse] = await Promise.all([
-				context.queryClient.ensureQueryData({
-					queryKey: ["room", params.roomId],
-					queryFn: () => matchApi.getMatch(params.roomId),
-				}),
-				context.queryClient.ensureQueryData({
-					queryKey: ["matchState", params.roomId],
-					queryFn: () => matchApi.getMatchState(params.roomId),
-				}),
+				matchApi.getMatch(params.roomId),
+				matchApi.getMatchState(params.roomId),
 			]);
 
 			return { match: matchResponse.data, matchState: matchStateResponse.data };

@@ -31,6 +31,7 @@ import { useAppDispatch } from "@/hooks/use-app-dispatch";
 import { setProfile } from "@/lib/redux/auth.slice";
 import { selfApi } from "@/apis/self";
 import { useTranslation } from "react-i18next";
+import { socket } from "@/lib/socket";
 
 export const Route = createFileRoute("/_userLayout/auth/login")({
 	component: RouteComponent,
@@ -49,6 +50,7 @@ function RouteComponent() {
 	});
 
 	const handlePostLogin = async () => {
+		socket.disconnect().connect();
 		const response = await selfApi.getSelf();
 		const profile = response.data;
 		dispatch(setProfile(profile!));

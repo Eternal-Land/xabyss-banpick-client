@@ -78,13 +78,14 @@ function RouteComponent() {
 
 	const { data: accountCharactersResponse, refetch: refetchAccountCharacters } =
 		useQuery({
-			queryKey: ["account-characters"],
-			queryFn: () =>
-				accountCharactersApi.listAccountCharacters({
-					page: 1,
-					take: 200,
-					isOwned: true,
-				}),
+			queryKey: ["account-characters", profile?.id],
+			queryFn: () => {
+				if (!profile?.id) return Promise.reject("No profile ID");
+				return accountCharactersApi.listAccountCharacters({
+					accountId: profile.id,
+				});
+			},
+			enabled: !!profile?.id,
 		});
 
 	const accountCharacters = useMemo<CharacterContainerProps[]>(() => {
@@ -165,12 +166,12 @@ function RouteComponent() {
 		onError: (error) => {
 			toast.error(
 				error.response?.data.message ||
-				t(
-					getTranslationToken(
-						"profile",
-						profileLocaleKeys.profile_hoyolab_sync_error,
+					t(
+						getTranslationToken(
+							"profile",
+							profileLocaleKeys.profile_hoyolab_sync_error,
+						),
 					),
-				),
 			);
 			setIsSyncConfirmOpen(false);
 			setSyncResult("error");
@@ -190,7 +191,6 @@ function RouteComponent() {
 				activatedConstellation: constellation
 					? Number(constellation)
 					: undefined,
-				isOwned: true,
 			}),
 		onSuccess: () => {
 			toast.success(
@@ -210,12 +210,12 @@ function RouteComponent() {
 		onError: (error) => {
 			toast.error(
 				error.response?.data.message ||
-				t(
-					getTranslationToken(
-						"profile",
-						profileLocaleKeys.profile_add_character_error,
+					t(
+						getTranslationToken(
+							"profile",
+							profileLocaleKeys.profile_add_character_error,
+						),
 					),
-				),
 			);
 		},
 	});
@@ -243,12 +243,12 @@ function RouteComponent() {
 		onError: (error) => {
 			toast.error(
 				error.response?.data.message ||
-				t(
-					getTranslationToken(
-						"profile",
-						profileLocaleKeys.profile_edit_character_error,
+					t(
+						getTranslationToken(
+							"profile",
+							profileLocaleKeys.profile_edit_character_error,
+						),
 					),
-				),
 			);
 		},
 	});
@@ -275,12 +275,12 @@ function RouteComponent() {
 		onError: (error) => {
 			toast.error(
 				error.response?.data.message ||
-				t(
-					getTranslationToken(
-						"profile",
-						profileLocaleKeys.profile_remove_character_error,
+					t(
+						getTranslationToken(
+							"profile",
+							profileLocaleKeys.profile_remove_character_error,
+						),
 					),
-				),
 			);
 		},
 	});
@@ -489,7 +489,10 @@ function RouteComponent() {
 						const accountCharacter = accountCharacterItems[index];
 
 						return (
-							<div className="flex flex-col gap-2 items-center" key={`${character.name}-${character.element}`}>
+							<div
+								className="flex flex-col gap-2 items-center"
+								key={`${character.name}-${character.element}`}
+							>
 								<div
 									className={`group relative ${accountCharacter ? "cursor-pointer" : ""}`}
 									role={accountCharacter ? "button" : undefined}
@@ -502,11 +505,11 @@ function RouteComponent() {
 									onKeyDown={
 										accountCharacter
 											? (event) => {
-												if (event.key === "Enter" || event.key === " ") {
-													event.preventDefault();
-													handleEditCharacterOpen(accountCharacter);
+													if (event.key === "Enter" || event.key === " ") {
+														event.preventDefault();
+														handleEditCharacterOpen(accountCharacter);
+													}
 												}
-											}
 											: undefined
 									}
 								>
