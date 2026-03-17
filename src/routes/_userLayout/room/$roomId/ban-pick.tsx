@@ -10,6 +10,7 @@ import BanPickRarityFilter, {
 	RARITY_FILTER_ALL,
 } from "@/components/match/ban-pick-rarity-filter";
 import { accountCharactersApi } from "@/apis/account-characters";
+import type { MatchStateResponse } from "@/apis/match/types";
 import { userWeaponApis } from "@/apis/user-weapons";
 import type {
 	AccountCharacterQuery,
@@ -20,8 +21,10 @@ import type {
 	BanPickCharacter,
 } from "@/components/match/ban-pick.types";
 import { CharacterElementDetail, MatchType } from "@/lib/constants";
+import { SocketEvent } from "@/lib/constants";
 import { selectAuthProfile } from "@/lib/redux/auth.slice";
 import { useAppSelector } from "@/hooks/use-app-selector";
+import { useSocketEvent } from "@/hooks/use-socket-event";
 import { createFileRoute, useLoaderData } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -116,8 +119,27 @@ function filterCharacters(
 	});
 }
 
+function mapCharacterNamesToAccountCharacters(
+	characters: AccountCharacterResponse[],
+	characterNames: string[],
+) {
+	const charactersByName = new Map(
+		characters.map((character) => [
+			character.characters.name.toLowerCase(),
+			character,
+		]),
+	);
+
+	return characterNames.flatMap((characterName) => {
+		const mappedCharacter = charactersByName.get(characterName.toLowerCase());
+		return mappedCharacter ? [mappedCharacter] : [];
+	});
+}
+
 function RouteComponent() {
-	const { match } = useLoaderData({ from: "/_userLayout/room/$roomId" });
+	const { match, matchState } = useLoaderData({
+		from: "/_userLayout/room/$roomId",
+	});
 	const profile = useAppSelector(selectAuthProfile);
 	const bluePlayer = match?.bluePlayer;
 	const redPlayer = match?.redPlayer;
@@ -142,7 +164,17 @@ function RouteComponent() {
 	);
 	const [pendingCharacter, setPendingCharacter] =
 		useState<AccountCharacterResponse | null>(null);
+	const [pageMatchState, setPageMatchState] = useState<
+		MatchStateResponse | undefined
+	>(matchState);
 	const autoResolvedStepRef = useRef<number | null>(null);
+
+	useSocketEvent(
+		SocketEvent.UPDATE_MATCH_STATE,
+		(nextMatchState: MatchStateResponse) => {
+			setPageMatchState(nextMatchState);
+		},
+	);
 
 	const { data: blueAccountCharactersResponse } = useQuery({
 		queryKey: [
@@ -432,6 +464,70 @@ function RouteComponent() {
 		autoResolvedStepRef.current = null;
 		toast.info("Draft fast-forwarded");
 	};
+
+	useEffect(() => {
+		setPageMatchState(matchState);
+	}, [matchState]);
+
+	useEffect(() => {
+		if (!isRealtimeMatch || !pageMatchState) {
+			return;
+		}
+
+		if (bluePlayer?.id && !blueAccountCharactersResponse) {
+			return;
+		}
+
+		if (redPlayer?.id && !redAccountCharactersResponse) {
+			return;
+		}
+
+		const nextDraftState: AccountDraftState = {
+			blue: {
+				bans: mapCharacterNamesToAccountCharacters(
+					blueCharacters,
+					pageMatchState.blueBanChars,
+				),
+				picks: mapCharacterNamesToAccountCharacters(
+					blueCharacters,
+					pageMatchState.blueSelectedChars,
+				),
+			},
+			red: {
+				bans: mapCharacterNamesToAccountCharacters(
+					redCharacters,
+					pageMatchState.redBanChars,
+				),
+				picks: mapCharacterNamesToAccountCharacters(
+					redCharacters,
+					pageMatchState.redSelectedChars,
+				),
+			},
+		};
+
+		setDraftState(nextDraftState);
+
+		const nextDraftStep = Math.min(
+			pageMatchState.blueBanChars.length +
+				pageMatchState.blueSelectedChars.length +
+				pageMatchState.redBanChars.length +
+				pageMatchState.redSelectedChars.length,
+			MOCK_DRAFT_SEQUENCE.length,
+		);
+
+		setDraftStep(nextDraftStep);
+		setPendingCharacter(null);
+		autoResolvedStepRef.current = null;
+	}, [
+		blueAccountCharactersResponse,
+		blueCharacters,
+		bluePlayer?.id,
+		isRealtimeMatch,
+		pageMatchState,
+		redAccountCharactersResponse,
+		redCharacters,
+		redPlayer?.id,
+	]);
 
 	useEffect(() => {
 		if (isDraftCompleted) {

@@ -1,4 +1,5 @@
 import { matchApi } from "@/apis/match";
+import { useSocketEvent } from "@/hooks/use-socket-event";
 import { SocketEvent } from "@/lib/constants";
 import { store } from "@/lib/redux";
 import { socket } from "@/lib/socket";
@@ -37,5 +38,9 @@ export const Route = createFileRoute("/_userLayout/room/$roomId")({
 });
 
 function RouteComponent() {
+	useSocketEvent(SocketEvent.MATCH_DELETED, () => {
+		window.location.href = "/match";
+	});
+
 	return <Outlet />;
 }

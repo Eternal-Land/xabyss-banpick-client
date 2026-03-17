@@ -11,3 +11,4 @@ export * from "./socket-events";
 export * from "./notification-type";
 export * from "./match-type";
 export * from "./match-status";
+export * from "./player-side";

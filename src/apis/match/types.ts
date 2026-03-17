@@ -5,6 +5,7 @@ import {
 	MatchType,
 	type MatchStatusEnum,
 	type MatchTypeEnum,
+	type PlayerSideEnum,
 } from "@/lib/constants";
 
 export interface MatchResponse {
@@ -22,6 +23,14 @@ export interface MatchStateResponse {
 	hostJoined: boolean;
 	redPlayerJoined: boolean;
 	bluePlayerJoined: boolean;
+	currentSession: number;
+	currentTurn: PlayerSideEnum;
+	blueBanChars: string[];
+	blueSelectedChars: string[];
+	blueSelectedWeapons: string[];
+	redBanChars: string[];
+	redSelectedChars: string[];
+	redSelectedWeapons: string[];
 }
 
 export const listMatchesQuerySchema = z.object({
