@@ -33,6 +33,10 @@ export interface MatchStateResponse {
 	redSelectedWeapons: string[];
 }
 
+export interface UpdateMatchTurnInput {
+	turn: PlayerSideEnum;
+}
+
 export const listMatchesQuerySchema = z.object({
 	...paginationQuerySchema.shape,
 	accountId: z.string().optional(),

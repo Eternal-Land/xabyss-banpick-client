@@ -3,6 +3,7 @@ import type { CharacterElementEnum, WeaponTypeEnum } from "@/lib/constants";
 export type CharacterRarity = 4 | 5;
 
 export interface BanPickCharacter {
+	id: string;
 	name: string;
 	imageUrl: string;
 	rarity: CharacterRarity;
