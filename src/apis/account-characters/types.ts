@@ -1,5 +1,4 @@
 import z from "zod";
-import { paginationQuerySchema } from "@/lib/types";
 import type { CharacterResponse } from "@/apis/characters/types";
 
 export interface AccountCharacterResponse {
@@ -9,7 +8,6 @@ export interface AccountCharacterResponse {
 	activatedConstellation: number;
 	characterLevel: number;
 	characterCost: number;
-	isOwned: boolean;
 	notes?: string;
 	createdAt: string;
 	updatedAt: string;
@@ -20,7 +18,6 @@ export const accountCharacterCreateSchema = z.object({
 	characterId: z.number().int(),
 	activatedConstellation: z.number().int().min(0).max(6).optional(),
 	characterLevel: z.number().int().min(0).optional(),
-	isOwned: z.boolean().optional(),
 	notes: z.string().optional(),
 });
 
@@ -32,7 +29,6 @@ export const accountCharacterUpdateSchema = z.object({
 	characterId: z.number().int().optional(),
 	activatedConstellation: z.number().int().min(0).max(6).optional(),
 	characterLevel: z.number().int().min(0).optional(),
-	isOwned: z.boolean().optional(),
 	notes: z.string().optional(),
 });
 
@@ -41,9 +37,8 @@ export type UpdateAccountCharacterInput = z.infer<
 >;
 
 export const accountCharacterQuerySchema = z.object({
-	...paginationQuerySchema.shape,
 	characterId: z.number().int().optional(),
-	isOwned: z.boolean().optional(),
+	accountId: z.string(),
 });
 
 export type AccountCharacterQuery = z.infer<typeof accountCharacterQuerySchema>;

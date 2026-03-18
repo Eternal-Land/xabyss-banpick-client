@@ -9,14 +9,10 @@ import type {
 
 async function listAccountCharacters(query: AccountCharacterQuery) {
 	const searchParams = new URLSearchParams();
-	searchParams.append("page", query.page.toString());
-	searchParams.append("take", query.take.toString());
 	if (query.characterId !== undefined) {
 		searchParams.append("characterId", query.characterId.toString());
 	}
-	if (query.isOwned !== undefined) {
-		searchParams.append("isOwned", query.isOwned.toString());
-	}
+	searchParams.append("accountId", query.accountId);
 
 	const response = await http.get<BaseApiResponse<AccountCharacterResponse[]>>(
 		`/api/account-character?${searchParams.toString()}`,

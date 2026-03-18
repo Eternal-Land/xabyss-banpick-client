@@ -1,4 +1,5 @@
 import { matchApi } from "@/apis/match";
+import { useSocketEvent } from "@/hooks/use-socket-event";
 import { SocketEvent } from "@/lib/constants";
 import { store } from "@/lib/redux";
 import { socket } from "@/lib/socket";
@@ -8,32 +9,13 @@ export const Route = createFileRoute("/_userLayout/room/$roomId")({
 	component: RouteComponent,
 	beforeLoad: async ({ params }) => {
 		console.log("Joining room:", params.roomId);
-		try {
-			await socket
-				.timeout(30000)
-				.emitWithAck(SocketEvent.JOIN_MATCH_ROOM, params.roomId);
-		} catch (err) {
-			console.error("Failed to join match room:", err);
-			throw redirect({
-				to: "/match",
-				search: {
-					page: 1,
-					take: 10,
-				},
-			});
-		}
+		await socket.emitWithAck(SocketEvent.JOIN_MATCH_ROOM, params.roomId);
 	},
-	loader: async ({ context, params }) => {
+	loader: async ({ params }) => {
 		try {
 			const [matchResponse, matchStateResponse] = await Promise.all([
-				context.queryClient.ensureQueryData({
-					queryKey: ["room", params.roomId],
-					queryFn: () => matchApi.getMatch(params.roomId),
-				}),
-				context.queryClient.ensureQueryData({
-					queryKey: ["matchState", params.roomId],
-					queryFn: () => matchApi.getMatchState(params.roomId),
-				}),
+				matchApi.getMatch(params.roomId),
+				matchApi.getMatchState(params.roomId),
 			]);
 
 			return { match: matchResponse.data, matchState: matchStateResponse.data };
@@ -56,5 +38,9 @@ export const Route = createFileRoute("/_userLayout/room/$roomId")({
 });
 
 function RouteComponent() {
+	useSocketEvent(SocketEvent.MATCH_DELETED, () => {
+		window.location.href = "/match";
+	});
+
 	return <Outlet />;
 }
