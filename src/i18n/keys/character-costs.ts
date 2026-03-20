@@ -5,5 +5,22 @@ export const characterCostsLocaleKeys = {
 	character_costs_saved: "character_costs_saved",
 	character_costs_table_character: "character_costs_table_character",
 	costs_tab_character_costs: "costs_tab_character_costs",
+	costs_tab_character_level_costs: "costs_tab_character_level_costs",
 	costs_tab_cost_milestones: "costs_tab_cost_milestones",
+	character_level_costs_title: "character_level_costs_title",
+	character_level_costs_add: "character_level_costs_add",
+	character_level_costs_table_level: "character_level_costs_table_level",
+	character_level_costs_table_cost: "character_level_costs_table_cost",
+	character_level_costs_table_updated_by:
+		"character_level_costs_table_updated_by",
+	character_level_costs_table_updated_at:
+		"character_level_costs_table_updated_at",
+	character_level_costs_table_actions: "character_level_costs_table_actions",
+	character_level_costs_create_success: "character_level_costs_create_success",
+	character_level_costs_create_error: "character_level_costs_create_error",
+	character_level_costs_update_success: "character_level_costs_update_success",
+	character_level_costs_update_error: "character_level_costs_update_error",
+	character_level_costs_delete_success: "character_level_costs_delete_success",
+	character_level_costs_delete_error: "character_level_costs_delete_error",
+	character_level_costs_empty: "character_level_costs_empty",
 } as const;

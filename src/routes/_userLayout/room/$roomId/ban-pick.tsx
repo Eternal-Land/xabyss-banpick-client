@@ -14,7 +14,6 @@ import { matchApi } from "@/apis/match";
 import type { MatchStateResponse } from "@/apis/match/types";
 import { userWeaponApis } from "@/apis/user-weapons";
 import type {
-	AccountCharacterQuery,
 	AccountCharacterResponse,
 } from "@/apis/account-characters/types";
 import type {
@@ -38,8 +37,7 @@ export const Route = createFileRoute("/_userLayout/room/$roomId/ban-pick")({
 
 const TURN_DURATION_SECONDS = 30;
 
-const MOCK_ACCOUNT_CHARACTER_QUERY: Omit<AccountCharacterQuery, "accountId"> =
-	{};
+const ACCOUNT_CHARACTER_QUERY = {};
 
 const mapAccountCharacterToBanPickCharacter = (
 	accountCharacter: AccountCharacterResponse,
@@ -94,7 +92,7 @@ interface AccountDraftState {
 	red: AccountDraftSideState;
 }
 
-const MOCK_DRAFT_SEQUENCE: DraftAction[] = [
+const DRAFT_SEQUENCE: DraftAction[] = [
 	{ side: "blue", type: "ban" },
 	{ side: "red", type: "ban" },
 	{ side: "blue", type: "ban" },
@@ -119,7 +117,7 @@ const MOCK_DRAFT_SEQUENCE: DraftAction[] = [
 	{ side: "red", type: "pick" },
 ];
 
-const INITIAL_DRAFT_STATE: AccountDraftState = {
+const EMPTY_DRAFT_STATE: AccountDraftState = {
 	blue: { bans: [], picks: [] },
 	red: { bans: [], picks: [] },
 };
@@ -208,9 +206,6 @@ function RouteComponent() {
 	const [rightElementFilter, setRightElementFilter] =
 		useState(ELEMENT_FILTER_ALL);
 	const [rightRarityFilter, setRightRarityFilter] = useState(RARITY_FILTER_ALL);
-	const [draftState, setDraftState] =
-		useState<AccountDraftState>(INITIAL_DRAFT_STATE);
-	const [draftStep, setDraftStep] = useState(0);
 	const [turnRemainingSeconds, setTurnRemainingSeconds] = useState(
 		TURN_DURATION_SECONDS,
 	);
@@ -232,12 +227,12 @@ function RouteComponent() {
 	const { data: blueAccountCharactersResponse } = useQuery({
 		queryKey: [
 			"account-characters",
-			{ ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: bluePlayer?.id },
+			{ ...ACCOUNT_CHARACTER_QUERY, accountId: bluePlayer?.id },
 		],
 		queryFn: () => {
 			if (!bluePlayer?.id) return Promise.reject("No blue player ID");
 			return accountCharactersApi.listAccountCharacters({
-				...MOCK_ACCOUNT_CHARACTER_QUERY,
+				...ACCOUNT_CHARACTER_QUERY,
 				accountId: bluePlayer.id,
 			});
 		},
@@ -247,12 +242,12 @@ function RouteComponent() {
 	const { data: redAccountCharactersResponse } = useQuery({
 		queryKey: [
 			"account-characters",
-			{ ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: redPlayer?.id },
+			{ ...ACCOUNT_CHARACTER_QUERY, accountId: redPlayer?.id },
 		],
 		queryFn: () => {
 			if (!redPlayer?.id) return Promise.reject("No red player ID");
 			return accountCharactersApi.listAccountCharacters({
-				...MOCK_ACCOUNT_CHARACTER_QUERY,
+				...ACCOUNT_CHARACTER_QUERY,
 				accountId: redPlayer.id,
 			});
 		},
@@ -272,12 +267,55 @@ function RouteComponent() {
 		[blueCharacters, redCharacters],
 	);
 
+	const draftState = useMemo<AccountDraftState>(() => {
+		if (!pageMatchState) {
+			return EMPTY_DRAFT_STATE;
+		}
+
+		return {
+			blue: {
+				bans: mapCharacterNamesToAccountCharacters(
+					allMatchCharacters,
+					pageMatchState.blueBanChars,
+				),
+				picks: mapCharacterNamesToAccountCharacters(
+					blueCharacters,
+					pageMatchState.blueSelectedChars,
+				),
+			},
+			red: {
+				bans: mapCharacterNamesToAccountCharacters(
+					allMatchCharacters,
+					pageMatchState.redBanChars,
+				),
+				picks: mapCharacterNamesToAccountCharacters(
+					redCharacters,
+					pageMatchState.redSelectedChars,
+				),
+			},
+		};
+	}, [allMatchCharacters, blueCharacters, pageMatchState, redCharacters]);
+
+	const draftStep = useMemo(() => {
+		if (!pageMatchState) {
+			return 0;
+		}
+
+		return Math.min(
+			pageMatchState.blueBanChars.length +
+				pageMatchState.blueSelectedChars.length +
+				pageMatchState.redBanChars.length +
+				pageMatchState.redSelectedChars.length,
+			DRAFT_SEQUENCE.length,
+		);
+	}, [pageMatchState]);
+
 	const currentAction =
-		draftStep < MOCK_DRAFT_SEQUENCE.length
-			? MOCK_DRAFT_SEQUENCE[draftStep]
+		draftStep < DRAFT_SEQUENCE.length
+			? DRAFT_SEQUENCE[draftStep]
 			: undefined;
 
-	const isDraftCompleted = draftStep >= MOCK_DRAFT_SEQUENCE.length;
+	const isDraftCompleted = draftStep >= DRAFT_SEQUENCE.length;
 
 	const formattedTurnCountdown = useMemo(() => {
 		const totalSeconds = isDraftCompleted ? 0 : turnRemainingSeconds;
@@ -288,36 +326,22 @@ function RouteComponent() {
 	}, [isDraftCompleted, turnRemainingSeconds]);
 
 	const isCurrentUserTurn = useMemo(() => {
-		if (isDraftCompleted || !profile?.id || !currentAction) {
+		if (isDraftCompleted || !profile?.id || !pageMatchState) {
 			return false;
 		}
 
-		if (isRealtimeMatch) {
-			if (!pageMatchState) {
-				return false;
-			}
-
-			if (profile.id === bluePlayer?.id) {
-				return pageMatchState.currentTurn === PlayerSide.BLUE;
-			}
-
-			if (profile.id === redPlayer?.id) {
-				return pageMatchState.currentTurn === PlayerSide.RED;
-			}
-
-			return false;
+		if (profile.id === bluePlayer?.id) {
+			return pageMatchState.currentTurn === PlayerSide.BLUE;
 		}
 
-		if (currentAction.side === "blue") {
-			return profile.id === bluePlayer?.id;
+		if (profile.id === redPlayer?.id) {
+			return pageMatchState.currentTurn === PlayerSide.RED;
 		}
 
-		return profile.id === redPlayer?.id;
+		return false;
 	}, [
 		bluePlayer?.id,
-		currentAction,
 		isDraftCompleted,
-		isRealtimeMatch,
 		pageMatchState,
 		profile?.id,
 		redPlayer?.id,
@@ -346,22 +370,8 @@ function RouteComponent() {
 			...draftState.red.picks,
 		].forEach((character) => selected.add(getBanPickCharacterId(character)));
 
-		if (isRealtimeMatch && pageMatchState) {
-			[
-				...pageMatchState.blueBanChars,
-				...pageMatchState.blueSelectedChars,
-				...pageMatchState.redBanChars,
-				...pageMatchState.redSelectedChars,
-			].forEach((characterId) => {
-				const normalizedId = String(characterId).trim();
-				if (normalizedId) {
-					selected.add(normalizedId);
-				}
-			});
-		}
-
 		return selected;
-	}, [draftState, isRealtimeMatch, pageMatchState]);
+	}, [draftState]);
 
 	const leftFilteredCharacters = useMemo(
 		() =>
@@ -469,47 +479,6 @@ function RouteComponent() {
 		[pendingCharacter],
 	);
 
-	const applyCharacterToDraft = useCallback(
-		(character: AccountCharacterResponse | null) => {
-			if (
-				!currentAction ||
-				!character ||
-				selectedCharacterIds.has(getBanPickCharacterId(character))
-			) {
-				return false;
-			}
-
-			setDraftState((prevState) => {
-				const nextState: AccountDraftState = {
-					blue: {
-						bans: [...prevState.blue.bans],
-						picks: [...prevState.blue.picks],
-					},
-					red: {
-						bans: [...prevState.red.bans],
-						picks: [...prevState.red.picks],
-					},
-				};
-
-				const target = nextState[currentAction.side];
-
-				if (currentAction.type === "ban") {
-					target.bans.push(character);
-				} else {
-					target.picks.push(character);
-				}
-
-				return nextState;
-			});
-
-			setTurnRemainingSeconds(TURN_DURATION_SECONDS);
-			setDraftStep((prevStep) => prevStep + 1);
-
-			return true;
-		},
-		[currentAction, selectedCharacterIds],
-	);
-
 	const getAvailableCharactersForAction = useCallback(() => {
 		if (!currentAction) {
 			return [] as AccountCharacterResponse[];
@@ -557,18 +526,7 @@ function RouteComponent() {
 	};
 
 	const onConfirmCharacter = async () => {
-		if (!pendingCharacter || !currentAction) {
-			return;
-		}
-
-		if (!isRealtimeMatch || !match?.id) {
-			const isConfirmed = applyCharacterToDraft(pendingCharacter);
-
-			if (!isConfirmed) {
-				return;
-			}
-
-			setPendingCharacter(null);
+		if (!pendingCharacter || !currentAction || !match?.id) {
 			return;
 		}
 
@@ -591,7 +549,7 @@ function RouteComponent() {
 				);
 			}
 
-			const nextAction = MOCK_DRAFT_SEQUENCE[draftStep + 1];
+			const nextAction = DRAFT_SEQUENCE[draftStep + 1];
 			if (nextAction) {
 				await matchApi.updateTurn(match.id, {
 					turn: mapDraftSideToPlayerSide(nextAction.side),
@@ -604,80 +562,6 @@ function RouteComponent() {
 		} finally {
 			setIsSubmittingTurnAction(false);
 		}
-	};
-
-	const onResetDraft = () => {
-		setDraftState(INITIAL_DRAFT_STATE);
-		setDraftStep(0);
-		setTurnRemainingSeconds(TURN_DURATION_SECONDS);
-		setPendingCharacter(null);
-		autoResolvedStepRef.current = null;
-	};
-
-	const onFastForwardDraft = () => {
-		if (isRealtimeMatch) {
-			toast.info("Fast forward is only available for mock draft");
-			return;
-		}
-
-		if (isDraftCompleted) {
-			return;
-		}
-
-		setDraftState((prevState) => {
-			const nextState: AccountDraftState = {
-				blue: {
-					bans: [...prevState.blue.bans],
-					picks: [...prevState.blue.picks],
-				},
-				red: {
-					bans: [...prevState.red.bans],
-					picks: [...prevState.red.picks],
-				},
-			};
-
-			const selectedNames = new Set<string>();
-
-			[
-				...nextState.blue.bans,
-				...nextState.blue.picks,
-				...nextState.red.bans,
-				...nextState.red.picks,
-			].forEach((character) =>
-				selectedNames.add(getBanPickCharacterId(character)),
-			);
-
-			for (let step = draftStep; step < MOCK_DRAFT_SEQUENCE.length; step += 1) {
-				const action = MOCK_DRAFT_SEQUENCE[step];
-				const sidePool =
-					action.side === "blue" ? blueCharacters : redCharacters;
-				const availablePool = sidePool.filter(
-					(character) => !selectedNames.has(getBanPickCharacterId(character)),
-				);
-
-				if (availablePool.length === 0) {
-					continue;
-				}
-
-				const randomCharacter =
-					availablePool[Math.floor(Math.random() * availablePool.length)];
-				selectedNames.add(getBanPickCharacterId(randomCharacter));
-
-				if (action.type === "ban") {
-					nextState[action.side].bans.push(randomCharacter);
-				} else {
-					nextState[action.side].picks.push(randomCharacter);
-				}
-			}
-
-			return nextState;
-		});
-
-		setDraftStep(MOCK_DRAFT_SEQUENCE.length);
-		setTurnRemainingSeconds(0);
-		setPendingCharacter(null);
-		autoResolvedStepRef.current = null;
-		toast.info("Draft fast-forwarded");
 	};
 
 	const onPickBlueWeapon = async (
@@ -725,67 +609,6 @@ function RouteComponent() {
 	}, [matchState]);
 
 	useEffect(() => {
-		if (!isRealtimeMatch || !pageMatchState) {
-			return;
-		}
-
-		if (bluePlayer?.id && !blueAccountCharactersResponse) {
-			return;
-		}
-
-		if (redPlayer?.id && !redAccountCharactersResponse) {
-			return;
-		}
-
-		const nextDraftState: AccountDraftState = {
-			blue: {
-				bans: mapCharacterNamesToAccountCharacters(
-					allMatchCharacters,
-					pageMatchState.blueBanChars,
-				),
-				picks: mapCharacterNamesToAccountCharacters(
-					blueCharacters,
-					pageMatchState.blueSelectedChars,
-				),
-			},
-			red: {
-				bans: mapCharacterNamesToAccountCharacters(
-					allMatchCharacters,
-					pageMatchState.redBanChars,
-				),
-				picks: mapCharacterNamesToAccountCharacters(
-					redCharacters,
-					pageMatchState.redSelectedChars,
-				),
-			},
-		};
-
-		setDraftState(nextDraftState);
-
-		const nextDraftStep = Math.min(
-			pageMatchState.blueBanChars.length +
-				pageMatchState.blueSelectedChars.length +
-				pageMatchState.redBanChars.length +
-				pageMatchState.redSelectedChars.length,
-			MOCK_DRAFT_SEQUENCE.length,
-		);
-
-		setDraftStep(nextDraftStep);
-		setPendingCharacter(null);
-		autoResolvedStepRef.current = null;
-	}, [
-		blueAccountCharactersResponse,
-		allMatchCharacters,
-		blueCharacters,
-		bluePlayer?.id,
-		isRealtimeMatch,
-		pageMatchState,
-		redAccountCharactersResponse,
-		redCharacters,
-		redPlayer?.id,
-	]);
-
-	useEffect(() => {
 		if (isDraftCompleted) {
 			return;
 		}
@@ -826,8 +649,8 @@ function RouteComponent() {
 		if (availableCharacters.length === 0) {
 			toast.error("No character available for auto pick");
 			setTurnRemainingSeconds(TURN_DURATION_SECONDS);
-			setDraftStep((prevStep) => prevStep + 1);
 			setPendingCharacter(null);
+			autoResolvedStepRef.current = null;
 			return;
 		}
 
@@ -836,19 +659,7 @@ function RouteComponent() {
 				Math.floor(Math.random() * availableCharacters.length)
 			];
 
-		if (!isRealtimeMatch || !match?.id) {
-			const isApplied = applyCharacterToDraft(randomCharacter);
-
-			if (isApplied) {
-				setPendingCharacter(null);
-				toast.info(
-					`Time over. Auto selected ${randomCharacter.characters.name}`,
-				);
-			}
-			return;
-		}
-
-		if (isSubmittingTurnAction) {
+		if (isSubmittingTurnAction || !match?.id) {
 			return;
 		}
 
@@ -868,7 +679,7 @@ function RouteComponent() {
 					);
 				}
 
-				const nextAction = MOCK_DRAFT_SEQUENCE[draftStep + 1];
+				const nextAction = DRAFT_SEQUENCE[draftStep + 1];
 				if (nextAction) {
 					await matchApi.updateTurn(match.id, {
 						turn: mapDraftSideToPlayerSide(nextAction.side),
@@ -888,13 +699,11 @@ function RouteComponent() {
 			}
 		})();
 	}, [
-		applyCharacterToDraft,
 		currentAction,
 		draftStep,
 		getAvailableCharactersForAction,
 		isDraftCompleted,
 		isCurrentUserTurn,
-		isRealtimeMatch,
 		isSubmittingTurnAction,
 		match?.id,
 		turnRemainingSeconds,
@@ -985,22 +794,8 @@ function RouteComponent() {
 							<p className="mt-3 text-xs text-white/80">
 								{isDraftCompleted
 									? "Draft completed"
-									: `Step ${draftStep + 1}/${MOCK_DRAFT_SEQUENCE.length}: ${currentAction?.side.toUpperCase()} ${currentAction?.type.toUpperCase()}`}
+									: `Step ${draftStep + 1}/${DRAFT_SEQUENCE.length}: ${currentAction?.side.toUpperCase()} ${currentAction?.type.toUpperCase()}`}
 							</p>
-							<button
-								type="button"
-								onClick={onResetDraft}
-								className="mt-3 h-8 w-full rounded-md border border-white/40 bg-white/10 text-xs hover:bg-white/20"
-							>
-								Reset mock draft
-							</button>
-							<button
-								type="button"
-								onClick={onFastForwardDraft}
-								className="mt-2 h-8 w-full rounded-md border border-white/40 bg-white/10 text-xs hover:bg-white/20"
-							>
-								Fast forward draft
-							</button>
 						</div>
 
 						<Button
