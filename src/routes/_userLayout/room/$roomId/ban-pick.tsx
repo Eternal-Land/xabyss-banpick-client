@@ -12,6 +12,10 @@ import BanPickRarityFilter, {
 import { accountCharactersApi } from "@/apis/account-characters";
 import { matchApi } from "@/apis/match";
 import type { MatchStateResponse } from "@/apis/match/types";
+import { sessionCostApi } from "@/apis/session-cost";
+import type { SessionCostResponse } from "@/apis/session-cost/types";
+import { sessionRecordApi } from "@/apis/session-record";
+import type { SaveSessionRecordInput } from "@/apis/session-record/types";
 import { userWeaponApis } from "@/apis/user-weapons";
 import type { AccountCharacterResponse } from "@/apis/account-characters/types";
 import type {
@@ -123,6 +127,13 @@ interface AccountDraftState {
 	red: AccountDraftSideState;
 }
 
+interface BanPickTimerSideValues {
+	chamber1: number;
+	chamber2: number;
+	chamber3: number;
+	resetTimes: number;
+}
+
 const DRAFT_SEQUENCE: DraftAction[] = [
 	{ side: "blue", type: "ban" },
 	{ side: "red", type: "ban" },
@@ -151,6 +162,19 @@ const DRAFT_SEQUENCE: DraftAction[] = [
 const EMPTY_DRAFT_STATE: AccountDraftState = {
 	blue: { bans: [], picks: [] },
 	red: { bans: [], picks: [] },
+};
+
+const EMPTY_SESSION_RECORD_INPUT: SaveSessionRecordInput = {
+	blueChamber1: 0,
+	blueChamber2: 0,
+	blueChamber3: 0,
+	blueResetTimes: 0,
+	blueFinalTime: 0,
+	redChamber1: 0,
+	redChamber2: 0,
+	redChamber3: 0,
+	redResetTimes: 0,
+	redFinalTime: 0,
 };
 
 function filterCharacters(
@@ -246,12 +270,80 @@ function RouteComponent() {
 	const [pageMatchState, setPageMatchState] = useState<
 		MatchStateResponse | undefined
 	>(matchState);
+	const [sessionCost, setSessionCost] = useState<SessionCostResponse | null>(null);
+	const [blueSelectedWeaponRefinementByCharacterId, setBlueSelectedWeaponRefinementByCharacterId] =
+		useState<Record<string, number | undefined>>({});
+	const [redSelectedWeaponRefinementByCharacterId, setRedSelectedWeaponRefinementByCharacterId] =
+		useState<Record<string, number | undefined>>({});
 	const autoResolvedStepRef = useRef<number | null>(null);
+	const lastCalculatedTurnRef = useRef<string | null>(null);
+	const sessionRecordInputRef = useRef<SaveSessionRecordInput>(
+		EMPTY_SESSION_RECORD_INPUT,
+	);
+
+	const syncMatchStateFromServer = useCallback(async () => {
+		if (!match?.id) {
+			return;
+		}
+
+		try {
+			const response = await matchApi.getMatchState(match.id);
+			setPageMatchState(response.data);
+		} catch {
+			// Socket sync is best-effort and should not interrupt page interactions.
+		}
+	}, [match?.id]);
+
+	const onDebouncedTimerValuesChange = useCallback(
+		(side: "blue" | "red", values: BanPickTimerSideValues) => {
+			const nextRecordInput: SaveSessionRecordInput =
+				side === "blue"
+					? {
+						...sessionRecordInputRef.current,
+						blueChamber1: values.chamber1,
+						blueChamber2: values.chamber2,
+						blueChamber3: values.chamber3,
+						blueResetTimes: values.resetTimes,
+						blueFinalTime:
+							values.chamber1 + values.chamber2 + values.chamber3,
+					}
+					: {
+						...sessionRecordInputRef.current,
+						redChamber1: values.chamber1,
+						redChamber2: values.chamber2,
+						redChamber3: values.chamber3,
+						redResetTimes: values.resetTimes,
+						redFinalTime:
+							values.chamber1 + values.chamber2 + values.chamber3,
+					};
+
+			sessionRecordInputRef.current = nextRecordInput;
+
+			const matchSessionId = Number(pageMatchState?.currentSession);
+			if (!Number.isInteger(matchSessionId) || matchSessionId <= 0) {
+				return;
+			}
+
+			void sessionRecordApi
+				.saveSessionRecord(matchSessionId, nextRecordInput)
+				.catch(() => {
+					// Session record autosave should not interrupt match flow.
+				});
+		},
+		[pageMatchState?.currentSession],
+	);
 
 	useSocketEvent(
-		SocketEvent.UPDATE_MATCH_STATE,
-		(nextMatchState: MatchStateResponse) => {
-			setPageMatchState(nextMatchState);
+		SocketEvent.UPDATE_MATCH_SESSION,
+		() => {
+			void syncMatchStateFromServer();
+		},
+	);
+
+	useSocketEvent(
+		SocketEvent.UPDATE_BAN_PICK_SLOT,
+		() => {
+			void syncMatchStateFromServer();
 		},
 	);
 
@@ -510,6 +602,30 @@ function RouteComponent() {
 		[pendingCharacter],
 	);
 
+	const blueSideCost = useMemo(
+		() => ({
+			totalCost: sessionCost?.blueTotalCost,
+			milestoneCost: sessionCost?.blueCostMilestone,
+			constellationCost: sessionCost?.blueConstellationCost,
+			refinementCost: sessionCost?.blueRefinementCost,
+			levelCost: sessionCost?.blueLevelCost,
+			timeBonusCost: sessionCost?.blueTimeBonusCost,
+		}),
+		[sessionCost],
+	);
+
+	const redSideCost = useMemo(
+		() => ({
+			totalCost: sessionCost?.redTotalCost,
+			milestoneCost: sessionCost?.redCostMilestone,
+			constellationCost: sessionCost?.redConstellationCost,
+			refinementCost: sessionCost?.redRefinementCost,
+			levelCost: sessionCost?.redLevelCost,
+			timeBonusCost: sessionCost?.redTimeBonusCost,
+		}),
+		[sessionCost],
+	);
+
 	const getAvailableCharactersForAction = useCallback(() => {
 		if (!currentAction) {
 			return [] as AccountCharacterResponse[];
@@ -610,6 +726,7 @@ function RouteComponent() {
 	const onPickBlueWeapon = async (
 		character: BanPickCharacter,
 		weaponId: number,
+		weaponRefinement: number,
 	) => {
 		if (!isRealtimeMatch || !match?.id) {
 			return;
@@ -620,7 +737,36 @@ function RouteComponent() {
 		}
 
 		try {
-			await matchApi.pickWeapon(match.id, character.id, String(weaponId));
+			await matchApi.pickWeapon(
+				match.id,
+				character.id,
+				String(weaponId),
+				weaponRefinement,
+			);
+
+			const matchSessionId = Number(pageMatchState?.currentSession);
+			if (!Number.isInteger(matchSessionId) || matchSessionId <= 0) {
+				return;
+			}
+
+			const pickedWeapon = weapons.find((weapon) => weapon.id === weaponId);
+			const response = await sessionCostApi.calculateSessionCost(matchSessionId, {
+				characterId: Number(character.id),
+				activatedConstellation: character.constellation,
+				characterLevel: character.level,
+				weaponId,
+				weaponRefinement,
+				weaponRarity: pickedWeapon?.rarity,
+				side: PlayerSide.BLUE,
+			});
+
+			if (response.data) {
+				setSessionCost(response.data);
+				setBlueSelectedWeaponRefinementByCharacterId((prev) => ({
+					...prev,
+					[character.id]: weaponRefinement,
+				}));
+			}
 		} catch {
 			toast.error(`Failed to pick weapon for ${character.name}`);
 			throw new Error("Failed to pick weapon");
@@ -630,6 +776,7 @@ function RouteComponent() {
 	const onPickRedWeapon = async (
 		character: BanPickCharacter,
 		weaponId: number,
+		weaponRefinement: number,
 	) => {
 		if (!isRealtimeMatch || !match?.id) {
 			return;
@@ -640,7 +787,36 @@ function RouteComponent() {
 		}
 
 		try {
-			await matchApi.pickWeapon(match.id, character.id, String(weaponId));
+			await matchApi.pickWeapon(
+				match.id,
+				character.id,
+				String(weaponId),
+				weaponRefinement,
+			);
+
+			const matchSessionId = Number(pageMatchState?.currentSession);
+			if (!Number.isInteger(matchSessionId) || matchSessionId <= 0) {
+				return;
+			}
+
+			const pickedWeapon = weapons.find((weapon) => weapon.id === weaponId);
+			const response = await sessionCostApi.calculateSessionCost(matchSessionId, {
+				characterId: Number(character.id),
+				activatedConstellation: character.constellation,
+				characterLevel: character.level,
+				weaponId,
+				weaponRefinement,
+				weaponRarity: pickedWeapon?.rarity,
+				side: PlayerSide.RED,
+			});
+
+			if (response.data) {
+				setSessionCost(response.data);
+				setRedSelectedWeaponRefinementByCharacterId((prev) => ({
+					...prev,
+					[character.id]: weaponRefinement,
+				}));
+			}
 		} catch {
 			toast.error(`Failed to pick weapon for ${character.name}`);
 			throw new Error("Failed to pick weapon");
@@ -649,7 +825,148 @@ function RouteComponent() {
 
 	useEffect(() => {
 		setPageMatchState(matchState);
+		setSessionCost(null);
+		setBlueSelectedWeaponRefinementByCharacterId({});
+		setRedSelectedWeaponRefinementByCharacterId({});
+		sessionRecordInputRef.current = EMPTY_SESSION_RECORD_INPUT;
+		lastCalculatedTurnRef.current = null;
 	}, [matchState]);
+
+	useEffect(() => {
+		if (!match?.id || !pageMatchState) {
+			return;
+		}
+
+		const matchSessionId = Number(pageMatchState.currentSession);
+		if (!Number.isInteger(matchSessionId) || matchSessionId <= 0) {
+			setSessionCost(null);
+			return;
+		}
+
+		let isCancelled = false;
+
+		void (async () => {
+			try {
+				const response = await sessionCostApi.getCurrentSessionCost(match.id);
+				if (!isCancelled) {
+					setSessionCost(response.data ?? null);
+				}
+			} catch {
+				if (!isCancelled) {
+					setSessionCost(null);
+				}
+			}
+		})();
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [match?.id, pageMatchState?.currentSession]);
+
+	useEffect(() => {
+		if (!pageMatchState) {
+			return;
+		}
+
+		if (isDraftCompleted) {
+			return;
+		}
+
+		const matchSessionId = Number(pageMatchState.currentSession);
+		if (!Number.isInteger(matchSessionId) || matchSessionId <= 0) {
+			return;
+		}
+
+		const completedTurn = draftStep - 1;
+		if (completedTurn < 0) {
+			return;
+		}
+
+		const latestAction = DRAFT_SEQUENCE[completedTurn];
+		if (!latestAction) {
+			return;
+		}
+
+		const latestCharacters =
+			latestAction.type === "ban"
+				? draftState[latestAction.side].bans
+				: draftState[latestAction.side].picks;
+
+		const latestCharacter = latestCharacters[latestCharacters.length - 1];
+		if (!latestCharacter) {
+			return;
+		}
+
+		const latestCharacterId = getBanPickCharacterId(latestCharacter);
+		const lastCalculatedKey = [
+			matchSessionId,
+			completedTurn,
+			latestAction.side,
+			latestAction.type,
+			latestCharacterId,
+		].join(":");
+
+		if (lastCalculatedTurnRef.current === lastCalculatedKey) {
+			return;
+		}
+
+		// Reserve key before requesting to avoid duplicate calls from rapid state updates
+		// (e.g. optimistic update + socket sync for the same turn).
+		lastCalculatedTurnRef.current = lastCalculatedKey;
+
+		const selectedWeaponId =
+			latestAction.type === "pick"
+				? latestAction.side === "blue"
+					? blueSelectedWeaponByCharacterId[latestCharacterId]
+					: redSelectedWeaponByCharacterId[latestCharacterId]
+				: undefined;
+
+		const selectedWeapon = selectedWeaponId
+			? weapons.find((weapon) => weapon.id === selectedWeaponId)
+			: undefined;
+
+		const selectedWeaponRefinement =
+			latestAction.type === "pick"
+				? latestAction.side === "blue"
+					? blueSelectedWeaponRefinementByCharacterId[latestCharacterId]
+					: redSelectedWeaponRefinementByCharacterId[latestCharacterId]
+				: undefined;
+
+		void (async () => {
+			try {
+				const response = await sessionCostApi.calculateSessionCost(matchSessionId, {
+					characterId: latestCharacter.characterId,
+					activatedConstellation: latestCharacter.activatedConstellation,
+					characterLevel: latestCharacter.characterLevel,
+					weaponId: selectedWeapon?.id,
+					weaponRefinement:
+						selectedWeaponRefinement ?? (selectedWeapon ? 1 : undefined),
+					weaponRarity: selectedWeapon?.rarity,
+					side: mapDraftSideToPlayerSide(latestAction.side),
+					currentTurn: completedTurn,
+				});
+
+				if (response.data) {
+					setSessionCost(response.data);
+				}
+			} catch {
+				if (lastCalculatedTurnRef.current === lastCalculatedKey) {
+					lastCalculatedTurnRef.current = null;
+				}
+				// Cost calculation is best-effort and should not block draft flow.
+			}
+		})();
+	}, [
+		blueSelectedWeaponByCharacterId,
+		blueSelectedWeaponRefinementByCharacterId,
+		draftState,
+		draftStep,
+		isDraftCompleted,
+		pageMatchState,
+		redSelectedWeaponByCharacterId,
+		redSelectedWeaponRefinementByCharacterId,
+		weapons,
+	]);
 
 	useEffect(() => {
 		if (isDraftCompleted) {
@@ -774,12 +1091,20 @@ function RouteComponent() {
 
 						{/* Timer */}
 						<div className="timer-side flex items-center gap-4">
-							<BanPickTimerInputs isRealtimeMatch={isRealtimeMatch} />
+							<BanPickTimerInputs
+								isRealtimeMatch={isRealtimeMatch}
+								side="blue"
+								onDebouncedValuesChange={onDebouncedTimerValuesChange}
+							/>
 						</div>
 
 						<div className="grid grid-rows-2 gap-4 h-full overflow-hidden">
 							<div className="grid grid-cols-7 gap-8">
-								<BanPickPlayerInfo side="blue" player={bluePlayer} />
+								<BanPickPlayerInfo
+									side="blue"
+									player={bluePlayer}
+									cost={blueSideCost}
+								/>
 
 								<BanPickDraftSlots
 									side="blue"
@@ -870,7 +1195,11 @@ function RouteComponent() {
 						<div className="bg-transparent bg-radial from-red-400/50 from-0% to-white/0 to-70% fixed inset-0 z-[-2] left-[1500px] top-0 h-screen aspect-square rounded-full"></div>
 
 						<div className="timer-side flex items-center gap-4">
-							<BanPickTimerInputs isRealtimeMatch={isRealtimeMatch} />
+							<BanPickTimerInputs
+								isRealtimeMatch={isRealtimeMatch}
+								side="red"
+								onDebouncedValuesChange={onDebouncedTimerValuesChange}
+							/>
 						</div>
 
 						<div className="grid grid-rows-2 gap-4 h-full overflow-hidden">
@@ -884,7 +1213,11 @@ function RouteComponent() {
 									pendingCharacter={pendingBanPickCharacter}
 								/>
 
-								<BanPickPlayerInfo side="red" player={redPlayer} />
+								<BanPickPlayerInfo
+									side="red"
+									player={redPlayer}
+									cost={redSideCost}
+								/>
 							</div>
 
 							{isDraftCompleted ? (

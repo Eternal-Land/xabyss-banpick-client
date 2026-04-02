@@ -98,6 +98,24 @@ function RouteComponent() {
 		});
 	});
 
+	useSocketEvent(SocketEvent.UPDATE_MATCH_SESSION, () => {
+		void (async () => {
+			try {
+				const response = await matchApi.getMatch(roomId);
+				if (response.data?.status === MatchStatus.LIVE) {
+					navigate({
+						to: "/room/$roomId/ban-pick",
+						params: {
+							roomId,
+						},
+					});
+				}
+			} catch {
+				// Session update navigation is best-effort.
+			}
+		})();
+	});
+
 	useEffect(() => {
 		setPageMatchState(matchState);
 	}, [matchState]);
