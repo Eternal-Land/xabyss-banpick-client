@@ -1,5 +1,6 @@
 import CharacterCostsTab from "@/components/character-costs";
 import CostMilestonesTab from "@/components/cost-milestones";
+import CharacterLevelCostsTab from "@/components/character-level-costs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getTranslationToken } from "@/i18n/namespaces";
 import { characterCostsLocaleKeys } from "@/i18n/keys";
@@ -10,7 +11,7 @@ import z from "zod";
 
 const costsSearchSchema = z.object({
 	tab: fallback(
-		z.enum(["character-costs", "cost-milestones"]),
+		z.enum(["character-costs", "character-level-costs", "cost-milestones"]),
 		"character-costs",
 	),
 });
@@ -40,6 +41,14 @@ function RouteComponent() {
 						),
 					)}
 				</TabsTrigger>
+				<TabsTrigger value="character-level-costs">
+					{t(
+						getTranslationToken(
+							"character-costs",
+							characterCostsLocaleKeys.costs_tab_character_level_costs,
+						),
+					)}
+				</TabsTrigger>
 				<TabsTrigger value="cost-milestones">
 					{t(
 						getTranslationToken(
@@ -51,6 +60,9 @@ function RouteComponent() {
 			</TabsList>
 			<TabsContent value="character-costs">
 				<CharacterCostsTab />
+			</TabsContent>
+			<TabsContent value="character-level-costs">
+				<CharacterLevelCostsTab />
 			</TabsContent>
 			<TabsContent value="cost-milestones">
 				<CostMilestonesTab />

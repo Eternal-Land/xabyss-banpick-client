@@ -5,6 +5,8 @@ export const SocketEvent = {
 	LEAVE_MATCH_ROOM: "leave_match_room",
 	MATCH_DELETED: "match_deleted",
 	UPDATE_MATCH_STATE: "update_match_state",
+	UPDATE_MATCH_SESSION: "update_match_session",
+	UPDATE_BAN_PICK_SLOT: "update_ban_pick_slot",
 	MATCH_STARTED: "match_started",
 } as const;
 

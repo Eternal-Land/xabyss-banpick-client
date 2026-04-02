@@ -7,13 +7,22 @@ import type { UserWeaponResponse } from "@/apis/user-weapons/types";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface WeaponPickerState {
 	characterId: string;
 	weaponType: BanPickCharacter["weaponType"];
+}
+
+interface WeaponRefinementPickerState {
+	character: BanPickCharacter;
+	weapon: UserWeaponResponse;
+	refinement: number;
 }
 
 export interface BanPickTeamBuildProps {
@@ -28,6 +37,7 @@ export interface BanPickTeamBuildProps {
 	onPickWeapon?: (
 		character: BanPickCharacter,
 		weaponId: number,
+		refinement: number,
 	) => Promise<void> | void;
 }
 
@@ -59,6 +69,9 @@ export default function BanPickTeamBuild({
 	const [weaponPicker, setWeaponPicker] = useState<WeaponPickerState | null>(
 		null,
 	);
+	const [weaponRefinementPicker, setWeaponRefinementPicker] =
+		useState<WeaponRefinementPickerState | null>(null);
+	const [isSubmittingWeapon, setIsSubmittingWeapon] = useState(false);
 
 	const firstHalfOrder = useMemo(
 		() => orderedSlots.slice(0, 4),
@@ -92,19 +105,24 @@ export default function BanPickTeamBuild({
 	const onSelectWeapon = async (
 		character: BanPickCharacter,
 		weaponId: number,
+		refinement: number,
 	) => {
+		setIsSubmittingWeapon(true);
 		try {
 			if (onPickWeapon) {
-				await onPickWeapon(character, weaponId);
+				await onPickWeapon(character, weaponId, refinement);
 			}
 		} catch {
 			return;
+		} finally {
+			setIsSubmittingWeapon(false);
 		}
 
 		setSelectedWeaponByCharacterIdState((prev) => ({
 			...prev,
 			[character.id]: weaponId,
 		}));
+		setWeaponRefinementPicker(null);
 		setWeaponPicker(null);
 	};
 
@@ -230,7 +248,7 @@ export default function BanPickTeamBuild({
 											/>
 										)}
 									</div>
-									<div className="flex flex-col items-center justify-center border border-white/20 border-2 aspect-square">
+									<div className="flex flex-col items-center justify-center aspect-square">
 										{renderWeaponSlot(member)}
 									</div>
 								</div>
@@ -294,7 +312,7 @@ export default function BanPickTeamBuild({
 											/>
 										)}
 									</div>
-									<div className="flex items-center justify-center border border-white/20 border-2 aspect-square">
+									<div className="flex items-center justify-center aspect-square">
 										{renderWeaponSlot(member)}
 									</div>
 								</div>
@@ -339,7 +357,11 @@ export default function BanPickTeamBuild({
 											return;
 										}
 
-										void onSelectWeapon(pickerCharacter, weapon.id);
+										setWeaponRefinementPicker({
+											character: pickerCharacter,
+											weapon,
+											refinement: 1,
+										});
 									}}
 									disabled={
 										!canPickWeapon || !pickerCharacter || isDisabledBySelection
@@ -364,6 +386,76 @@ export default function BanPickTeamBuild({
 							);
 						})}
 					</div>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={Boolean(weaponRefinementPicker)}
+				onOpenChange={(open) => {
+					if (!open && !isSubmittingWeapon) {
+						setWeaponRefinementPicker(null);
+					}
+				}}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>Select Weapon Refinement</DialogTitle>
+						<DialogDescription>
+							Choose refinement rank for {weaponRefinementPicker?.weapon.name}.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="grid grid-cols-5 gap-2">
+						{[1, 2, 3, 4, 5].map((refinement) => (
+							<button
+								key={refinement}
+								type="button"
+								onClick={() =>
+									setWeaponRefinementPicker((prev) =>
+										prev
+											? {
+												...prev,
+												refinement,
+										  }
+											: prev,
+									)
+								}
+								className={cn(
+									"rounded border border-white/20 bg-white/5 py-2 text-sm hover:bg-white/10",
+									weaponRefinementPicker?.refinement === refinement &&
+										"border-emerald-400 bg-emerald-500/10",
+								)}
+							>
+								R{refinement}
+							</button>
+						))}
+					</div>
+
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setWeaponRefinementPicker(null)}
+							disabled={isSubmittingWeapon}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={() => {
+								if (!weaponRefinementPicker) {
+									return;
+								}
+
+								void onSelectWeapon(
+									weaponRefinementPicker.character,
+									weaponRefinementPicker.weapon.id,
+									weaponRefinementPicker.refinement,
+								);
+							}}
+							disabled={isSubmittingWeapon || !canPickWeapon}
+						>
+							Confirm
+						</Button>
+					</DialogFooter>
 				</DialogContent>
 			</Dialog>
 		</div>

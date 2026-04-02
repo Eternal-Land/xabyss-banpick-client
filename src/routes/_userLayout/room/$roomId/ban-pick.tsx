@@ -12,11 +12,12 @@ import BanPickRarityFilter, {
 import { accountCharactersApi } from "@/apis/account-characters";
 import { matchApi } from "@/apis/match";
 import type { MatchStateResponse } from "@/apis/match/types";
+import { sessionCostApi } from "@/apis/session-cost";
+import type { SessionCostResponse } from "@/apis/session-cost/types";
+import { sessionRecordApi } from "@/apis/session-record";
+import type { SaveSessionRecordInput } from "@/apis/session-record/types";
 import { userWeaponApis } from "@/apis/user-weapons";
-import type {
-	AccountCharacterQuery,
-	AccountCharacterResponse,
-} from "@/apis/account-characters/types";
+import type { AccountCharacterResponse } from "@/apis/account-characters/types";
 import type {
 	DraftAction,
 	BanPickCharacter,
@@ -38,8 +39,7 @@ export const Route = createFileRoute("/_userLayout/room/$roomId/ban-pick")({
 
 const TURN_DURATION_SECONDS = 30;
 
-const MOCK_ACCOUNT_CHARACTER_QUERY: Omit<AccountCharacterQuery, "accountId"> =
-	{};
+const ACCOUNT_CHARACTER_QUERY = {};
 
 const mapAccountCharacterToBanPickCharacter = (
 	accountCharacter: AccountCharacterResponse,
@@ -60,6 +60,39 @@ const getBanPickCharacterId = (character: AccountCharacterResponse) =>
 
 const mapDraftSideToPlayerSide = (side: DraftAction["side"]) =>
 	side === "blue" ? PlayerSide.BLUE : PlayerSide.RED;
+
+function applyDraftActionToMatchState(
+	prevState: MatchStateResponse,
+	action: DraftAction,
+	characterId: string,
+	nextTurn?: MatchStateResponse["currentTurn"],
+): MatchStateResponse {
+	const nextState: MatchStateResponse = {
+		...prevState,
+		blueBanChars: [...prevState.blueBanChars],
+		redBanChars: [...prevState.redBanChars],
+		blueSelectedChars: [...prevState.blueSelectedChars],
+		redSelectedChars: [...prevState.redSelectedChars],
+	};
+
+	if (action.type === "ban") {
+		if (action.side === "blue") {
+			nextState.blueBanChars.push(characterId);
+		} else {
+			nextState.redBanChars.push(characterId);
+		}
+	} else if (action.side === "blue") {
+		nextState.blueSelectedChars.push(characterId);
+	} else {
+		nextState.redSelectedChars.push(characterId);
+	}
+
+	if (nextTurn !== undefined) {
+		nextState.currentTurn = nextTurn;
+	}
+
+	return nextState;
+}
 
 function mapSelectedWeaponsByCharacterId(
 	picks: AccountCharacterResponse[],
@@ -94,7 +127,14 @@ interface AccountDraftState {
 	red: AccountDraftSideState;
 }
 
-const MOCK_DRAFT_SEQUENCE: DraftAction[] = [
+interface BanPickTimerSideValues {
+	chamber1: number;
+	chamber2: number;
+	chamber3: number;
+	resetTimes: number;
+}
+
+const DRAFT_SEQUENCE: DraftAction[] = [
 	{ side: "blue", type: "ban" },
 	{ side: "red", type: "ban" },
 	{ side: "blue", type: "ban" },
@@ -119,9 +159,22 @@ const MOCK_DRAFT_SEQUENCE: DraftAction[] = [
 	{ side: "red", type: "pick" },
 ];
 
-const INITIAL_DRAFT_STATE: AccountDraftState = {
+const EMPTY_DRAFT_STATE: AccountDraftState = {
 	blue: { bans: [], picks: [] },
 	red: { bans: [], picks: [] },
+};
+
+const EMPTY_SESSION_RECORD_INPUT: SaveSessionRecordInput = {
+	blueChamber1: 0,
+	blueChamber2: 0,
+	blueChamber3: 0,
+	blueResetTimes: 0,
+	blueFinalTime: 0,
+	redChamber1: 0,
+	redChamber2: 0,
+	redChamber3: 0,
+	redResetTimes: 0,
+	redFinalTime: 0,
 };
 
 function filterCharacters(
@@ -208,9 +261,6 @@ function RouteComponent() {
 	const [rightElementFilter, setRightElementFilter] =
 		useState(ELEMENT_FILTER_ALL);
 	const [rightRarityFilter, setRightRarityFilter] = useState(RARITY_FILTER_ALL);
-	const [draftState, setDraftState] =
-		useState<AccountDraftState>(INITIAL_DRAFT_STATE);
-	const [draftStep, setDraftStep] = useState(0);
 	const [turnRemainingSeconds, setTurnRemainingSeconds] = useState(
 		TURN_DURATION_SECONDS,
 	);
@@ -220,24 +270,92 @@ function RouteComponent() {
 	const [pageMatchState, setPageMatchState] = useState<
 		MatchStateResponse | undefined
 	>(matchState);
+	const [sessionCost, setSessionCost] = useState<SessionCostResponse | null>(null);
+	const [blueSelectedWeaponRefinementByCharacterId, setBlueSelectedWeaponRefinementByCharacterId] =
+		useState<Record<string, number | undefined>>({});
+	const [redSelectedWeaponRefinementByCharacterId, setRedSelectedWeaponRefinementByCharacterId] =
+		useState<Record<string, number | undefined>>({});
 	const autoResolvedStepRef = useRef<number | null>(null);
+	const lastCalculatedTurnRef = useRef<string | null>(null);
+	const sessionRecordInputRef = useRef<SaveSessionRecordInput>(
+		EMPTY_SESSION_RECORD_INPUT,
+	);
+
+	const syncMatchStateFromServer = useCallback(async () => {
+		if (!match?.id) {
+			return;
+		}
+
+		try {
+			const response = await matchApi.getMatchState(match.id);
+			setPageMatchState(response.data);
+		} catch {
+			// Socket sync is best-effort and should not interrupt page interactions.
+		}
+	}, [match?.id]);
+
+	const onDebouncedTimerValuesChange = useCallback(
+		(side: "blue" | "red", values: BanPickTimerSideValues) => {
+			const nextRecordInput: SaveSessionRecordInput =
+				side === "blue"
+					? {
+						...sessionRecordInputRef.current,
+						blueChamber1: values.chamber1,
+						blueChamber2: values.chamber2,
+						blueChamber3: values.chamber3,
+						blueResetTimes: values.resetTimes,
+						blueFinalTime:
+							values.chamber1 + values.chamber2 + values.chamber3,
+					}
+					: {
+						...sessionRecordInputRef.current,
+						redChamber1: values.chamber1,
+						redChamber2: values.chamber2,
+						redChamber3: values.chamber3,
+						redResetTimes: values.resetTimes,
+						redFinalTime:
+							values.chamber1 + values.chamber2 + values.chamber3,
+					};
+
+			sessionRecordInputRef.current = nextRecordInput;
+
+			const matchSessionId = Number(pageMatchState?.currentSession);
+			if (!Number.isInteger(matchSessionId) || matchSessionId <= 0) {
+				return;
+			}
+
+			void sessionRecordApi
+				.saveSessionRecord(matchSessionId, nextRecordInput)
+				.catch(() => {
+					// Session record autosave should not interrupt match flow.
+				});
+		},
+		[pageMatchState?.currentSession],
+	);
 
 	useSocketEvent(
-		SocketEvent.UPDATE_MATCH_STATE,
-		(nextMatchState: MatchStateResponse) => {
-			setPageMatchState(nextMatchState);
+		SocketEvent.UPDATE_MATCH_SESSION,
+		() => {
+			void syncMatchStateFromServer();
+		},
+	);
+
+	useSocketEvent(
+		SocketEvent.UPDATE_BAN_PICK_SLOT,
+		() => {
+			void syncMatchStateFromServer();
 		},
 	);
 
 	const { data: blueAccountCharactersResponse } = useQuery({
 		queryKey: [
 			"account-characters",
-			{ ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: bluePlayer?.id },
+			{ ...ACCOUNT_CHARACTER_QUERY, accountId: bluePlayer?.id },
 		],
 		queryFn: () => {
 			if (!bluePlayer?.id) return Promise.reject("No blue player ID");
 			return accountCharactersApi.listAccountCharacters({
-				...MOCK_ACCOUNT_CHARACTER_QUERY,
+				...ACCOUNT_CHARACTER_QUERY,
 				accountId: bluePlayer.id,
 			});
 		},
@@ -247,12 +365,12 @@ function RouteComponent() {
 	const { data: redAccountCharactersResponse } = useQuery({
 		queryKey: [
 			"account-characters",
-			{ ...MOCK_ACCOUNT_CHARACTER_QUERY, accountId: redPlayer?.id },
+			{ ...ACCOUNT_CHARACTER_QUERY, accountId: redPlayer?.id },
 		],
 		queryFn: () => {
 			if (!redPlayer?.id) return Promise.reject("No red player ID");
 			return accountCharactersApi.listAccountCharacters({
-				...MOCK_ACCOUNT_CHARACTER_QUERY,
+				...ACCOUNT_CHARACTER_QUERY,
 				accountId: redPlayer.id,
 			});
 		},
@@ -272,12 +390,53 @@ function RouteComponent() {
 		[blueCharacters, redCharacters],
 	);
 
-	const currentAction =
-		draftStep < MOCK_DRAFT_SEQUENCE.length
-			? MOCK_DRAFT_SEQUENCE[draftStep]
-			: undefined;
+	const draftState = useMemo<AccountDraftState>(() => {
+		if (!pageMatchState) {
+			return EMPTY_DRAFT_STATE;
+		}
 
-	const isDraftCompleted = draftStep >= MOCK_DRAFT_SEQUENCE.length;
+		return {
+			blue: {
+				bans: mapCharacterNamesToAccountCharacters(
+					allMatchCharacters,
+					pageMatchState.blueBanChars,
+				),
+				picks: mapCharacterNamesToAccountCharacters(
+					blueCharacters,
+					pageMatchState.blueSelectedChars,
+				),
+			},
+			red: {
+				bans: mapCharacterNamesToAccountCharacters(
+					allMatchCharacters,
+					pageMatchState.redBanChars,
+				),
+				picks: mapCharacterNamesToAccountCharacters(
+					redCharacters,
+					pageMatchState.redSelectedChars,
+				),
+			},
+		};
+	}, [allMatchCharacters, blueCharacters, pageMatchState, redCharacters]);
+
+	const draftStep = useMemo(() => {
+		if (!pageMatchState) {
+			return 0;
+		}
+
+		return Math.min(
+			pageMatchState.blueBanChars.length +
+				pageMatchState.blueSelectedChars.length +
+				pageMatchState.redBanChars.length +
+				pageMatchState.redSelectedChars.length,
+			DRAFT_SEQUENCE.length,
+		);
+	}, [pageMatchState]);
+
+	const currentAction =
+		draftStep < DRAFT_SEQUENCE.length ? DRAFT_SEQUENCE[draftStep] : undefined;
+
+	const isDraftCompleted = draftStep >= DRAFT_SEQUENCE.length;
 
 	const formattedTurnCountdown = useMemo(() => {
 		const totalSeconds = isDraftCompleted ? 0 : turnRemainingSeconds;
@@ -292,33 +451,21 @@ function RouteComponent() {
 			return false;
 		}
 
-		if (isRealtimeMatch) {
-			if (!pageMatchState) {
-				return false;
-			}
+		const expectedTurn = mapDraftSideToPlayerSide(currentAction.side);
 
-			if (profile.id === bluePlayer?.id) {
-				return pageMatchState.currentTurn === PlayerSide.BLUE;
-			}
-
-			if (profile.id === redPlayer?.id) {
-				return pageMatchState.currentTurn === PlayerSide.RED;
-			}
-
-			return false;
+		if (profile.id === bluePlayer?.id) {
+			return expectedTurn === PlayerSide.BLUE;
 		}
 
-		if (currentAction.side === "blue") {
-			return profile.id === bluePlayer?.id;
+		if (profile.id === redPlayer?.id) {
+			return expectedTurn === PlayerSide.RED;
 		}
 
-		return profile.id === redPlayer?.id;
+		return false;
 	}, [
 		bluePlayer?.id,
 		currentAction,
 		isDraftCompleted,
-		isRealtimeMatch,
-		pageMatchState,
 		profile?.id,
 		redPlayer?.id,
 	]);
@@ -346,22 +493,8 @@ function RouteComponent() {
 			...draftState.red.picks,
 		].forEach((character) => selected.add(getBanPickCharacterId(character)));
 
-		if (isRealtimeMatch && pageMatchState) {
-			[
-				...pageMatchState.blueBanChars,
-				...pageMatchState.blueSelectedChars,
-				...pageMatchState.redBanChars,
-				...pageMatchState.redSelectedChars,
-			].forEach((characterId) => {
-				const normalizedId = String(characterId).trim();
-				if (normalizedId) {
-					selected.add(normalizedId);
-				}
-			});
-		}
-
 		return selected;
-	}, [draftState, isRealtimeMatch, pageMatchState]);
+	}, [draftState]);
 
 	const leftFilteredCharacters = useMemo(
 		() =>
@@ -469,45 +602,28 @@ function RouteComponent() {
 		[pendingCharacter],
 	);
 
-	const applyCharacterToDraft = useCallback(
-		(character: AccountCharacterResponse | null) => {
-			if (
-				!currentAction ||
-				!character ||
-				selectedCharacterIds.has(getBanPickCharacterId(character))
-			) {
-				return false;
-			}
+	const blueSideCost = useMemo(
+		() => ({
+			totalCost: sessionCost?.blueTotalCost,
+			milestoneCost: sessionCost?.blueCostMilestone,
+			constellationCost: sessionCost?.blueConstellationCost,
+			refinementCost: sessionCost?.blueRefinementCost,
+			levelCost: sessionCost?.blueLevelCost,
+			timeBonusCost: sessionCost?.blueTimeBonusCost,
+		}),
+		[sessionCost],
+	);
 
-			setDraftState((prevState) => {
-				const nextState: AccountDraftState = {
-					blue: {
-						bans: [...prevState.blue.bans],
-						picks: [...prevState.blue.picks],
-					},
-					red: {
-						bans: [...prevState.red.bans],
-						picks: [...prevState.red.picks],
-					},
-				};
-
-				const target = nextState[currentAction.side];
-
-				if (currentAction.type === "ban") {
-					target.bans.push(character);
-				} else {
-					target.picks.push(character);
-				}
-
-				return nextState;
-			});
-
-			setTurnRemainingSeconds(TURN_DURATION_SECONDS);
-			setDraftStep((prevStep) => prevStep + 1);
-
-			return true;
-		},
-		[currentAction, selectedCharacterIds],
+	const redSideCost = useMemo(
+		() => ({
+			totalCost: sessionCost?.redTotalCost,
+			milestoneCost: sessionCost?.redCostMilestone,
+			constellationCost: sessionCost?.redConstellationCost,
+			refinementCost: sessionCost?.redRefinementCost,
+			levelCost: sessionCost?.redLevelCost,
+			timeBonusCost: sessionCost?.redTimeBonusCost,
+		}),
+		[sessionCost],
 	);
 
 	const getAvailableCharactersForAction = useCallback(() => {
@@ -557,18 +673,7 @@ function RouteComponent() {
 	};
 
 	const onConfirmCharacter = async () => {
-		if (!pendingCharacter || !currentAction) {
-			return;
-		}
-
-		if (!isRealtimeMatch || !match?.id) {
-			const isConfirmed = applyCharacterToDraft(pendingCharacter);
-
-			if (!isConfirmed) {
-				return;
-			}
-
-			setPendingCharacter(null);
+		if (!pendingCharacter || !currentAction || !match?.id) {
 			return;
 		}
 
@@ -576,113 +681,52 @@ function RouteComponent() {
 			return;
 		}
 
+		const characterId = getBanPickCharacterId(pendingCharacter);
+		const nextAction = DRAFT_SEQUENCE[draftStep + 1];
+		const ensuredNextTurn = nextAction
+			? mapDraftSideToPlayerSide(nextAction.side)
+			: undefined;
+		const previousMatchState = pageMatchState;
+
+		setPendingCharacter(null);
+		setPageMatchState((prev) => {
+			if (!prev) {
+				return prev;
+			}
+
+			return applyDraftActionToMatchState(
+				prev,
+				currentAction,
+				characterId,
+				ensuredNextTurn,
+			);
+		});
 		setIsSubmittingTurnAction(true);
 
 		try {
 			if (currentAction.type === "ban") {
-				await matchApi.banChar(
-					match.id,
-					getBanPickCharacterId(pendingCharacter),
-				);
+				await matchApi.banChar(match.id, characterId);
 			} else {
-				await matchApi.pickChar(
-					match.id,
-					getBanPickCharacterId(pendingCharacter),
-				);
+				await matchApi.pickChar(match.id, characterId);
 			}
 
-			const nextAction = MOCK_DRAFT_SEQUENCE[draftStep + 1];
-			if (nextAction) {
+			if (nextAction && ensuredNextTurn !== undefined) {
 				await matchApi.updateTurn(match.id, {
-					turn: mapDraftSideToPlayerSide(nextAction.side),
+					turn: ensuredNextTurn,
 				});
 			}
-
-			setPendingCharacter(null);
 		} catch {
+			setPageMatchState(previousMatchState);
 			toast.error("Failed to submit turn action");
 		} finally {
 			setIsSubmittingTurnAction(false);
 		}
 	};
 
-	const onResetDraft = () => {
-		setDraftState(INITIAL_DRAFT_STATE);
-		setDraftStep(0);
-		setTurnRemainingSeconds(TURN_DURATION_SECONDS);
-		setPendingCharacter(null);
-		autoResolvedStepRef.current = null;
-	};
-
-	const onFastForwardDraft = () => {
-		if (isRealtimeMatch) {
-			toast.info("Fast forward is only available for mock draft");
-			return;
-		}
-
-		if (isDraftCompleted) {
-			return;
-		}
-
-		setDraftState((prevState) => {
-			const nextState: AccountDraftState = {
-				blue: {
-					bans: [...prevState.blue.bans],
-					picks: [...prevState.blue.picks],
-				},
-				red: {
-					bans: [...prevState.red.bans],
-					picks: [...prevState.red.picks],
-				},
-			};
-
-			const selectedNames = new Set<string>();
-
-			[
-				...nextState.blue.bans,
-				...nextState.blue.picks,
-				...nextState.red.bans,
-				...nextState.red.picks,
-			].forEach((character) =>
-				selectedNames.add(getBanPickCharacterId(character)),
-			);
-
-			for (let step = draftStep; step < MOCK_DRAFT_SEQUENCE.length; step += 1) {
-				const action = MOCK_DRAFT_SEQUENCE[step];
-				const sidePool =
-					action.side === "blue" ? blueCharacters : redCharacters;
-				const availablePool = sidePool.filter(
-					(character) => !selectedNames.has(getBanPickCharacterId(character)),
-				);
-
-				if (availablePool.length === 0) {
-					continue;
-				}
-
-				const randomCharacter =
-					availablePool[Math.floor(Math.random() * availablePool.length)];
-				selectedNames.add(getBanPickCharacterId(randomCharacter));
-
-				if (action.type === "ban") {
-					nextState[action.side].bans.push(randomCharacter);
-				} else {
-					nextState[action.side].picks.push(randomCharacter);
-				}
-			}
-
-			return nextState;
-		});
-
-		setDraftStep(MOCK_DRAFT_SEQUENCE.length);
-		setTurnRemainingSeconds(0);
-		setPendingCharacter(null);
-		autoResolvedStepRef.current = null;
-		toast.info("Draft fast-forwarded");
-	};
-
 	const onPickBlueWeapon = async (
 		character: BanPickCharacter,
 		weaponId: number,
+		weaponRefinement: number,
 	) => {
 		if (!isRealtimeMatch || !match?.id) {
 			return;
@@ -693,7 +737,36 @@ function RouteComponent() {
 		}
 
 		try {
-			await matchApi.pickWeapon(match.id, character.id, String(weaponId));
+			await matchApi.pickWeapon(
+				match.id,
+				character.id,
+				String(weaponId),
+				weaponRefinement,
+			);
+
+			const matchSessionId = Number(pageMatchState?.currentSession);
+			if (!Number.isInteger(matchSessionId) || matchSessionId <= 0) {
+				return;
+			}
+
+			const pickedWeapon = weapons.find((weapon) => weapon.id === weaponId);
+			const response = await sessionCostApi.calculateSessionCost(matchSessionId, {
+				characterId: Number(character.id),
+				activatedConstellation: character.constellation,
+				characterLevel: character.level,
+				weaponId,
+				weaponRefinement,
+				weaponRarity: pickedWeapon?.rarity,
+				side: PlayerSide.BLUE,
+			});
+
+			if (response.data) {
+				setSessionCost(response.data);
+				setBlueSelectedWeaponRefinementByCharacterId((prev) => ({
+					...prev,
+					[character.id]: weaponRefinement,
+				}));
+			}
 		} catch {
 			toast.error(`Failed to pick weapon for ${character.name}`);
 			throw new Error("Failed to pick weapon");
@@ -703,6 +776,7 @@ function RouteComponent() {
 	const onPickRedWeapon = async (
 		character: BanPickCharacter,
 		weaponId: number,
+		weaponRefinement: number,
 	) => {
 		if (!isRealtimeMatch || !match?.id) {
 			return;
@@ -713,7 +787,36 @@ function RouteComponent() {
 		}
 
 		try {
-			await matchApi.pickWeapon(match.id, character.id, String(weaponId));
+			await matchApi.pickWeapon(
+				match.id,
+				character.id,
+				String(weaponId),
+				weaponRefinement,
+			);
+
+			const matchSessionId = Number(pageMatchState?.currentSession);
+			if (!Number.isInteger(matchSessionId) || matchSessionId <= 0) {
+				return;
+			}
+
+			const pickedWeapon = weapons.find((weapon) => weapon.id === weaponId);
+			const response = await sessionCostApi.calculateSessionCost(matchSessionId, {
+				characterId: Number(character.id),
+				activatedConstellation: character.constellation,
+				characterLevel: character.level,
+				weaponId,
+				weaponRefinement,
+				weaponRarity: pickedWeapon?.rarity,
+				side: PlayerSide.RED,
+			});
+
+			if (response.data) {
+				setSessionCost(response.data);
+				setRedSelectedWeaponRefinementByCharacterId((prev) => ({
+					...prev,
+					[character.id]: weaponRefinement,
+				}));
+			}
 		} catch {
 			toast.error(`Failed to pick weapon for ${character.name}`);
 			throw new Error("Failed to pick weapon");
@@ -722,67 +825,147 @@ function RouteComponent() {
 
 	useEffect(() => {
 		setPageMatchState(matchState);
+		setSessionCost(null);
+		setBlueSelectedWeaponRefinementByCharacterId({});
+		setRedSelectedWeaponRefinementByCharacterId({});
+		sessionRecordInputRef.current = EMPTY_SESSION_RECORD_INPUT;
+		lastCalculatedTurnRef.current = null;
 	}, [matchState]);
 
 	useEffect(() => {
-		if (!isRealtimeMatch || !pageMatchState) {
+		if (!match?.id || !pageMatchState) {
 			return;
 		}
 
-		if (bluePlayer?.id && !blueAccountCharactersResponse) {
+		const matchSessionId = Number(pageMatchState.currentSession);
+		if (!Number.isInteger(matchSessionId) || matchSessionId <= 0) {
+			setSessionCost(null);
 			return;
 		}
 
-		if (redPlayer?.id && !redAccountCharactersResponse) {
-			return;
-		}
+		let isCancelled = false;
 
-		const nextDraftState: AccountDraftState = {
-			blue: {
-				bans: mapCharacterNamesToAccountCharacters(
-					allMatchCharacters,
-					pageMatchState.blueBanChars,
-				),
-				picks: mapCharacterNamesToAccountCharacters(
-					blueCharacters,
-					pageMatchState.blueSelectedChars,
-				),
-			},
-			red: {
-				bans: mapCharacterNamesToAccountCharacters(
-					allMatchCharacters,
-					pageMatchState.redBanChars,
-				),
-				picks: mapCharacterNamesToAccountCharacters(
-					redCharacters,
-					pageMatchState.redSelectedChars,
-				),
-			},
+		void (async () => {
+			try {
+				const response = await sessionCostApi.getCurrentSessionCost(match.id);
+				if (!isCancelled) {
+					setSessionCost(response.data ?? null);
+				}
+			} catch {
+				if (!isCancelled) {
+					setSessionCost(null);
+				}
+			}
+		})();
+
+		return () => {
+			isCancelled = true;
 		};
+	}, [match?.id, pageMatchState?.currentSession]);
 
-		setDraftState(nextDraftState);
+	useEffect(() => {
+		if (!pageMatchState) {
+			return;
+		}
 
-		const nextDraftStep = Math.min(
-			pageMatchState.blueBanChars.length +
-				pageMatchState.blueSelectedChars.length +
-				pageMatchState.redBanChars.length +
-				pageMatchState.redSelectedChars.length,
-			MOCK_DRAFT_SEQUENCE.length,
-		);
+		if (isDraftCompleted) {
+			return;
+		}
 
-		setDraftStep(nextDraftStep);
-		setPendingCharacter(null);
-		autoResolvedStepRef.current = null;
+		const matchSessionId = Number(pageMatchState.currentSession);
+		if (!Number.isInteger(matchSessionId) || matchSessionId <= 0) {
+			return;
+		}
+
+		const completedTurn = draftStep - 1;
+		if (completedTurn < 0) {
+			return;
+		}
+
+		const latestAction = DRAFT_SEQUENCE[completedTurn];
+		if (!latestAction) {
+			return;
+		}
+
+		const latestCharacters =
+			latestAction.type === "ban"
+				? draftState[latestAction.side].bans
+				: draftState[latestAction.side].picks;
+
+		const latestCharacter = latestCharacters[latestCharacters.length - 1];
+		if (!latestCharacter) {
+			return;
+		}
+
+		const latestCharacterId = getBanPickCharacterId(latestCharacter);
+		const lastCalculatedKey = [
+			matchSessionId,
+			completedTurn,
+			latestAction.side,
+			latestAction.type,
+			latestCharacterId,
+		].join(":");
+
+		if (lastCalculatedTurnRef.current === lastCalculatedKey) {
+			return;
+		}
+
+		// Reserve key before requesting to avoid duplicate calls from rapid state updates
+		// (e.g. optimistic update + socket sync for the same turn).
+		lastCalculatedTurnRef.current = lastCalculatedKey;
+
+		const selectedWeaponId =
+			latestAction.type === "pick"
+				? latestAction.side === "blue"
+					? blueSelectedWeaponByCharacterId[latestCharacterId]
+					: redSelectedWeaponByCharacterId[latestCharacterId]
+				: undefined;
+
+		const selectedWeapon = selectedWeaponId
+			? weapons.find((weapon) => weapon.id === selectedWeaponId)
+			: undefined;
+
+		const selectedWeaponRefinement =
+			latestAction.type === "pick"
+				? latestAction.side === "blue"
+					? blueSelectedWeaponRefinementByCharacterId[latestCharacterId]
+					: redSelectedWeaponRefinementByCharacterId[latestCharacterId]
+				: undefined;
+
+		void (async () => {
+			try {
+				const response = await sessionCostApi.calculateSessionCost(matchSessionId, {
+					characterId: latestCharacter.characterId,
+					activatedConstellation: latestCharacter.activatedConstellation,
+					characterLevel: latestCharacter.characterLevel,
+					weaponId: selectedWeapon?.id,
+					weaponRefinement:
+						selectedWeaponRefinement ?? (selectedWeapon ? 1 : undefined),
+					weaponRarity: selectedWeapon?.rarity,
+					side: mapDraftSideToPlayerSide(latestAction.side),
+					currentTurn: completedTurn,
+				});
+
+				if (response.data) {
+					setSessionCost(response.data);
+				}
+			} catch {
+				if (lastCalculatedTurnRef.current === lastCalculatedKey) {
+					lastCalculatedTurnRef.current = null;
+				}
+				// Cost calculation is best-effort and should not block draft flow.
+			}
+		})();
 	}, [
-		blueAccountCharactersResponse,
-		allMatchCharacters,
-		blueCharacters,
-		bluePlayer?.id,
-		isRealtimeMatch,
+		blueSelectedWeaponByCharacterId,
+		blueSelectedWeaponRefinementByCharacterId,
+		draftState,
+		draftStep,
+		isDraftCompleted,
 		pageMatchState,
-		redAccountCharactersResponse,
-		redCharacters,
-		redPlayer?.id,
+		redSelectedWeaponByCharacterId,
+		redSelectedWeaponRefinementByCharacterId,
+		weapons,
 	]);
 
 	useEffect(() => {
@@ -826,8 +1009,8 @@ function RouteComponent() {
 		if (availableCharacters.length === 0) {
 			toast.error("No character available for auto pick");
 			setTurnRemainingSeconds(TURN_DURATION_SECONDS);
-			setDraftStep((prevStep) => prevStep + 1);
 			setPendingCharacter(null);
+			autoResolvedStepRef.current = null;
 			return;
 		}
 
@@ -835,43 +1018,42 @@ function RouteComponent() {
 			availableCharacters[
 				Math.floor(Math.random() * availableCharacters.length)
 			];
+		const randomCharacterId = getBanPickCharacterId(randomCharacter);
+		const nextAction = DRAFT_SEQUENCE[draftStep + 1];
+		const ensuredNextTurn = nextAction
+			? mapDraftSideToPlayerSide(nextAction.side)
+			: undefined;
+		const previousMatchState = pageMatchState;
 
-		if (!isRealtimeMatch || !match?.id) {
-			const isApplied = applyCharacterToDraft(randomCharacter);
+		if (isSubmittingTurnAction || !match?.id) {
+			return;
+		}
 
-			if (isApplied) {
-				setPendingCharacter(null);
-				toast.info(
-					`Time over. Auto selected ${randomCharacter.characters.name}`,
-				);
+		setPageMatchState((prev) => {
+			if (!prev) {
+				return prev;
 			}
-			return;
-		}
 
-		if (isSubmittingTurnAction) {
-			return;
-		}
-
+			return applyDraftActionToMatchState(
+				prev,
+				currentAction,
+				randomCharacterId,
+				ensuredNextTurn,
+			);
+		});
 		setIsSubmittingTurnAction(true);
 
 		void (async () => {
 			try {
 				if (currentAction.type === "ban") {
-					await matchApi.banChar(
-						match.id,
-						getBanPickCharacterId(randomCharacter),
-					);
+					await matchApi.banChar(match.id, randomCharacterId);
 				} else {
-					await matchApi.pickChar(
-						match.id,
-						getBanPickCharacterId(randomCharacter),
-					);
+					await matchApi.pickChar(match.id, randomCharacterId);
 				}
 
-				const nextAction = MOCK_DRAFT_SEQUENCE[draftStep + 1];
-				if (nextAction) {
+				if (nextAction && ensuredNextTurn !== undefined) {
 					await matchApi.updateTurn(match.id, {
-						turn: mapDraftSideToPlayerSide(nextAction.side),
+						turn: ensuredNextTurn,
 					});
 				}
 
@@ -880,6 +1062,7 @@ function RouteComponent() {
 					`Time over. Auto selected ${randomCharacter.characters.name}`,
 				);
 			} catch {
+				setPageMatchState(previousMatchState);
 				toast.error("Failed to auto submit turn action");
 				setTurnRemainingSeconds(TURN_DURATION_SECONDS);
 				autoResolvedStepRef.current = null;
@@ -888,13 +1071,11 @@ function RouteComponent() {
 			}
 		})();
 	}, [
-		applyCharacterToDraft,
 		currentAction,
 		draftStep,
 		getAvailableCharactersForAction,
 		isDraftCompleted,
 		isCurrentUserTurn,
-		isRealtimeMatch,
 		isSubmittingTurnAction,
 		match?.id,
 		turnRemainingSeconds,
@@ -910,12 +1091,20 @@ function RouteComponent() {
 
 						{/* Timer */}
 						<div className="timer-side flex items-center gap-4">
-							<BanPickTimerInputs isRealtimeMatch={isRealtimeMatch} />
+							<BanPickTimerInputs
+								isRealtimeMatch={isRealtimeMatch}
+								side="blue"
+								onDebouncedValuesChange={onDebouncedTimerValuesChange}
+							/>
 						</div>
 
 						<div className="grid grid-rows-2 gap-4 h-full overflow-hidden">
 							<div className="grid grid-cols-7 gap-8">
-								<BanPickPlayerInfo side="blue" player={bluePlayer} />
+								<BanPickPlayerInfo
+									side="blue"
+									player={bluePlayer}
+									cost={blueSideCost}
+								/>
 
 								<BanPickDraftSlots
 									side="blue"
@@ -985,22 +1174,8 @@ function RouteComponent() {
 							<p className="mt-3 text-xs text-white/80">
 								{isDraftCompleted
 									? "Draft completed"
-									: `Step ${draftStep + 1}/${MOCK_DRAFT_SEQUENCE.length}: ${currentAction?.side.toUpperCase()} ${currentAction?.type.toUpperCase()}`}
+									: `Step ${draftStep + 1}/${DRAFT_SEQUENCE.length}: ${currentAction?.side.toUpperCase()} ${currentAction?.type.toUpperCase()}`}
 							</p>
-							<button
-								type="button"
-								onClick={onResetDraft}
-								className="mt-3 h-8 w-full rounded-md border border-white/40 bg-white/10 text-xs hover:bg-white/20"
-							>
-								Reset mock draft
-							</button>
-							<button
-								type="button"
-								onClick={onFastForwardDraft}
-								className="mt-2 h-8 w-full rounded-md border border-white/40 bg-white/10 text-xs hover:bg-white/20"
-							>
-								Fast forward draft
-							</button>
 						</div>
 
 						<Button
@@ -1020,7 +1195,11 @@ function RouteComponent() {
 						<div className="bg-transparent bg-radial from-red-400/50 from-0% to-white/0 to-70% fixed inset-0 z-[-2] left-[1500px] top-0 h-screen aspect-square rounded-full"></div>
 
 						<div className="timer-side flex items-center gap-4">
-							<BanPickTimerInputs isRealtimeMatch={isRealtimeMatch} />
+							<BanPickTimerInputs
+								isRealtimeMatch={isRealtimeMatch}
+								side="red"
+								onDebouncedValuesChange={onDebouncedTimerValuesChange}
+							/>
 						</div>
 
 						<div className="grid grid-rows-2 gap-4 h-full overflow-hidden">
@@ -1034,7 +1213,11 @@ function RouteComponent() {
 									pendingCharacter={pendingBanPickCharacter}
 								/>
 
-								<BanPickPlayerInfo side="red" player={redPlayer} />
+								<BanPickPlayerInfo
+									side="red"
+									player={redPlayer}
+									cost={redSideCost}
+								/>
 							</div>
 
 							{isDraftCompleted ? (

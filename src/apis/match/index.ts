@@ -67,9 +67,14 @@ async function banChar(matchId: string, charId: string) {
 	return response.data;
 }
 
-async function pickWeapon(matchId: string, charId: string, weaponId: string) {
+async function pickWeapon(
+	matchId: string,
+	charId: string,
+	weaponId: string,
+	weaponRefinement: number,
+) {
 	const response = await http.put<BaseApiResponse>(
-		`/api/user/match/${matchId}/pick-weapon/${charId}/${weaponId}`,
+		`/api/user/match/${matchId}/pick-weapon/${charId}/${weaponId}/${weaponRefinement}`,
 	);
 	return response.data;
 }
