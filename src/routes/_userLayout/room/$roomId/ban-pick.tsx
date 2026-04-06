@@ -22,12 +22,22 @@ import type {
 	DraftAction,
 	BanPickCharacter,
 } from "@/components/match/ban-pick.types";
-import { CharacterElementDetail, MatchType, PlayerSide } from "@/lib/constants";
+import {
+	CharacterElementDetail,
+	MatchType,
+	PlayerSide,
+	MatchStatus,
+} from "@/lib/constants";
 import { SocketEvent } from "@/lib/constants";
 import { selectAuthProfile } from "@/lib/redux/auth.slice";
 import { useAppSelector } from "@/hooks/use-app-selector";
 import { useSocketEvent } from "@/hooks/use-socket-event";
-import { createFileRoute, useLoaderData } from "@tanstack/react-router";
+import { useDebounce } from "@/hooks/use-debounce";
+import {
+	createFileRoute,
+	useLoaderData,
+	useRouter,
+} from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -102,6 +112,7 @@ function mapSelectedWeaponsByCharacterId(
 
 	picks.forEach((character, index) => {
 		const rawWeaponId = weaponIds[index];
+		2;
 		if (!rawWeaponId) {
 			return;
 		}
@@ -177,6 +188,99 @@ const EMPTY_SESSION_RECORD_INPUT: SaveSessionRecordInput = {
 	redFinalTime: 0,
 };
 
+function getExpectedDraftCounts() {
+	return DRAFT_SEQUENCE.reduce(
+		(acc, action) => {
+			if (action.side === "blue") {
+				if (action.type === "ban") {
+					acc.blueBanCount += 1;
+				} else {
+					acc.bluePickCount += 1;
+				}
+			} else if (action.type === "ban") {
+				acc.redBanCount += 1;
+			} else {
+				acc.redPickCount += 1;
+			}
+
+			return acc;
+		},
+		{
+			blueBanCount: 0,
+			bluePickCount: 0,
+			redBanCount: 0,
+			redPickCount: 0,
+		},
+	);
+}
+
+function isValidSelectedWeaponId(weaponId?: string) {
+	const normalizedWeaponId = Number(weaponId);
+	return Number.isInteger(normalizedWeaponId) && normalizedWeaponId > 0;
+}
+
+function validateSessionCompletionData(
+	matchState: MatchStateResponse,
+	record: SaveSessionRecordInput,
+) {
+	const validationErrors: string[] = [];
+	const expectedDraftCounts = getExpectedDraftCounts();
+
+	if (matchState.blueBanChars.length !== expectedDraftCounts.blueBanCount) {
+		validationErrors.push("Blue ban phase is not completed.");
+	}
+
+	if (matchState.redBanChars.length !== expectedDraftCounts.redBanCount) {
+		validationErrors.push("Red ban phase is not completed.");
+	}
+
+	if (
+		matchState.blueSelectedChars.length !== expectedDraftCounts.bluePickCount
+	) {
+		validationErrors.push("Blue pick phase is not completed.");
+	}
+
+	if (matchState.redSelectedChars.length !== expectedDraftCounts.redPickCount) {
+		validationErrors.push("Red pick phase is not completed.");
+	}
+
+	for (let index = 0; index < expectedDraftCounts.bluePickCount; index += 1) {
+		if (!isValidSelectedWeaponId(matchState.blueSelectedWeapons[index])) {
+			validationErrors.push(
+				"Blue side must select weapon for all picked characters.",
+			);
+			break;
+		}
+	}
+
+	for (let index = 0; index < expectedDraftCounts.redPickCount; index += 1) {
+		if (!isValidSelectedWeaponId(matchState.redSelectedWeapons[index])) {
+			validationErrors.push(
+				"Red side must select weapon for all picked characters.",
+			);
+			break;
+		}
+	}
+
+	const expectedBlueFinalTime =
+		record.blueChamber1 + record.blueChamber2 + record.blueChamber3;
+	if (record.blueFinalTime <= 0) {
+		validationErrors.push("Blue final time must be greater than 0.");
+	} else if (record.blueFinalTime !== expectedBlueFinalTime) {
+		validationErrors.push("Blue final time must equal sum of chamber times.");
+	}
+
+	const expectedRedFinalTime =
+		record.redChamber1 + record.redChamber2 + record.redChamber3;
+	if (record.redFinalTime <= 0) {
+		validationErrors.push("Red final time must be greater than 0.");
+	} else if (record.redFinalTime !== expectedRedFinalTime) {
+		validationErrors.push("Red final time must equal sum of chamber times.");
+	}
+
+	return validationErrors;
+}
+
 function filterCharacters(
 	characters: AccountCharacterResponse[],
 	search: string,
@@ -245,6 +349,7 @@ function RouteComponent() {
 	const { match, matchState } = useLoaderData({
 		from: "/_userLayout/room/$roomId",
 	});
+	const router = useRouter();
 	const profile = useAppSelector(selectAuthProfile);
 	const bluePlayer = match?.bluePlayer;
 	const redPlayer = match?.redPlayer;
@@ -270,52 +375,55 @@ function RouteComponent() {
 	const [pageMatchState, setPageMatchState] = useState<
 		MatchStateResponse | undefined
 	>(matchState);
-	const [sessionCost, setSessionCost] = useState<SessionCostResponse | null>(null);
-	const [blueSelectedWeaponRefinementByCharacterId, setBlueSelectedWeaponRefinementByCharacterId] =
-		useState<Record<string, number | undefined>>({});
-	const [redSelectedWeaponRefinementByCharacterId, setRedSelectedWeaponRefinementByCharacterId] =
-		useState<Record<string, number | undefined>>({});
+	const [sessionCost, setSessionCost] = useState<SessionCostResponse | null>(
+		null,
+	);
+	const [
+		blueSelectedWeaponRefinementByCharacterId,
+		setBlueSelectedWeaponRefinementByCharacterId,
+	] = useState<Record<string, number | undefined>>({});
+	const [
+		redSelectedWeaponRefinementByCharacterId,
+		setRedSelectedWeaponRefinementByCharacterId,
+	] = useState<Record<string, number | undefined>>({});
 	const autoResolvedStepRef = useRef<number | null>(null);
 	const lastCalculatedTurnRef = useRef<string | null>(null);
 	const sessionRecordInputRef = useRef<SaveSessionRecordInput>(
 		EMPTY_SESSION_RECORD_INPUT,
 	);
 
-	const syncMatchStateFromServer = useCallback(async () => {
-		if (!match?.id) {
-			return;
-		}
+	const triggerDebouncedSaveSessionRecord = useDebounce(
+		(matchSessionId: number, recordInput: SaveSessionRecordInput) => {
+			void sessionRecordApi
+				.saveSessionRecord(matchSessionId, recordInput)
+				.catch(() => {
+					// Session record autosave should not interrupt match flow.
+				});
+		},
+		5000,
+	);
 
-		try {
-			const response = await matchApi.getMatchState(match.id);
-			setPageMatchState(response.data);
-		} catch {
-			// Socket sync is best-effort and should not interrupt page interactions.
-		}
-	}, [match?.id]);
-
-	const onDebouncedTimerValuesChange = useCallback(
+	const onTimerValuesChange = useCallback(
 		(side: "blue" | "red", values: BanPickTimerSideValues) => {
 			const nextRecordInput: SaveSessionRecordInput =
 				side === "blue"
 					? {
-						...sessionRecordInputRef.current,
-						blueChamber1: values.chamber1,
-						blueChamber2: values.chamber2,
-						blueChamber3: values.chamber3,
-						blueResetTimes: values.resetTimes,
-						blueFinalTime:
-							values.chamber1 + values.chamber2 + values.chamber3,
-					}
+							...sessionRecordInputRef.current,
+							blueChamber1: values.chamber1,
+							blueChamber2: values.chamber2,
+							blueChamber3: values.chamber3,
+							blueResetTimes: values.resetTimes,
+							blueFinalTime:
+								values.chamber1 + values.chamber2 + values.chamber3,
+						}
 					: {
-						...sessionRecordInputRef.current,
-						redChamber1: values.chamber1,
-						redChamber2: values.chamber2,
-						redChamber3: values.chamber3,
-						redResetTimes: values.resetTimes,
-						redFinalTime:
-							values.chamber1 + values.chamber2 + values.chamber3,
-					};
+							...sessionRecordInputRef.current,
+							redChamber1: values.chamber1,
+							redChamber2: values.chamber2,
+							redChamber3: values.chamber3,
+							redResetTimes: values.resetTimes,
+							redFinalTime: values.chamber1 + values.chamber2 + values.chamber3,
+						};
 
 			sessionRecordInputRef.current = nextRecordInput;
 
@@ -324,28 +432,25 @@ function RouteComponent() {
 				return;
 			}
 
-			void sessionRecordApi
-				.saveSessionRecord(matchSessionId, nextRecordInput)
-				.catch(() => {
-					// Session record autosave should not interrupt match flow.
-				});
+			triggerDebouncedSaveSessionRecord(matchSessionId, nextRecordInput);
 		},
-		[pageMatchState?.currentSession],
+		[pageMatchState?.currentSession, triggerDebouncedSaveSessionRecord],
 	);
 
-	useSocketEvent(
-		SocketEvent.UPDATE_MATCH_SESSION,
-		() => {
-			void syncMatchStateFromServer();
-		},
-	);
+	useSocketEvent(SocketEvent.UPDATE_MATCH_STATE, (data: MatchStateResponse) => {
+		setPageMatchState(data);
+	});
 
-	useSocketEvent(
-		SocketEvent.UPDATE_BAN_PICK_SLOT,
-		() => {
-			void syncMatchStateFromServer();
-		},
-	);
+	useSocketEvent(SocketEvent.MATCH_UPDATED, (data: any) => {
+		if (data.status === MatchStatus.COMPLETED) {
+			void router.navigate({
+				to: "/room/$roomId/result",
+				params: { roomId: match?.id ?? "" },
+			});
+		} else {
+			void router.invalidate();
+		}
+	});
 
 	const { data: blueAccountCharactersResponse } = useQuery({
 		queryKey: [
@@ -709,12 +814,6 @@ function RouteComponent() {
 			} else {
 				await matchApi.pickChar(match.id, characterId);
 			}
-
-			if (nextAction && ensuredNextTurn !== undefined) {
-				await matchApi.updateTurn(match.id, {
-					turn: ensuredNextTurn,
-				});
-			}
 		} catch {
 			setPageMatchState(previousMatchState);
 			toast.error("Failed to submit turn action");
@@ -750,15 +849,18 @@ function RouteComponent() {
 			}
 
 			const pickedWeapon = weapons.find((weapon) => weapon.id === weaponId);
-			const response = await sessionCostApi.calculateSessionCost(matchSessionId, {
-				characterId: Number(character.id),
-				activatedConstellation: character.constellation,
-				characterLevel: character.level,
-				weaponId,
-				weaponRefinement,
-				weaponRarity: pickedWeapon?.rarity,
-				side: PlayerSide.BLUE,
-			});
+			const response = await sessionCostApi.calculateSessionCost(
+				matchSessionId,
+				{
+					characterId: Number(character.id),
+					activatedConstellation: character.constellation,
+					characterLevel: character.level,
+					weaponId,
+					weaponRefinement,
+					weaponRarity: pickedWeapon?.rarity,
+					side: PlayerSide.BLUE,
+				},
+			);
 
 			if (response.data) {
 				setSessionCost(response.data);
@@ -800,15 +902,18 @@ function RouteComponent() {
 			}
 
 			const pickedWeapon = weapons.find((weapon) => weapon.id === weaponId);
-			const response = await sessionCostApi.calculateSessionCost(matchSessionId, {
-				characterId: Number(character.id),
-				activatedConstellation: character.constellation,
-				characterLevel: character.level,
-				weaponId,
-				weaponRefinement,
-				weaponRarity: pickedWeapon?.rarity,
-				side: PlayerSide.RED,
-			});
+			const response = await sessionCostApi.calculateSessionCost(
+				matchSessionId,
+				{
+					characterId: Number(character.id),
+					activatedConstellation: character.constellation,
+					characterLevel: character.level,
+					weaponId,
+					weaponRefinement,
+					weaponRarity: pickedWeapon?.rarity,
+					side: PlayerSide.RED,
+				},
+			);
 
 			if (response.data) {
 				setSessionCost(response.data);
@@ -934,17 +1039,20 @@ function RouteComponent() {
 
 		void (async () => {
 			try {
-				const response = await sessionCostApi.calculateSessionCost(matchSessionId, {
-					characterId: latestCharacter.characterId,
-					activatedConstellation: latestCharacter.activatedConstellation,
-					characterLevel: latestCharacter.characterLevel,
-					weaponId: selectedWeapon?.id,
-					weaponRefinement:
-						selectedWeaponRefinement ?? (selectedWeapon ? 1 : undefined),
-					weaponRarity: selectedWeapon?.rarity,
-					side: mapDraftSideToPlayerSide(latestAction.side),
-					currentTurn: completedTurn,
-				});
+				const response = await sessionCostApi.calculateSessionCost(
+					matchSessionId,
+					{
+						characterId: latestCharacter.characterId,
+						activatedConstellation: latestCharacter.activatedConstellation,
+						characterLevel: latestCharacter.characterLevel,
+						weaponId: selectedWeapon?.id,
+						weaponRefinement:
+							selectedWeaponRefinement ?? (selectedWeapon ? 1 : undefined),
+						weaponRarity: selectedWeapon?.rarity,
+						side: mapDraftSideToPlayerSide(latestAction.side),
+						currentTurn: completedTurn,
+					},
+				);
 
 				if (response.data) {
 					setSessionCost(response.data);
@@ -1051,12 +1159,6 @@ function RouteComponent() {
 					await matchApi.pickChar(match.id, randomCharacterId);
 				}
 
-				if (nextAction && ensuredNextTurn !== undefined) {
-					await matchApi.updateTurn(match.id, {
-						turn: ensuredNextTurn,
-					});
-				}
-
 				setPendingCharacter(null);
 				toast.info(
 					`Time over. Auto selected ${randomCharacter.characters.name}`,
@@ -1094,7 +1196,7 @@ function RouteComponent() {
 							<BanPickTimerInputs
 								isRealtimeMatch={isRealtimeMatch}
 								side="blue"
-								onDebouncedValuesChange={onDebouncedTimerValuesChange}
+								onValuesChange={onTimerValuesChange}
 							/>
 						</div>
 
@@ -1178,17 +1280,75 @@ function RouteComponent() {
 							</p>
 						</div>
 
-						<Button
-							onClick={onConfirmCharacter}
-							disabled={
-								isDraftCompleted ||
-								!isCurrentUserTurn ||
-								!pendingCharacter ||
-								isSubmittingTurnAction
-							}
-						>
-							Confirm
-						</Button>
+						<div className="flex flex-col gap-2 w-full">
+							<Button
+								onClick={async () => {
+									if (isDraftCompleted) {
+										if (profile?.id !== match?.host?.id) return;
+										if (!pageMatchState) {
+											toast.error(
+												"Match state is unavailable. Please refresh and try again.",
+											);
+											return;
+										}
+										const record = sessionRecordInputRef.current;
+										const sessionValidationErrors =
+											validateSessionCompletionData(pageMatchState, record);
+										if (sessionValidationErrors.length > 0) {
+											toast.error(
+												sessionValidationErrors[0] ??
+													"Session data is incomplete.",
+											);
+											return;
+										}
+
+										try {
+											setIsSubmittingTurnAction(true);
+											const matchSessionId = Number(
+												pageMatchState?.currentSession,
+											);
+											if (
+												Number.isInteger(matchSessionId) &&
+												matchSessionId > 0
+											) {
+												await sessionRecordApi.saveSessionRecord(
+													matchSessionId,
+													record,
+												);
+											}
+											if (match?.id) await matchApi.completeSession(match.id);
+											toast.success("Session completed");
+											if (match?.id) {
+												void router.navigate({
+													to: "/room/$roomId/result",
+													params: { roomId: match.id },
+												});
+											}
+										} catch (err) {
+											toast.error("Failed to complete session");
+										} finally {
+											setIsSubmittingTurnAction(false);
+										}
+									} else {
+										onConfirmCharacter();
+									}
+								}}
+								disabled={
+									isSubmittingTurnAction ||
+									(isDraftCompleted
+										? profile?.id !== match?.host?.id
+										: !isCurrentUserTurn || !pendingCharacter)
+								}
+								className={
+									isDraftCompleted
+										? "w-full border shadow-[0_0_10px_rgba(255,255,255,0.2)]"
+										: "w-full"
+								}
+								variant={isDraftCompleted ? "secondary" : "default"}
+							>
+								{isDraftCompleted ? "Complete Session" : "Confirm"}
+							</Button>
+						</div>
 					</div>
 
 					<div className="col-span-3 flex flex-col h-dvh p-4 gap-4">
@@ -1198,7 +1358,7 @@ function RouteComponent() {
 							<BanPickTimerInputs
 								isRealtimeMatch={isRealtimeMatch}
 								side="red"
-								onDebouncedValuesChange={onDebouncedTimerValuesChange}
+								onValuesChange={onTimerValuesChange}
 							/>
 						</div>
 

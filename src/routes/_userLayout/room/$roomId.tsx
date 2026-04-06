@@ -1,5 +1,6 @@
 import { matchApi } from "@/apis/match";
 import { useSocketEvent } from "@/hooks/use-socket-event";
+import { MatchStatus } from "@/lib/constants";
 import { SocketEvent } from "@/lib/constants";
 import { store } from "@/lib/redux";
 import { socket } from "@/lib/socket";
@@ -13,10 +14,16 @@ export const Route = createFileRoute("/_userLayout/room/$roomId")({
 	},
 	loader: async ({ params }) => {
 		try {
-			const [matchResponse, matchStateResponse] = await Promise.all([
-				matchApi.getMatch(params.roomId),
-				matchApi.getMatchState(params.roomId),
-			]);
+			const matchResponse = await matchApi.getMatch(params.roomId);
+
+			if (matchResponse.data?.status === MatchStatus.COMPLETED) {
+				throw redirect({
+					to: "/room/$roomId/result",
+					params: { roomId: params.roomId },
+				});
+			}
+
+			const matchStateResponse = await matchApi.getMatchState(params.roomId);
 
 			return { match: matchResponse.data, matchState: matchStateResponse.data };
 		} catch (err) {

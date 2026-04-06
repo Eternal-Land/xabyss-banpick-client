@@ -1,6 +1,5 @@
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useDebounce } from "@/hooks/use-debounce";
 import { useEffect, useState } from "react";
 
 interface BanPickTimerSideValues {
@@ -13,7 +12,7 @@ interface BanPickTimerSideValues {
 export interface BanPickTimerInputsProps {
 	isRealtimeMatch: boolean;
 	side: "blue" | "red";
-	onDebouncedValuesChange?: (
+	onValuesChange?: (
 		side: "blue" | "red",
 		values: BanPickTimerSideValues,
 	) => void;
@@ -57,26 +56,19 @@ const parseNonNegativeInt = (value: string) => {
 export default function BanPickTimerInputs({
 	isRealtimeMatch,
 	side,
-	onDebouncedValuesChange,
+	onValuesChange,
 }: BanPickTimerInputsProps) {
 	const [chamber1Input, setChamber1Input] = useState("");
 	const [chamber2Input, setChamber2Input] = useState("");
 	const [chamber3Input, setChamber3Input] = useState("");
 	const [resetInput, setResetInput] = useState("");
 
-	const triggerDebouncedValuesChange = useDebounce(
-		(nextSide: "blue" | "red", nextValues: BanPickTimerSideValues) => {
-			onDebouncedValuesChange?.(nextSide, nextValues);
-		},
-		5000,
-	);
-
 	useEffect(() => {
-		if (!onDebouncedValuesChange) {
+		if (!onValuesChange) {
 			return;
 		}
 
-		triggerDebouncedValuesChange(side, {
+		onValuesChange(side, {
 			chamber1: parseClockToSeconds(chamber1Input),
 			chamber2: parseClockToSeconds(chamber2Input),
 			chamber3: parseClockToSeconds(chamber3Input),
@@ -88,8 +80,7 @@ export default function BanPickTimerInputs({
 		chamber3Input,
 		resetInput,
 		side,
-		onDebouncedValuesChange,
-		triggerDebouncedValuesChange,
+		onValuesChange,
 	]);
 
 	if (isRealtimeMatch) {

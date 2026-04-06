@@ -4,7 +4,6 @@ import type {
 	ListMatchesQuery,
 	MatchResponse,
 	MatchStateResponse,
-	UpdateMatchTurnInput,
 } from "./types";
 import type { BaseApiResponse } from "@/lib/types";
 import { buildSearchParams } from "@/lib/helpers";
@@ -79,10 +78,9 @@ async function pickWeapon(
 	return response.data;
 }
 
-async function updateTurn(matchId: string, input: UpdateMatchTurnInput) {
-	const response = await http.put<BaseApiResponse<MatchStateResponse>>(
-		`/api/user/match/${matchId}/turn`,
-		input,
+async function completeSession(matchId: string) {
+	const response = await http.post<BaseApiResponse>(
+		`/api/user/match/${matchId}/complete-session`,
 	);
 	return response.data;
 }
@@ -94,8 +92,8 @@ export const matchApi = {
 	getMatchState,
 	deleteMatch,
 	startMatch,
-	updateTurn,
 	pickChar,
 	banChar,
 	pickWeapon,
+	completeSession,
 } as const;

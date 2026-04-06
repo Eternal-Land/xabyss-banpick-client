@@ -8,6 +8,7 @@ export const SocketEvent = {
 	UPDATE_MATCH_SESSION: "update_match_session",
 	UPDATE_BAN_PICK_SLOT: "update_ban_pick_slot",
 	MATCH_STARTED: "match_started",
+	MATCH_UPDATED: "match_updated",
 } as const;
 
 export type SocketEventEnum = (typeof SocketEvent)[keyof typeof SocketEvent];

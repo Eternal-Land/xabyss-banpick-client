@@ -144,6 +144,13 @@ function RouteComponent() {
 									roomId: match.id,
 								},
 							});
+						} else if (match.status == MatchStatus.COMPLETED) {
+							navigate({
+								to: "/room/$roomId/result",
+								params: {
+									roomId: match.id,
+								},
+							});
 						}
 					}}
 				/>

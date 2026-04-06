@@ -15,3 +15,30 @@ export interface SessionRecordResponse extends SaveSessionRecordInput {
 	id: number;
 	matchSessionId: number;
 }
+
+export interface MatchSessionReportItemResponse {
+	matchSessionId: number;
+	sessionIndex: number;
+	sessionStatus: number;
+	currentTurn: number;
+	totalCostBlue: number;
+	totalCostRed: number;
+	blueParticipant: any | null;
+	redParticipant: any | null;
+	winnerSide: number | null;
+	blueFinalTime: number | null;
+	redFinalTime: number | null;
+	record: SessionRecordResponse | null;
+	cost: any | null;
+}
+
+export interface MatchReportDetailResponse {
+	matchId: string;
+	status: number;
+	type: number;
+	sessionCount: number;
+	host: any | null;
+	redPlayer: any | null;
+	bluePlayer: any | null;
+	sessions: MatchSessionReportItemResponse[];
+}

@@ -1,6 +1,10 @@
 import { http } from "@/lib/http";
 import type { BaseApiResponse } from "@/lib/types";
-import type { SaveSessionRecordInput, SessionRecordResponse } from "./types";
+import type {
+	MatchReportDetailResponse,
+	SaveSessionRecordInput,
+	SessionRecordResponse,
+} from "./types";
 
 async function saveSessionRecord(
 	matchSessionId: number,
@@ -13,6 +17,14 @@ async function saveSessionRecord(
 	return response.data;
 }
 
+async function getMatchReport(matchId: string) {
+	const response = await http.get<BaseApiResponse<MatchReportDetailResponse>>(
+		`/api/user/session-record/${matchId}/report`,
+	);
+	return response.data;
+}
+
 export const sessionRecordApi = {
 	saveSessionRecord,
+	getMatchReport,
 } as const;
