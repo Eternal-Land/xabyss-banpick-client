@@ -2,7 +2,7 @@ import { IconAssets } from "@/lib/constants/icon-assets";
 import { cn } from "@/lib/utils";
 
 interface PlayerInfo {
-	id: string;
+	id?: string;
 	displayName?: string;
 	ingameUuid?: string;
 	avatar?: string;
@@ -23,7 +23,8 @@ interface BanPickPlayerInfoProps {
 	cost?: SideCostInfo;
 }
 
-const toCostNumber = (value: number | undefined) => Number(value ?? 0).toFixed(2);
+const toCostNumber = (value: number | undefined) =>
+	Number(value ?? 0).toFixed(2);
 
 export default function BanPickPlayerInfo({
 	side,
