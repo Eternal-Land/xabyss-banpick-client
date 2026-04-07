@@ -1,3 +1,11 @@
+import type {
+	MatchStatusEnum,
+	MatchTypeEnum,
+	PlayerSideEnum,
+} from "@/lib/constants";
+import type { SessionCostResponse } from "@/apis/session-cost/types";
+import type { ProfileResponse } from "@/apis/self/types";
+
 export interface SaveSessionRecordInput {
 	blueChamber1: number;
 	blueChamber2: number;
@@ -20,25 +28,25 @@ export interface MatchSessionReportItemResponse {
 	matchSessionId: number;
 	sessionIndex: number;
 	sessionStatus: number;
-	currentTurn: number;
+	currentTurn: PlayerSideEnum;
 	totalCostBlue: number;
 	totalCostRed: number;
-	blueParticipant: any | null;
-	redParticipant: any | null;
-	winnerSide: number | null;
+	blueParticipant: ProfileResponse | null;
+	redParticipant: ProfileResponse | null;
+	winnerSide: PlayerSideEnum | null;
 	blueFinalTime: number | null;
 	redFinalTime: number | null;
 	record: SessionRecordResponse | null;
-	cost: any | null;
+	cost: SessionCostResponse | null;
 }
 
 export interface MatchReportDetailResponse {
 	matchId: string;
-	status: number;
-	type: number;
+	status: MatchStatusEnum;
+	type: MatchTypeEnum;
 	sessionCount: number;
-	host: any | null;
-	redPlayer: any | null;
-	bluePlayer: any | null;
+	host: ProfileResponse | null;
+	redPlayer: ProfileResponse | null;
+	bluePlayer: ProfileResponse | null;
 	sessions: MatchSessionReportItemResponse[];
 }

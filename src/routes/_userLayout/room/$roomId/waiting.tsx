@@ -133,8 +133,13 @@ function RouteComponent() {
 			return;
 		}
 
-		if (match.status === MatchStatus.WAITING) {
-			return;
+		if (match.status === MatchStatus.COMPLETED) {
+			navigate({
+				to: "/room/$roomId/result",
+				params: {
+					roomId,
+				},
+			});
 		}
 
 		if (match.status === MatchStatus.LIVE) {

@@ -21,12 +21,12 @@ import { sessionRecordApi } from "@/apis/session-record";
 import type { SaveSessionRecordInput } from "@/apis/session-record/types";
 import type { AccountCharacterResponse } from "@/apis/account-characters/types";
 import type { BanPickCharacter } from "@/components/match/ban-pick.types";
+import type { BanPickTimerInputValues } from "@/components/match/ban-pick-timer-inputs";
 import { MatchType, PlayerSide, MatchStatus } from "@/lib/constants";
 import { SocketEvent } from "@/lib/constants";
 import { selectAuthProfile } from "@/lib/redux/auth.slice";
 import { useAppSelector } from "@/hooks/use-app-selector";
 import { useSocketEvent } from "@/hooks/use-socket-event";
-import { useDebounce } from "@/hooks/use-debounce";
 import { useBanPickFilters } from "@/hooks/use-ban-pick-filters";
 import { useBanPickQueries } from "@/hooks/use-ban-pick-queries";
 import {
@@ -34,8 +34,12 @@ import {
 	useLoaderData,
 	useRouter,
 } from "@tanstack/react-router";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+
+dayjs.extend(customParseFormat);
 
 export const Route = createFileRoute("/_userLayout/room/$roomId/ban-pick")({
 	component: RouteComponent,
@@ -51,19 +55,166 @@ interface AccountDraftState {
 	red: AccountDraftSideState;
 }
 
-interface BanPickTimerSideValues {
-	chamber1: number;
-	chamber2: number;
-	chamber3: number;
-	resetTimes: number;
+interface BanPickTimerInputsBySide {
+	blue: BanPickTimerInputValues;
+	red: BanPickTimerInputValues;
 }
+
+const EMPTY_TIMER_SIDE_VALUES: BanPickTimerInputValues = {
+	chamber1: "",
+	chamber2: "",
+	chamber3: "",
+	reset: "",
+};
+
+const EMPTY_TIMER_INPUTS_BY_SIDE: BanPickTimerInputsBySide = {
+	blue: EMPTY_TIMER_SIDE_VALUES,
+	red: EMPTY_TIMER_SIDE_VALUES,
+};
 
 const EMPTY_DRAFT_STATE: AccountDraftState = {
 	blue: { bans: [], picks: [] },
 	red: { bans: [], picks: [] },
 };
 
+const formatClockFromSeconds = (value: number) => {
+	const normalized = Number.isFinite(value)
+		? Math.max(0, Math.floor(value))
+		: 0;
+	const minutes = Math.floor(normalized / 60);
+	const seconds = normalized % 60;
+	return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+};
+
+const parseClockToSecondsStrict = (value: string) => {
+	const normalized = value.trim();
+	if (!normalized) {
+		return {
+			value: 0,
+			error: "Time is required in mm:ss format.",
+		};
+	}
+
+	const parsed = dayjs(normalized, "mm:ss", true);
+	if (!parsed.isValid()) {
+		return {
+			value: 0,
+			error: "Time must be in mm:ss format.",
+		};
+	}
+
+	return {
+		value: parsed.minute() * 60 + parsed.second(),
+		error: null,
+	};
+};
+
+const parseResetStrict = (value: string) => {
+	const normalized = value.trim();
+	if (!normalized) {
+		return {
+			value: 0,
+			error: null,
+		};
+	}
+
+	if (!/^\d+$/.test(normalized)) {
+		return {
+			value: 0,
+			error: "Reset must be a non-negative integer.",
+		};
+	}
+
+	return {
+		value: Number(normalized),
+		error: null,
+	};
+};
+
+const parseTimerInputsToRecord = (
+	timerInputs: BanPickTimerInputsBySide,
+	isRealtimeMatch: boolean,
+) => {
+	const errors: string[] = [];
+
+	const blueChamber1 = parseClockToSecondsStrict(timerInputs.blue.chamber1);
+	if (blueChamber1.error) {
+		errors.push(`Blue ${blueChamber1.error}`);
+	}
+
+	const redChamber1 = parseClockToSecondsStrict(timerInputs.red.chamber1);
+	if (redChamber1.error) {
+		errors.push(`Red ${redChamber1.error}`);
+	}
+
+	if (isRealtimeMatch) {
+		return {
+			record: {
+				blueChamber1: blueChamber1.value,
+				blueChamber2: 0,
+				blueChamber3: 0,
+				blueResetTimes: 0,
+				blueFinalTime: blueChamber1.value,
+				redChamber1: redChamber1.value,
+				redChamber2: 0,
+				redChamber3: 0,
+				redResetTimes: 0,
+				redFinalTime: redChamber1.value,
+			},
+			errors,
+		};
+	}
+
+	const blueChamber2 = parseClockToSecondsStrict(timerInputs.blue.chamber2);
+	if (blueChamber2.error) {
+		errors.push(`Blue chamber 2 ${blueChamber2.error.toLowerCase()}`);
+	}
+
+	const blueChamber3 = parseClockToSecondsStrict(timerInputs.blue.chamber3);
+	if (blueChamber3.error) {
+		errors.push(`Blue chamber 3 ${blueChamber3.error.toLowerCase()}`);
+	}
+
+	const redChamber2 = parseClockToSecondsStrict(timerInputs.red.chamber2);
+	if (redChamber2.error) {
+		errors.push(`Red chamber 2 ${redChamber2.error.toLowerCase()}`);
+	}
+
+	const redChamber3 = parseClockToSecondsStrict(timerInputs.red.chamber3);
+	if (redChamber3.error) {
+		errors.push(`Red chamber 3 ${redChamber3.error.toLowerCase()}`);
+	}
+
+	const blueReset = parseResetStrict(timerInputs.blue.reset);
+	if (blueReset.error) {
+		errors.push(`Blue ${blueReset.error}`);
+	}
+
+	const redReset = parseResetStrict(timerInputs.red.reset);
+	if (redReset.error) {
+		errors.push(`Red ${redReset.error}`);
+	}
+
+	return {
+		record: {
+			blueChamber1: blueChamber1.value,
+			blueChamber2: blueChamber2.value,
+			blueChamber3: blueChamber3.value,
+			blueResetTimes: blueReset.value,
+			blueFinalTime:
+				blueChamber1.value + blueChamber2.value + blueChamber3.value,
+			redChamber1: redChamber1.value,
+			redChamber2: redChamber2.value,
+			redChamber3: redChamber3.value,
+			redResetTimes: redReset.value,
+			redFinalTime: redChamber1.value + redChamber2.value + redChamber3.value,
+		},
+		errors,
+	};
+};
+
 function RouteComponent() {
+	const { roomId } = Route.useParams();
 	const { match, matchState } = useLoaderData({
 		from: "/_userLayout/room/$roomId",
 	});
@@ -101,6 +252,9 @@ function RouteComponent() {
 	const [sessionCost, setSessionCost] = useState<SessionCostResponse | null>(
 		null,
 	);
+	const [timerInputs, setTimerInputs] = useState<BanPickTimerInputsBySide>(
+		EMPTY_TIMER_INPUTS_BY_SIDE,
+	);
 	const [
 		blueSelectedWeaponRefinementByCharacterId,
 		setBlueSelectedWeaponRefinementByCharacterId,
@@ -111,53 +265,70 @@ function RouteComponent() {
 	] = useState<Record<string, number | undefined>>({});
 	const autoResolvedStepRef = useRef<number | null>(null);
 	const lastCalculatedTurnRef = useRef<string | null>(null);
+	const initializedSessionIdRef = useRef<number | null>(
+		Number.isInteger(Number(matchState?.currentSession))
+			? Number(matchState?.currentSession)
+			: null,
+	);
+	const hydrationRequestIdRef = useRef(0);
 	const sessionRecordInputRef = useRef<SaveSessionRecordInput>(
 		EMPTY_SESSION_RECORD_INPUT,
 	);
 
-	const triggerDebouncedSaveSessionRecord = useDebounce(
-		(matchSessionId: number, recordInput: SaveSessionRecordInput) => {
-			void sessionRecordApi
-				.saveSessionRecord(matchSessionId, recordInput)
-				.catch(() => {
-					// Session record autosave should not interrupt match flow.
-				});
+	const onTimerValuesChange = useCallback(
+		(side: "blue" | "red", values: BanPickTimerInputValues) => {
+			setTimerInputs((prev) => {
+				const previousSideValues = prev[side];
+				if (
+					previousSideValues.chamber1 === values.chamber1 &&
+					previousSideValues.chamber2 === values.chamber2 &&
+					previousSideValues.chamber3 === values.chamber3 &&
+					previousSideValues.reset === values.reset
+				) {
+					return prev;
+				}
+
+				return {
+					...prev,
+					[side]: values,
+				};
+			});
 		},
-		5000,
+		[],
 	);
 
-	const onTimerValuesChange = useCallback(
-		(side: "blue" | "red", values: BanPickTimerSideValues) => {
-			const nextRecordInput: SaveSessionRecordInput =
-				side === "blue"
-					? {
-							...sessionRecordInputRef.current,
-							blueChamber1: values.chamber1,
-							blueChamber2: values.chamber2,
-							blueChamber3: values.chamber3,
-							blueResetTimes: values.resetTimes,
-							blueFinalTime:
-								values.chamber1 + values.chamber2 + values.chamber3,
-						}
-					: {
-							...sessionRecordInputRef.current,
-							redChamber1: values.chamber1,
-							redChamber2: values.chamber2,
-							redChamber3: values.chamber3,
-							redResetTimes: values.resetTimes,
-							redFinalTime: values.chamber1 + values.chamber2 + values.chamber3,
-						};
-
-			sessionRecordInputRef.current = nextRecordInput;
-
-			const matchSessionId = Number(pageMatchState?.currentSession);
-			if (!Number.isInteger(matchSessionId) || matchSessionId <= 0) {
+	const navigateByMatchStatus = useCallback(
+		(status?: number) => {
+			if (status === MatchStatus.COMPLETED) {
+				void router.navigate({
+					to: "/room/$roomId/result",
+					params: { roomId },
+				});
 				return;
 			}
 
-			triggerDebouncedSaveSessionRecord(matchSessionId, nextRecordInput);
+			if (status === MatchStatus.LIVE) {
+				return;
+			}
+
+			if (status === MatchStatus.WAITING) {
+				void router.navigate({
+					to: "/room/$roomId/waiting",
+					params: { roomId },
+				});
+				return;
+			}
+
+			void router.navigate({
+				to: "/match",
+				search: {
+					page: 1,
+					take: 10,
+					accountId: profile?.id,
+				},
+			});
 		},
-		[pageMatchState?.currentSession, triggerDebouncedSaveSessionRecord],
+		[profile?.id, roomId, router],
 	);
 
 	useSocketEvent(SocketEvent.UPDATE_MATCH_STATE, (data: MatchStateResponse) => {
@@ -165,15 +336,35 @@ function RouteComponent() {
 	});
 
 	useSocketEvent(SocketEvent.MATCH_UPDATED, (data: any) => {
-		if (data.status === MatchStatus.COMPLETED) {
-			void router.navigate({
-				to: "/room/$roomId/result",
-				params: { roomId: match?.id ?? "" },
-			});
-		} else {
-			void router.invalidate();
-		}
+		navigateByMatchStatus(data?.status);
 	});
+
+	useSocketEvent(SocketEvent.UPDATE_MATCH_SESSION, () => {
+		void (async () => {
+			try {
+				const response = await matchApi.getMatch(roomId);
+				navigateByMatchStatus(response.data?.status);
+			} catch {
+				// Session update navigation is best-effort.
+			}
+		})();
+	});
+
+	useEffect(() => {
+		if (!match) {
+			void router.navigate({
+				to: "/match",
+				search: {
+					page: 1,
+					take: 10,
+					accountId: profile?.id,
+				},
+			});
+			return;
+		}
+
+		navigateByMatchStatus(match.status);
+	}, [match, navigateByMatchStatus, profile?.id, router]);
 
 	const { blueCharacters, redCharacters, weapons } = useBanPickQueries({
 		bluePlayerId: bluePlayer?.id,
@@ -516,7 +707,7 @@ function RouteComponent() {
 		weaponId: number,
 		weaponRefinement: number,
 	) => {
-		if (!isRealtimeMatch || !match?.id) {
+		if (!match?.id) {
 			return;
 		}
 
@@ -569,7 +760,7 @@ function RouteComponent() {
 		weaponId: number,
 		weaponRefinement: number,
 	) => {
-		if (!isRealtimeMatch || !match?.id) {
+		if (!match?.id) {
 			return;
 		}
 
@@ -619,12 +810,90 @@ function RouteComponent() {
 
 	useEffect(() => {
 		setPageMatchState(matchState);
+
+		const incomingSessionId = Number(matchState?.currentSession);
+		const normalizedIncomingSessionId =
+			Number.isInteger(incomingSessionId) && incomingSessionId > 0
+				? incomingSessionId
+				: null;
+
+		if (initializedSessionIdRef.current === normalizedIncomingSessionId) {
+			return;
+		}
+
+		initializedSessionIdRef.current = normalizedIncomingSessionId;
 		setSessionCost(null);
 		setBlueSelectedWeaponRefinementByCharacterId({});
 		setRedSelectedWeaponRefinementByCharacterId({});
+		setTimerInputs(EMPTY_TIMER_INPUTS_BY_SIDE);
 		sessionRecordInputRef.current = EMPTY_SESSION_RECORD_INPUT;
 		lastCalculatedTurnRef.current = null;
 	}, [matchState]);
+
+	useEffect(() => {
+		if (!match?.id || !pageMatchState?.currentSession) {
+			return;
+		}
+
+		const currentSessionId = Number(pageMatchState.currentSession);
+		if (!Number.isInteger(currentSessionId) || currentSessionId <= 0) {
+			return;
+		}
+
+		let isCancelled = false;
+		const requestId = hydrationRequestIdRef.current + 1;
+		hydrationRequestIdRef.current = requestId;
+
+		void (async () => {
+			try {
+				const response = await sessionRecordApi.getMatchReport(match.id);
+				const session = response.data?.sessions?.find(
+					(item) => item.matchSessionId === currentSessionId,
+				);
+				const record = session?.record;
+
+				if (isCancelled || requestId !== hydrationRequestIdRef.current) {
+					return;
+				}
+
+				if (!record) {
+					setTimerInputs(EMPTY_TIMER_INPUTS_BY_SIDE);
+					return;
+				}
+
+				setTimerInputs({
+					blue: {
+						chamber1: formatClockFromSeconds(record.blueChamber1),
+						chamber2: isRealtimeMatch
+							? ""
+							: formatClockFromSeconds(record.blueChamber2),
+						chamber3: isRealtimeMatch
+							? ""
+							: formatClockFromSeconds(record.blueChamber3),
+						reset: isRealtimeMatch ? "" : String(record.blueResetTimes),
+					},
+					red: {
+						chamber1: formatClockFromSeconds(record.redChamber1),
+						chamber2: isRealtimeMatch
+							? ""
+							: formatClockFromSeconds(record.redChamber2),
+						chamber3: isRealtimeMatch
+							? ""
+							: formatClockFromSeconds(record.redChamber3),
+						reset: isRealtimeMatch ? "" : String(record.redResetTimes),
+					},
+				});
+			} catch {
+				if (!isCancelled && requestId === hydrationRequestIdRef.current) {
+					setTimerInputs(EMPTY_TIMER_INPUTS_BY_SIDE);
+				}
+			}
+		})();
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [isRealtimeMatch, match?.id, pageMatchState?.currentSession]);
 
 	useEffect(() => {
 		if (!match?.id || !pageMatchState) {
@@ -882,10 +1151,22 @@ function RouteComponent() {
 				return;
 			}
 
-			const record = sessionRecordInputRef.current;
+			const parsedTimer = parseTimerInputsToRecord(
+				timerInputs,
+				isRealtimeMatch,
+			);
+
+			if (parsedTimer.errors.length > 0) {
+				toast.error(parsedTimer.errors[0]);
+				return;
+			}
+
+			const record = parsedTimer.record;
+			sessionRecordInputRef.current = record;
 			const sessionValidationErrors = validateSessionCompletionData(
 				pageMatchState,
 				record,
+				isRealtimeMatch,
 			);
 			if (sessionValidationErrors.length > 0) {
 				toast.error(
@@ -900,13 +1181,34 @@ function RouteComponent() {
 				if (Number.isInteger(matchSessionId) && matchSessionId > 0) {
 					await sessionRecordApi.saveSessionRecord(matchSessionId, record);
 				}
-				if (match?.id) await matchApi.completeSession(match.id);
-				toast.success("Session completed");
 				if (match?.id) {
-					void router.navigate({
-						to: "/room/$roomId/result",
-						params: { roomId: match.id },
-					});
+					await matchApi.completeSession(match.id);
+					const refreshedMatchResponse = await matchApi.getMatch(match.id);
+					const refreshedMatch = refreshedMatchResponse.data;
+					const reportResponse = await sessionRecordApi.getMatchReport(
+						match.id,
+					);
+					const report = reportResponse.data;
+					const completedSessionCount =
+						report?.sessions?.filter((session) => session.sessionStatus === 2)
+							.length ?? 0;
+					const isReportFullyCompleted =
+						Boolean(report) &&
+						completedSessionCount >= (report?.sessionCount ?? 0);
+
+					if (
+						refreshedMatch?.status === MatchStatus.COMPLETED ||
+						isReportFullyCompleted
+					) {
+						toast.success("Session completed. Match is finished.");
+						void router.navigate({
+							to: "/room/$roomId/result",
+							params: { roomId: match.id },
+						});
+					} else {
+						toast.success("Session completed. Next session started.");
+						void router.invalidate();
+					}
 				}
 			} catch {
 				toast.error("Failed to complete session");
@@ -929,6 +1231,7 @@ function RouteComponent() {
 						player={bluePlayer}
 						cost={blueSideCost}
 						isRealtimeMatch={isRealtimeMatch}
+						timerValues={timerInputs.blue}
 						onTimerValuesChange={onTimerValuesChange}
 						bans={blueBanPickBans}
 						picks={blueBanPickPicks}
@@ -977,6 +1280,7 @@ function RouteComponent() {
 						player={redPlayer}
 						cost={redSideCost}
 						isRealtimeMatch={isRealtimeMatch}
+						timerValues={timerInputs.red}
 						onTimerValuesChange={onTimerValuesChange}
 						bans={redBanPickBans}
 						picks={redBanPickPicks}

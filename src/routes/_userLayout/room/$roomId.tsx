@@ -1,7 +1,7 @@
 import { matchApi } from "@/apis/match";
+import type { MatchStateResponse } from "@/apis/match/types";
 import { useSocketEvent } from "@/hooks/use-socket-event";
-import { MatchStatus } from "@/lib/constants";
-import { SocketEvent } from "@/lib/constants";
+import { MatchStatus, SocketEvent } from "@/lib/constants";
 import { store } from "@/lib/redux";
 import { socket } from "@/lib/socket";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
@@ -15,17 +15,13 @@ export const Route = createFileRoute("/_userLayout/room/$roomId")({
 	loader: async ({ params }) => {
 		try {
 			const matchResponse = await matchApi.getMatch(params.roomId);
+			let matchStateResponse: MatchStateResponse | undefined = undefined;
 
-			if (matchResponse.data?.status === MatchStatus.COMPLETED) {
-				throw redirect({
-					to: "/room/$roomId/result",
-					params: { roomId: params.roomId },
-				});
+			if (matchResponse.data?.status != MatchStatus.COMPLETED) {
+				matchStateResponse = (await matchApi.getMatchState(params.roomId)).data;
 			}
 
-			const matchStateResponse = await matchApi.getMatchState(params.roomId);
-
-			return { match: matchResponse.data, matchState: matchStateResponse.data };
+			return { match: matchResponse.data, matchState: matchStateResponse };
 		} catch (err) {
 			const { profile } = store.getState().auth;
 			throw redirect({

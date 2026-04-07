@@ -6,19 +6,14 @@ import BanPickElementFilter from "@/components/match/ban-pick-element-filter";
 import BanPickPlayerInfo from "@/components/match/ban-pick-player-info";
 import BanPickRarityFilter from "@/components/match/ban-pick-rarity-filter";
 import BanPickTeamBuild from "@/components/match/ban-pick-team-build";
-import BanPickTimerInputs from "@/components/match/ban-pick-timer-inputs";
+import BanPickTimerInputs, {
+	type BanPickTimerInputValues,
+} from "@/components/match/ban-pick-timer-inputs";
 import type {
 	BanPickCharacter,
 	DraftAction,
 	DraftSide,
 } from "@/components/match/ban-pick.types";
-
-interface BanPickTimerSideValues {
-	chamber1: number;
-	chamber2: number;
-	chamber3: number;
-	resetTimes: number;
-}
 
 interface BanPickSideCostInfo {
 	totalCost?: number;
@@ -41,9 +36,10 @@ interface BanPickSideSectionProps {
 	player?: BanPickSidePlayerInfo;
 	cost: BanPickSideCostInfo;
 	isRealtimeMatch: boolean;
+	timerValues: BanPickTimerInputValues;
 	onTimerValuesChange: (
 		side: DraftSide,
-		values: BanPickTimerSideValues,
+		values: BanPickTimerInputValues,
 	) => void;
 	bans: BanPickCharacter[];
 	picks: BanPickCharacter[];
@@ -78,6 +74,7 @@ export default function BanPickSideSection({
 	player,
 	cost,
 	isRealtimeMatch,
+	timerValues,
 	onTimerValuesChange,
 	bans,
 	picks,
@@ -115,6 +112,7 @@ export default function BanPickSideSection({
 				<BanPickTimerInputs
 					isRealtimeMatch={isRealtimeMatch}
 					side={side}
+					values={timerValues}
 					onValuesChange={onTimerValuesChange}
 				/>
 			</div>

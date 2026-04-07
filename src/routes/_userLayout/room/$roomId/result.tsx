@@ -1,16 +1,91 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useLoaderData } from "@tanstack/react-router";
+import { matchApi } from "@/apis/match";
 import { sessionRecordApi } from "@/apis/session-record";
 import { Button } from "@/components/ui/button";
-import { PlayerSide } from "@/lib/constants";
+import { useAppSelector } from "@/hooks/use-app-selector";
+import { useSocketEvent } from "@/hooks/use-socket-event";
+import { MatchStatus, PlayerSide, SocketEvent } from "@/lib/constants";
+import { selectAuthProfile } from "@/lib/redux/auth.slice";
 import { cn } from "@/lib/utils";
+import { useCallback, useEffect } from "react";
 
 export const Route = createFileRoute("/_userLayout/room/$roomId/result")({
 	component: MatchResultComponent,
 });
 
 function MatchResultComponent() {
+	const navigate = Route.useNavigate();
 	const { roomId } = Route.useParams();
+	const { match } = useLoaderData({
+		from: "/_userLayout/room/$roomId",
+	});
+	const profile = useAppSelector(selectAuthProfile);
+
+	const navigateByMatchStatus = useCallback(
+		(status?: number) => {
+			if (status === MatchStatus.COMPLETED) {
+				return;
+			}
+
+			if (status === MatchStatus.LIVE) {
+				void navigate({
+					to: "/room/$roomId/ban-pick",
+					params: { roomId },
+				});
+				return;
+			}
+
+			if (status === MatchStatus.WAITING) {
+				void navigate({
+					to: "/room/$roomId/waiting",
+					params: { roomId },
+				});
+				return;
+			}
+
+			void navigate({
+				to: "/match",
+				search: {
+					page: 1,
+					take: 10,
+					accountId: profile?.id,
+				},
+			});
+		},
+		[navigate, profile?.id, roomId],
+	);
+
+	useSocketEvent(SocketEvent.MATCH_UPDATED, (data: any) => {
+		navigateByMatchStatus(data?.status);
+	});
+
+	useSocketEvent(SocketEvent.UPDATE_MATCH_SESSION, () => {
+		void (async () => {
+			try {
+				const response = await matchApi.getMatch(roomId);
+				navigateByMatchStatus(response.data?.status);
+			} catch {
+				// Session update navigation is best-effort.
+			}
+		})();
+	});
+
+	useEffect(() => {
+		if (!match) {
+			void navigate({
+				to: "/match",
+				search: {
+					page: 1,
+					take: 10,
+					accountId: profile?.id,
+				},
+			});
+			return;
+		}
+
+		navigateByMatchStatus(match.status);
+	}, [match, navigate, navigateByMatchStatus, profile?.id]);
 
 	const { data: reportResponse, isLoading } = useQuery({
 		queryKey: ["match-report", roomId],
@@ -55,9 +130,9 @@ function MatchResultComponent() {
 
 	const finalResultLabel =
 		blueWins > redWins
-			? `${bluePlayer?.username ?? "Blue"} wins`
+			? `${bluePlayer?.displayName ?? "Blue"} wins`
 			: redWins > blueWins
-				? `${redPlayer?.username ?? "Red"} wins`
+				? `${redPlayer?.displayName ?? "Red"} wins`
 				: "Draw";
 
 	const finalResultClassName =
@@ -70,11 +145,11 @@ function MatchResultComponent() {
 	const sessionRows = report.sessions.map((session, index) => {
 		const isBlueLeft = session.blueParticipant?.id === bluePlayer?.id;
 		const leftName = isBlueLeft
-			? (bluePlayer?.username ?? "Blue")
-			: (redPlayer?.username ?? "Red");
+			? (bluePlayer?.displayName ?? "Blue")
+			: (redPlayer?.displayName ?? "Red");
 		const rightName = isBlueLeft
-			? (redPlayer?.username ?? "Red")
-			: (bluePlayer?.username ?? "Blue");
+			? (redPlayer?.displayName ?? "Red")
+			: (bluePlayer?.displayName ?? "Blue");
 
 		const leftFinalTime = isBlueLeft
 			? (session.record?.blueFinalTime ?? 0)
@@ -145,12 +220,12 @@ function MatchResultComponent() {
 				<div className="rounded-2xl border border-white/20 bg-black/40 backdrop-blur-xl p-8 shadow-2xl mb-8 flex items-center justify-center gap-12">
 					<div className="flex flex-col items-center gap-4 flex-1">
 						<img
-							src={bluePlayer?.avatarUrl || "/imgs/default-avatar.png"}
-							alt={bluePlayer?.username}
+							src={bluePlayer?.avatar || "/imgs/default-avatar.png"}
+							alt={bluePlayer?.displayName ?? "Blue"}
 							className="h-24 w-24 rounded-full border-4 border-sky-500 shadow-[0_0_20px_rgba(14,165,233,0.5)]"
 						/>
 						<span className="text-2xl font-bold text-sky-400">
-							{bluePlayer?.username}
+							{bluePlayer?.displayName}
 						</span>
 					</div>
 
@@ -162,12 +237,12 @@ function MatchResultComponent() {
 
 					<div className="flex flex-col items-center gap-4 flex-1">
 						<img
-							src={redPlayer?.avatarUrl || "/imgs/default-avatar.png"}
-							alt={redPlayer?.username}
+							src={redPlayer?.avatar || "/imgs/default-avatar.png"}
+							alt={redPlayer?.displayName ?? "Red"}
 							className="h-24 w-24 rounded-full border-4 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)]"
 						/>
 						<span className="text-2xl font-bold text-red-400">
-							{redPlayer?.username}
+							{redPlayer?.displayName}
 						</span>
 					</div>
 				</div>

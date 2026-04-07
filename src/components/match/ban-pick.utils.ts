@@ -159,6 +159,7 @@ export function isValidSelectedWeaponId(weaponId?: string) {
 export function validateSessionCompletionData(
 	matchState: MatchStateResponse,
 	record: SaveSessionRecordInput,
+	isRealtimeMatch: boolean,
 ) {
 	const validationErrors: string[] = [];
 	const expectedDraftCounts = getExpectedDraftCounts();
@@ -199,20 +200,66 @@ export function validateSessionCompletionData(
 		}
 	}
 
-	const expectedBlueFinalTime =
-		record.blueChamber1 + record.blueChamber2 + record.blueChamber3;
-	if (record.blueFinalTime <= 0) {
-		validationErrors.push("Blue final time must be greater than 0.");
-	} else if (record.blueFinalTime !== expectedBlueFinalTime) {
-		validationErrors.push("Blue final time must equal sum of chamber times.");
-	}
+	if (isRealtimeMatch) {
+		if (record.blueChamber1 <= 0) {
+			validationErrors.push(
+				"Blue time must be greater than 0 for realtime match.",
+			);
+		}
 
-	const expectedRedFinalTime =
-		record.redChamber1 + record.redChamber2 + record.redChamber3;
-	if (record.redFinalTime <= 0) {
-		validationErrors.push("Red final time must be greater than 0.");
-	} else if (record.redFinalTime !== expectedRedFinalTime) {
-		validationErrors.push("Red final time must equal sum of chamber times.");
+		if (record.redChamber1 <= 0) {
+			validationErrors.push(
+				"Red time must be greater than 0 for realtime match.",
+			);
+		}
+
+		if (
+			record.blueChamber2 !== 0 ||
+			record.blueChamber3 !== 0 ||
+			record.blueResetTimes !== 0
+		) {
+			validationErrors.push(
+				"Blue chamber 2, chamber 3, and reset must be 0 for realtime match.",
+			);
+		}
+
+		if (
+			record.redChamber2 !== 0 ||
+			record.redChamber3 !== 0 ||
+			record.redResetTimes !== 0
+		) {
+			validationErrors.push(
+				"Red chamber 2, chamber 3, and reset must be 0 for realtime match.",
+			);
+		}
+
+		if (record.blueFinalTime !== record.blueChamber1) {
+			validationErrors.push(
+				"Blue final time must equal chamber 1 for realtime match.",
+			);
+		}
+
+		if (record.redFinalTime !== record.redChamber1) {
+			validationErrors.push(
+				"Red final time must equal chamber 1 for realtime match.",
+			);
+		}
+	} else {
+		const expectedBlueFinalTime =
+			record.blueChamber1 + record.blueChamber2 + record.blueChamber3;
+		if (record.blueFinalTime <= 0) {
+			validationErrors.push("Blue final time must be greater than 0.");
+		} else if (record.blueFinalTime !== expectedBlueFinalTime) {
+			validationErrors.push("Blue final time must equal sum of chamber times.");
+		}
+
+		const expectedRedFinalTime =
+			record.redChamber1 + record.redChamber2 + record.redChamber3;
+		if (record.redFinalTime <= 0) {
+			validationErrors.push("Red final time must be greater than 0.");
+		} else if (record.redFinalTime !== expectedRedFinalTime) {
+			validationErrors.push("Red final time must equal sum of chamber times.");
+		}
 	}
 
 	return validationErrors;
