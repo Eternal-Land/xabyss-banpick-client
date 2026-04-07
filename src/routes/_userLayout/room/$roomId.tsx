@@ -17,7 +17,10 @@ export const Route = createFileRoute("/_userLayout/room/$roomId")({
 			const matchResponse = await matchApi.getMatch(params.roomId);
 			let matchStateResponse: MatchStateResponse | undefined = undefined;
 
-			if (matchResponse.data?.status != MatchStatus.COMPLETED) {
+			if (
+				matchResponse.data?.status != MatchStatus.COMPLETED &&
+				matchResponse.data?.status != MatchStatus.CANCELED
+			) {
 				matchStateResponse = (await matchApi.getMatchState(params.roomId)).data;
 			}
 

@@ -299,34 +299,31 @@ function RouteComponent() {
 
 	const navigateByMatchStatus = useCallback(
 		(status?: number) => {
-			if (status === MatchStatus.COMPLETED) {
-				void router.navigate({
-					to: "/room/$roomId/result",
-					params: { roomId },
-				});
-				return;
+			switch (status) {
+				case MatchStatus.COMPLETED:
+					void router.navigate({
+						to: "/room/$roomId/result",
+						params: { roomId },
+					});
+					return;
+				case MatchStatus.LIVE:
+					return;
+				case MatchStatus.WAITING:
+					void router.navigate({
+						to: "/room/$roomId/waiting",
+						params: { roomId },
+					});
+					return;
+				default:
+					void router.navigate({
+						to: "/match",
+						search: {
+							page: 1,
+							take: 10,
+							accountId: profile?.id,
+						},
+					});
 			}
-
-			if (status === MatchStatus.LIVE) {
-				return;
-			}
-
-			if (status === MatchStatus.WAITING) {
-				void router.navigate({
-					to: "/room/$roomId/waiting",
-					params: { roomId },
-				});
-				return;
-			}
-
-			void router.navigate({
-				to: "/match",
-				search: {
-					page: 1,
-					take: 10,
-					accountId: profile?.id,
-				},
-			});
 		},
 		[profile?.id, roomId, router],
 	);

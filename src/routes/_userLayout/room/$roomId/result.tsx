@@ -24,34 +24,31 @@ function MatchResultComponent() {
 
 	const navigateByMatchStatus = useCallback(
 		(status?: number) => {
-			if (status === MatchStatus.COMPLETED) {
-				return;
+			switch (status) {
+				case MatchStatus.COMPLETED:
+					return;
+				case MatchStatus.LIVE:
+					void navigate({
+						to: "/room/$roomId/ban-pick",
+						params: { roomId },
+					});
+					return;
+				case MatchStatus.WAITING:
+					void navigate({
+						to: "/room/$roomId/waiting",
+						params: { roomId },
+					});
+					return;
+				default:
+					void navigate({
+						to: "/match",
+						search: {
+							page: 1,
+							take: 10,
+							accountId: profile?.id,
+						},
+					});
 			}
-
-			if (status === MatchStatus.LIVE) {
-				void navigate({
-					to: "/room/$roomId/ban-pick",
-					params: { roomId },
-				});
-				return;
-			}
-
-			if (status === MatchStatus.WAITING) {
-				void navigate({
-					to: "/room/$roomId/waiting",
-					params: { roomId },
-				});
-				return;
-			}
-
-			void navigate({
-				to: "/match",
-				search: {
-					page: 1,
-					take: 10,
-					accountId: profile?.id,
-				},
-			});
 		},
 		[navigate, profile?.id, roomId],
 	);

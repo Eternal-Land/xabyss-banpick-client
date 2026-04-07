@@ -133,33 +133,35 @@ function RouteComponent() {
 			return;
 		}
 
-		if (match.status === MatchStatus.COMPLETED) {
-			navigate({
-				to: "/room/$roomId/result",
-				params: {
-					roomId,
-				},
-			});
+		switch (match.status) {
+			case MatchStatus.WAITING:
+				return;
+			case MatchStatus.COMPLETED:
+				navigate({
+					to: "/room/$roomId/result",
+					params: {
+						roomId,
+					},
+				});
+				return;
+			case MatchStatus.LIVE:
+				navigate({
+					to: "/room/$roomId/ban-pick",
+					params: {
+						roomId,
+					},
+				});
+				return;
+			default:
+				navigate({
+					to: "/match",
+					search: {
+						page: 1,
+						take: 10,
+						accountId: profile?.id,
+					},
+				});
 		}
-
-		if (match.status === MatchStatus.LIVE) {
-			navigate({
-				to: "/room/$roomId/ban-pick",
-				params: {
-					roomId,
-				},
-			});
-			return;
-		}
-
-		navigate({
-			to: "/match",
-			search: {
-				page: 1,
-				take: 10,
-				accountId: profile?.id,
-			},
-		});
 	}, [match, navigate, profile?.id, roomId]);
 
 	if (!match) {
