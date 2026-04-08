@@ -151,11 +151,6 @@ export function getExpectedDraftCounts() {
 	);
 }
 
-export function isValidSelectedWeaponId(weaponId?: string) {
-	const normalizedWeaponId = Number(weaponId);
-	return Number.isInteger(normalizedWeaponId) && normalizedWeaponId > 0;
-}
-
 export function validateSessionCompletionData(
 	matchState: MatchStateResponse,
 	record: SaveSessionRecordInput,
@@ -180,24 +175,6 @@ export function validateSessionCompletionData(
 
 	if (matchState.redSelectedChars.length !== expectedDraftCounts.redPickCount) {
 		validationErrors.push("Red pick phase is not completed.");
-	}
-
-	for (let index = 0; index < expectedDraftCounts.bluePickCount; index += 1) {
-		if (!isValidSelectedWeaponId(matchState.blueSelectedWeapons[index])) {
-			validationErrors.push(
-				"Blue side must select weapon for all picked characters.",
-			);
-			break;
-		}
-	}
-
-	for (let index = 0; index < expectedDraftCounts.redPickCount; index += 1) {
-		if (!isValidSelectedWeaponId(matchState.redSelectedWeapons[index])) {
-			validationErrors.push(
-				"Red side must select weapon for all picked characters.",
-			);
-			break;
-		}
 	}
 
 	if (isRealtimeMatch) {

@@ -1,5 +1,7 @@
 import { cn } from '@/lib/utils'
 import { IconAssets } from '@/lib/constants/icon-assets'
+import { matchLocaleKeys } from '@/i18n/keys'
+import { useTranslation } from 'react-i18next'
 import type {
     BanPickCharacter,
     DraftAction,
@@ -92,6 +94,7 @@ export default function BanPickDraftSlots({
     isDraftCompleted,
     pendingCharacter,
 }: BanPickDraftSlotsProps) {
+    const { t } = useTranslation('match')
     const pickBaseClass =
         side === 'blue'
             ? 'bg-sky-800/10 border-sky-400/50'
@@ -142,7 +145,7 @@ export default function BanPickDraftSlots({
                             ) : (
                                 <img
                                     src={IconAssets.EMPTY_CHARACTER_ICON}
-                                    alt="Empty ban slot"
+                                    alt={t(matchLocaleKeys.ban_pick_empty_ban_slot_alt)}
                                     className="w-12 h-12 object-contain"
                                 />
                             )}
@@ -190,7 +193,7 @@ export default function BanPickDraftSlots({
                             ) : (
                                 <img
                                     src={IconAssets.EMPTY_CHARACTER_ICON}
-                                    alt="Empty pick slot"
+                                    alt={t(matchLocaleKeys.ban_pick_empty_pick_slot_alt)}
                                     className="w-12 h-12 object-contain"
                                 />
                             )}

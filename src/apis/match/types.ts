@@ -28,9 +28,11 @@ export interface MatchStateResponse {
 	blueBanChars: string[];
 	blueSelectedChars: string[];
 	blueSelectedWeapons: string[];
+	blueSelectedWeaponRefinements: number[];
 	redBanChars: string[];
 	redSelectedChars: string[];
 	redSelectedWeapons: string[];
+	redSelectedWeaponRefinements: number[];
 }
 
 export const listMatchesQuerySchema = z.object({

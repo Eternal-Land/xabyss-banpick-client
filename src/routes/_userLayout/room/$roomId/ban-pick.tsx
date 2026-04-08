@@ -29,6 +29,7 @@ import { useAppSelector } from "@/hooks/use-app-selector";
 import { useSocketEvent } from "@/hooks/use-socket-event";
 import { useBanPickFilters } from "@/hooks/use-ban-pick-filters";
 import { useBanPickQueries } from "@/hooks/use-ban-pick-queries";
+import { matchLocaleKeys } from "@/i18n/keys";
 import {
 	createFileRoute,
 	useLoaderData,
@@ -37,6 +38,7 @@ import {
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 dayjs.extend(customParseFormat);
@@ -131,6 +133,61 @@ const parseResetStrict = (value: string) => {
 	};
 };
 
+const mapDraftBanCharacters = (
+	preferredCharacters: AccountCharacterResponse[],
+	fallbackCharacters: AccountCharacterResponse[],
+	characterIdsOrNames: string[],
+) => {
+	const preferredById = new Map(
+		preferredCharacters.flatMap((character) => [
+			[getBanPickCharacterId(character), character] as const,
+			[character.id, character] as const,
+		]),
+	);
+	const preferredByName = new Map(
+		preferredCharacters.map((character) => [
+			character.characters.name.toLowerCase(),
+			character,
+		]),
+	);
+
+	const fallbackById = new Map(
+		fallbackCharacters.flatMap((character) => [
+			[getBanPickCharacterId(character), character] as const,
+			[character.id, character] as const,
+		]),
+	);
+	const fallbackByName = new Map(
+		fallbackCharacters.map((character) => [
+			character.characters.name.toLowerCase(),
+			character,
+		]),
+	);
+
+	return characterIdsOrNames.flatMap((characterIdOrName) => {
+		const normalizedValue = String(characterIdOrName).trim();
+		if (!normalizedValue) {
+			return [];
+		}
+
+		const mappedPreferred =
+			preferredById.get(normalizedValue) ??
+			preferredByName.get(normalizedValue.toLowerCase());
+		if (mappedPreferred) {
+			return [mappedPreferred];
+		}
+
+		const mappedFallback =
+			fallbackById.get(normalizedValue) ??
+			fallbackByName.get(normalizedValue.toLowerCase());
+		if (mappedFallback) {
+			return [mappedFallback];
+		}
+
+		return [];
+	});
+};
+
 const parseTimerInputsToRecord = (
 	timerInputs: BanPickTimerInputsBySide,
 	isRealtimeMatch: boolean,
@@ -214,6 +271,7 @@ const parseTimerInputsToRecord = (
 };
 
 function RouteComponent() {
+	const { t } = useTranslation("match");
 	const { roomId } = Route.useParams();
 	const { match: initialMatch, matchState } = useLoaderData({
 		from: "/_userLayout/room/$roomId",
@@ -257,12 +315,12 @@ function RouteComponent() {
 		EMPTY_TIMER_INPUTS_BY_SIDE,
 	);
 	const [
-		blueSelectedWeaponRefinementByCharacterId,
-		setBlueSelectedWeaponRefinementByCharacterId,
+		blueSelectedWeaponRefinementByCharacterIdLocal,
+		setBlueSelectedWeaponRefinementByCharacterIdLocal,
 	] = useState<Record<string, number | undefined>>({});
 	const [
-		redSelectedWeaponRefinementByCharacterId,
-		setRedSelectedWeaponRefinementByCharacterId,
+		redSelectedWeaponRefinementByCharacterIdLocal,
+		setRedSelectedWeaponRefinementByCharacterIdLocal,
 	] = useState<Record<string, number | undefined>>({});
 	const autoResolvedStepRef = useRef<number | null>(null);
 	const lastCalculatedTurnRef = useRef<string | null>(null);
@@ -344,6 +402,17 @@ function RouteComponent() {
 	useSocketEvent(SocketEvent.UPDATE_MATCH_SESSION, () => {
 		void (async () => {
 			try {
+				if (match?.id) {
+					const currentSessionCost =
+						await sessionCostApi.getCurrentSessionCost(match.id);
+					setSessionCost(currentSessionCost.data ?? null);
+
+					const latestMatchState = await matchApi.getMatchState(match.id);
+					if (latestMatchState.data) {
+						setPageMatchState(latestMatchState.data);
+					}
+				}
+
 				const response = await matchApi.getMatch(roomId);
 				if (response.data) {
 					setMatch(response.data);
@@ -391,7 +460,8 @@ function RouteComponent() {
 
 		return {
 			blue: {
-				bans: mapCharacterNamesToAccountCharacters(
+				bans: mapDraftBanCharacters(
+					blueCharacters,
 					allMatchCharacters,
 					pageMatchState.blueBanChars,
 				),
@@ -401,7 +471,8 @@ function RouteComponent() {
 				),
 			},
 			red: {
-				bans: mapCharacterNamesToAccountCharacters(
+				bans: mapDraftBanCharacters(
+					redCharacters,
 					allMatchCharacters,
 					pageMatchState.redBanChars,
 				),
@@ -564,29 +635,69 @@ function RouteComponent() {
 		[draftState.red.picks, pageMatchState],
 	);
 
-	const blueDisabledWeaponIds = useMemo(() => {
-		if (!pageMatchState) {
-			return new Set<number>();
-		}
+	const blueSelectedWeaponRefinementByCharacterIdFromState = useMemo(
+		() => {
+			if (!pageMatchState) {
+				return {} as Record<string, number | undefined>;
+			}
 
-		return new Set(
-			pageMatchState.blueSelectedWeapons
-				.map((weaponId) => Number(weaponId))
-				.filter((weaponId) => Number.isInteger(weaponId) && weaponId > 0),
-		);
-	}, [pageMatchState]);
+			const refinements = pageMatchState.blueSelectedWeaponRefinements ?? [];
+			const mapped: Record<string, number | undefined> = {};
 
-	const redDisabledWeaponIds = useMemo(() => {
-		if (!pageMatchState) {
-			return new Set<number>();
-		}
+			draftState.blue.picks.forEach((character, index) => {
+				const refinement = refinements[index];
+				if (typeof refinement === "number" && refinement > 0) {
+					mapped[getBanPickCharacterId(character)] = refinement;
+				}
+			});
 
-		return new Set(
-			pageMatchState.redSelectedWeapons
-				.map((weaponId) => Number(weaponId))
-				.filter((weaponId) => Number.isInteger(weaponId) && weaponId > 0),
-		);
-	}, [pageMatchState]);
+			return mapped;
+		},
+		[draftState.blue.picks, pageMatchState],
+	);
+
+	const redSelectedWeaponRefinementByCharacterIdFromState = useMemo(
+		() => {
+			if (!pageMatchState) {
+				return {} as Record<string, number | undefined>;
+			}
+
+			const refinements = pageMatchState.redSelectedWeaponRefinements ?? [];
+			const mapped: Record<string, number | undefined> = {};
+
+			draftState.red.picks.forEach((character, index) => {
+				const refinement = refinements[index];
+				if (typeof refinement === "number" && refinement > 0) {
+					mapped[getBanPickCharacterId(character)] = refinement;
+				}
+			});
+
+			return mapped;
+		},
+		[draftState.red.picks, pageMatchState],
+	);
+
+	const blueSelectedWeaponRefinementByCharacterId = useMemo(
+		() => ({
+			...blueSelectedWeaponRefinementByCharacterIdFromState,
+			...blueSelectedWeaponRefinementByCharacterIdLocal,
+		}),
+		[
+			blueSelectedWeaponRefinementByCharacterIdFromState,
+			blueSelectedWeaponRefinementByCharacterIdLocal,
+		],
+	);
+
+	const redSelectedWeaponRefinementByCharacterId = useMemo(
+		() => ({
+			...redSelectedWeaponRefinementByCharacterIdFromState,
+			...redSelectedWeaponRefinementByCharacterIdLocal,
+		}),
+		[
+			redSelectedWeaponRefinementByCharacterIdFromState,
+			redSelectedWeaponRefinementByCharacterIdLocal,
+		],
+	);
 
 	const pendingBanPickCharacter = useMemo(
 		() =>
@@ -705,7 +816,7 @@ function RouteComponent() {
 			}
 		} catch {
 			setPageMatchState(previousMatchState);
-			toast.error("Failed to submit turn action");
+			toast.error(t(matchLocaleKeys.ban_pick_failed_submit_turn));
 		} finally {
 			setIsSubmittingTurnAction(false);
 		}
@@ -753,13 +864,17 @@ function RouteComponent() {
 
 			if (response.data) {
 				setSessionCost(response.data);
-				setBlueSelectedWeaponRefinementByCharacterId((prev) => ({
+				setBlueSelectedWeaponRefinementByCharacterIdLocal((prev) => ({
 					...prev,
 					[character.id]: weaponRefinement,
 				}));
 			}
 		} catch {
-			toast.error(`Failed to pick weapon for ${character.name}`);
+			toast.error(
+				t(matchLocaleKeys.ban_pick_failed_pick_weapon, {
+					characterName: character.name,
+				}),
+			);
 			throw new Error("Failed to pick weapon");
 		}
 	};
@@ -806,13 +921,17 @@ function RouteComponent() {
 
 			if (response.data) {
 				setSessionCost(response.data);
-				setRedSelectedWeaponRefinementByCharacterId((prev) => ({
+				setRedSelectedWeaponRefinementByCharacterIdLocal((prev) => ({
 					...prev,
 					[character.id]: weaponRefinement,
 				}));
 			}
 		} catch {
-			toast.error(`Failed to pick weapon for ${character.name}`);
+			toast.error(
+				t(matchLocaleKeys.ban_pick_failed_pick_weapon, {
+					characterName: character.name,
+				}),
+			);
 			throw new Error("Failed to pick weapon");
 		}
 	};
@@ -832,8 +951,8 @@ function RouteComponent() {
 
 		initializedSessionIdRef.current = normalizedIncomingSessionId;
 		setSessionCost(null);
-		setBlueSelectedWeaponRefinementByCharacterId({});
-		setRedSelectedWeaponRefinementByCharacterId({});
+		setBlueSelectedWeaponRefinementByCharacterIdLocal({});
+		setRedSelectedWeaponRefinementByCharacterIdLocal({});
 		setTimerInputs(EMPTY_TIMER_INPUTS_BY_SIDE);
 		sessionRecordInputRef.current = EMPTY_SESSION_RECORD_INPUT;
 		lastCalculatedTurnRef.current = null;
@@ -933,7 +1052,12 @@ function RouteComponent() {
 		return () => {
 			isCancelled = true;
 		};
-	}, [match?.id, pageMatchState?.currentSession]);
+	}, [
+		match?.id,
+		pageMatchState?.currentSession,
+		pageMatchState?.blueSelectedWeapons,
+		pageMatchState?.redSelectedWeapons,
+	]);
 
 	useEffect(() => {
 		if (!pageMatchState) {
@@ -1082,7 +1206,7 @@ function RouteComponent() {
 		const availableCharacters = getAvailableCharactersForAction();
 
 		if (availableCharacters.length === 0) {
-			toast.error("No character available for auto pick");
+			toast.error(t(matchLocaleKeys.ban_pick_no_character_auto_pick));
 			setTurnRemainingSeconds(TURN_DURATION_SECONDS);
 			setPendingCharacter(null);
 			autoResolvedStepRef.current = null;
@@ -1128,11 +1252,13 @@ function RouteComponent() {
 
 				setPendingCharacter(null);
 				toast.info(
-					`Time over. Auto selected ${randomCharacter.characters.name}`,
+					t(matchLocaleKeys.ban_pick_auto_selected, {
+						characterName: randomCharacter.characters.name,
+					}),
 				);
 			} catch {
 				setPageMatchState(previousMatchState);
-				toast.error("Failed to auto submit turn action");
+				toast.error(t(matchLocaleKeys.ban_pick_failed_auto_submit));
 				setTurnRemainingSeconds(TURN_DURATION_SECONDS);
 				autoResolvedStepRef.current = null;
 			} finally {
@@ -1154,9 +1280,7 @@ function RouteComponent() {
 		if (isDraftCompleted) {
 			if (profile?.id !== match?.host?.id) return;
 			if (!pageMatchState) {
-				toast.error(
-					"Match state is unavailable. Please refresh and try again.",
-				);
+				toast.error(t(matchLocaleKeys.ban_pick_match_state_unavailable));
 				return;
 			}
 
@@ -1179,7 +1303,8 @@ function RouteComponent() {
 			);
 			if (sessionValidationErrors.length > 0) {
 				toast.error(
-					sessionValidationErrors[0] ?? "Session data is incomplete.",
+					sessionValidationErrors[0] ??
+						t(matchLocaleKeys.ban_pick_session_data_incomplete),
 				);
 				return;
 			}
@@ -1212,13 +1337,17 @@ function RouteComponent() {
 						refreshedMatch?.status === MatchStatus.COMPLETED ||
 						isReportFullyCompleted
 					) {
-						toast.success("Session completed. Match is finished.");
+						toast.success(
+							t(matchLocaleKeys.ban_pick_session_completed_match_finished),
+						);
 						void router.navigate({
 							to: "/room/$roomId/result",
 							params: { roomId: match.id },
 						});
 					} else {
-						toast.success("Session completed. Next session started.");
+						toast.success(
+							t(matchLocaleKeys.ban_pick_session_completed_next_started),
+						);
 						await router.invalidate();
 
 						const latestMatchResponse = await matchApi.getMatch(match.id);
@@ -1228,7 +1357,7 @@ function RouteComponent() {
 					}
 				}
 			} catch {
-				toast.error("Failed to complete session");
+				toast.error(t(matchLocaleKeys.ban_pick_failed_complete_session));
 			} finally {
 				setIsSubmittingTurnAction(false);
 			}
@@ -1269,10 +1398,8 @@ function RouteComponent() {
 						weapons={weapons}
 						canReorderTeam={canReorderBlueTeam}
 						canPickWeapon={profile?.id === bluePlayer?.id}
-						disabledWeaponIds={
-							profile?.id === bluePlayer?.id ? blueDisabledWeaponIds : undefined
-						}
 						selectedWeaponByCharacterId={blueSelectedWeaponByCharacterId}
+						selectedWeaponRefinementByCharacterId={blueSelectedWeaponRefinementByCharacterId}
 						onPickWeapon={onPickBlueWeapon}
 					/>
 
@@ -1318,10 +1445,8 @@ function RouteComponent() {
 						weapons={weapons}
 						canReorderTeam={canReorderRedTeam}
 						canPickWeapon={profile?.id === redPlayer?.id}
-						disabledWeaponIds={
-							profile?.id === redPlayer?.id ? redDisabledWeaponIds : undefined
-						}
 						selectedWeaponByCharacterId={redSelectedWeaponByCharacterId}
+						selectedWeaponRefinementByCharacterId={redSelectedWeaponRefinementByCharacterId}
 						onPickWeapon={onPickRedWeapon}
 					/>
 				</div>
