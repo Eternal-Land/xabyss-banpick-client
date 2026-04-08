@@ -60,8 +60,8 @@ interface BanPickSideSectionProps {
 	weapons: UserWeaponResponse[];
 	canReorderTeam: boolean;
 	canPickWeapon: boolean;
-	disabledWeaponIds?: Set<number>;
 	selectedWeaponByCharacterId: Record<string, number | undefined>;
+	selectedWeaponRefinementByCharacterId: Record<string, number | undefined>;
 	onPickWeapon: (
 		character: BanPickCharacter,
 		weaponId: number,
@@ -95,8 +95,8 @@ export default function BanPickSideSection({
 	weapons,
 	canReorderTeam,
 	canPickWeapon,
-	disabledWeaponIds,
 	selectedWeaponByCharacterId,
+	selectedWeaponRefinementByCharacterId,
 	onPickWeapon,
 }: BanPickSideSectionProps) {
 	const isBlue = side === "blue";
@@ -158,8 +158,8 @@ export default function BanPickSideSection({
 						}
 						canReorder={canReorderTeam}
 						canPickWeapon={canPickWeapon}
-						disabledWeaponIds={disabledWeaponIds}
 						selectedWeaponByCharacterId={selectedWeaponByCharacterId}
+						selectedWeaponRefinementByCharacterId={selectedWeaponRefinementByCharacterId}
 						onPickWeapon={onPickWeapon}
 					/>
 				) : (

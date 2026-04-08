@@ -13,6 +13,8 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { matchLocaleKeys } from "@/i18n/keys";
+import { useTranslation } from "react-i18next";
 
 interface WeaponPickerState {
 	characterId: string;
@@ -32,8 +34,8 @@ export interface BanPickTeamBuildProps {
 	slotClassName: string;
 	canReorder?: boolean;
 	canPickWeapon?: boolean;
-	disabledWeaponIds?: Set<number>;
 	selectedWeaponByCharacterId?: Record<string, number | undefined>;
+	selectedWeaponRefinementByCharacterId?: Record<string, number | undefined>;
 	onPickWeapon?: (
 		character: BanPickCharacter,
 		weaponId: number,
@@ -52,10 +54,11 @@ export default function BanPickTeamBuild({
 	slotClassName,
 	canReorder = true,
 	canPickWeapon = true,
-	disabledWeaponIds,
 	selectedWeaponByCharacterId,
+	selectedWeaponRefinementByCharacterId,
 	onPickWeapon,
 }: BanPickTeamBuildProps) {
+	const { t } = useTranslation("match");
 	const [orderedSlots, setOrderedSlots] = useState<
 		Array<BanPickCharacter | null>
 	>(() => toFixedTeamSlots(picks));
@@ -72,6 +75,10 @@ export default function BanPickTeamBuild({
 	const [weaponRefinementPicker, setWeaponRefinementPicker] =
 		useState<WeaponRefinementPickerState | null>(null);
 	const [isSubmittingWeapon, setIsSubmittingWeapon] = useState(false);
+	const [selectedWeaponRefinementByCharacterIdState, setSelectedWeaponRefinementByCharacterIdState] =
+		useState<Record<string, number | undefined>>(
+			selectedWeaponRefinementByCharacterId ?? {},
+		);
 
 	const firstHalfOrder = useMemo(
 		() => orderedSlots.slice(0, 4),
@@ -102,6 +109,22 @@ export default function BanPickTeamBuild({
 		});
 	}, [picks, selectedWeaponByCharacterId]);
 
+	useEffect(() => {
+		setSelectedWeaponRefinementByCharacterIdState((prev) => {
+			const next: Record<string, number | undefined> = {};
+			picks.forEach((character) => {
+				if (selectedWeaponRefinementByCharacterId) {
+					next[character.id] =
+						selectedWeaponRefinementByCharacterId[character.id];
+					return;
+				}
+
+				next[character.id] = prev[character.id];
+			});
+			return next;
+		});
+	}, [picks, selectedWeaponRefinementByCharacterId]);
+
 	const onSelectWeapon = async (
 		character: BanPickCharacter,
 		weaponId: number,
@@ -122,6 +145,10 @@ export default function BanPickTeamBuild({
 			...prev,
 			[character.id]: weaponId,
 		}));
+		setSelectedWeaponRefinementByCharacterIdState((prev) => ({
+			...prev,
+			[character.id]: refinement,
+		}));
 		setWeaponRefinementPicker(null);
 		setWeaponPicker(null);
 	};
@@ -140,6 +167,8 @@ export default function BanPickTeamBuild({
 		}
 
 		const selectedWeaponId = selectedWeaponByCharacterIdState[member.id];
+		const selectedWeaponRefinement =
+			selectedWeaponRefinementByCharacterIdState[member.id];
 		const selectedWeapon = weapons.find(
 			(weapon) => weapon.id === selectedWeaponId,
 		);
@@ -154,7 +183,7 @@ export default function BanPickTeamBuild({
 					})
 				}
 				disabled={!canPickWeapon}
-				className="flex h-full w-full items-center justify-center overflow-hidden rounded border border-white/20 bg-white/5 p-1"
+				className="relative flex h-full w-full items-center justify-center overflow-hidden rounded border border-white/20 bg-white/5 p-1"
 			>
 				{selectedWeapon?.iconUrl ? (
 					<img
@@ -165,6 +194,11 @@ export default function BanPickTeamBuild({
 				) : (
 					<Plus className="h-6 w-6 text-white/80" />
 				)}
+					{selectedWeapon && selectedWeaponRefinement ? (
+						<span className="absolute right-1 top-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+							R{selectedWeaponRefinement}
+						</span>
+					) : null}
 			</button>
 		);
 	};
@@ -200,7 +234,7 @@ export default function BanPickTeamBuild({
 							titleClassName,
 						)}
 					>
-						First Half
+						{t(matchLocaleKeys.ban_pick_first_half)}
 					</h3>
 					<div className="flex items-center grid grid-cols-4 gap-4">
 						{firstHalfOrder.map((member, index) => {
@@ -243,7 +277,7 @@ export default function BanPickTeamBuild({
 										) : (
 											<img
 												src={IconAssets.EMPTY_CHARACTER_ICON}
-												alt="Empty team slot"
+												alt={t(matchLocaleKeys.ban_pick_empty_team_slot_alt)}
 												className="w-12 h-12 object-contain"
 											/>
 										)}
@@ -264,7 +298,7 @@ export default function BanPickTeamBuild({
 							titleClassName,
 						)}
 					>
-						Second Half
+						{t(matchLocaleKeys.ban_pick_second_half)}
 					</h3>
 					<div className="flex items-center grid grid-cols-4 gap-4">
 						{secondHalfOrder.map((member, index) => {
@@ -307,7 +341,7 @@ export default function BanPickTeamBuild({
 										) : (
 											<img
 												src={IconAssets.EMPTY_CHARACTER_ICON}
-												alt="Empty team slot"
+												alt={t(matchLocaleKeys.ban_pick_empty_team_slot_alt)}
 												className="w-12 h-12 object-contain"
 											/>
 										)}
@@ -328,7 +362,7 @@ export default function BanPickTeamBuild({
 			>
 				<DialogContent className="max-w-3xl">
 					<DialogHeader>
-						<DialogTitle>Select Weapon</DialogTitle>
+						<DialogTitle>{t(matchLocaleKeys.ban_pick_select_weapon)}</DialogTitle>
 					</DialogHeader>
 
 					<div className="grid grid-cols-5 gap-3 max-h-[60vh] overflow-y-auto">
@@ -336,12 +370,6 @@ export default function BanPickTeamBuild({
 							const pickerCharacter = picks.find(
 								(member) => member.id === weaponPicker?.characterId,
 							);
-							const pickerCurrentWeaponId = pickerCharacter
-								? selectedWeaponByCharacterIdState[pickerCharacter.id]
-								: undefined;
-							const isDisabledBySelection =
-								Boolean(disabledWeaponIds?.has(weapon.id)) &&
-								weapon.id !== pickerCurrentWeaponId;
 
 							const isSelected =
 								weaponPicker &&
@@ -363,13 +391,10 @@ export default function BanPickTeamBuild({
 											refinement: 1,
 										});
 									}}
-									disabled={
-										!canPickWeapon || !pickerCharacter || isDisabledBySelection
-									}
+									disabled={!canPickWeapon || !pickerCharacter}
 									className={cn(
 										"flex flex-col items-center gap-2 rounded border border-white/20 p-2 bg-white/5 hover:bg-white/10",
 										isSelected && "border-emerald-400 bg-emerald-500/10",
-										isDisabledBySelection && "opacity-50 cursor-not-allowed",
 									)}
 								>
 									<div className="h-14 w-14 overflow-hidden rounded">
@@ -399,9 +424,13 @@ export default function BanPickTeamBuild({
 			>
 				<DialogContent className="max-w-md">
 					<DialogHeader>
-						<DialogTitle>Select Weapon Refinement</DialogTitle>
+						<DialogTitle>
+							{t(matchLocaleKeys.ban_pick_select_weapon_refinement)}
+						</DialogTitle>
 						<DialogDescription>
-							Choose refinement rank for {weaponRefinementPicker?.weapon.name}.
+							{t(matchLocaleKeys.ban_pick_choose_refinement_for, {
+								weaponName: weaponRefinementPicker?.weapon.name,
+							})}
 						</DialogDescription>
 					</DialogHeader>
 
@@ -437,7 +466,7 @@ export default function BanPickTeamBuild({
 							onClick={() => setWeaponRefinementPicker(null)}
 							disabled={isSubmittingWeapon}
 						>
-							Cancel
+							{t(matchLocaleKeys.ban_pick_cancel)}
 						</Button>
 						<Button
 							onClick={() => {
@@ -453,7 +482,7 @@ export default function BanPickTeamBuild({
 							}}
 							disabled={isSubmittingWeapon || !canPickWeapon}
 						>
-							Confirm
+							{t(matchLocaleKeys.ban_pick_confirm)}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

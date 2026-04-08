@@ -23,12 +23,14 @@ export const Route = createFileRoute("/_userLayout/room/$roomId/waiting")({
 
 interface CopyLinkButtonProps {
 	link: string;
+	label: string;
 	onCopySuccess: string;
 	onCopyError: string;
 }
 
 function CopyLinkButton({
 	link,
+	label,
 	onCopySuccess,
 	onCopyError,
 }: CopyLinkButtonProps) {
@@ -46,7 +48,7 @@ function CopyLinkButton({
 			}}
 		>
 			<Copy className="size-4 mr-2" />
-			<span className="text-sm font-medium">Copy Invite Link</span>
+			<span className="text-sm font-medium">{label}</span>
 		</Button>
 	);
 }
@@ -78,7 +80,7 @@ function RouteComponent() {
 	const startMatchMutation = useMutation({
 		mutationFn: matchApi.startMatch,
 		onError: () => {
-			toast.error("Failed to start match");
+			toast.error(tMatch(matchLocaleKeys.match_waiting_start_error));
 		},
 	});
 
@@ -189,7 +191,7 @@ function RouteComponent() {
 							</h2>
 							<div className="flex items-center justify-center gap-2">
 								<span className="text-sm font-medium text-white/50 uppercase tracking-widest">
-									Status
+									{tMatch(matchLocaleKeys.match_waiting_status_label)}
 								</span>
 								<div
 									className={cn(
@@ -246,7 +248,7 @@ function RouteComponent() {
 									: tMatch(matchLocaleKeys.match_waiting_connecting)}
 							</h3>
 							<p className="text-cyan-200/60 font-mono mt-1 text-sm">
-								UID: {bluePlayer?.ingameUuid || "--------"}
+								{tMatch(matchLocaleKeys.match_waiting_uid_label)}: {bluePlayer?.ingameUuid || "--------"}
 							</p>
 						</div>
 					</div>
@@ -269,7 +271,7 @@ function RouteComponent() {
 						<div className="text-center space-y-3">
 							<div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
 								<span className="text-xs font-semibold text-white/50 uppercase tracking-wider">
-									Format
+									{tMatch(matchLocaleKeys.match_waiting_format_label)}
 								</span>
 								<span className="text-sm font-bold text-white">
 									BO{match.sessionCount}
@@ -279,14 +281,15 @@ function RouteComponent() {
 							<div className="flex items-center justify-center gap-3 bg-black/40 px-5 py-2 rounded-full border border-white/5">
 								<img
 									src={match.host?.avatar || IconAssets.EMPTY_CHARACTER_ICON}
-									alt="Host"
+									alt={tMatch(matchLocaleKeys.match_waiting_host_avatar_alt)}
 									className="w-6 h-6 rounded-full object-cover border border-white/20"
 								/>
 								<span className="text-sm text-white/70">
-									Host:{" "}
-									<span className="text-white font-medium">
-										{match.host?.displayName || "Unknown"}
-									</span>
+									{tMatch(matchLocaleKeys.match_waiting_host_label, {
+										hostName:
+											match.host?.displayName ||
+											tMatch(matchLocaleKeys.match_waiting_unknown_host),
+									})}
 								</span>
 								<div
 									className={cn(
@@ -306,12 +309,15 @@ function RouteComponent() {
 									<div className="flex items-center gap-3 text-lg font-medium text-white/60 bg-white/5 px-6 py-3 rounded-2xl border border-white/5">
 										<Spinner className="w-5 h-5 text-white/40" />
 										<span>
-											Waiting for {waitingPlayers} player
-											{waitingPlayers > 1 ? "s" : ""}...
+											{tMatch(matchLocaleKeys.match_waiting_for_players, {
+												count: waitingPlayers,
+												suffix: waitingPlayers > 1 ? "s" : "",
+											})}
 										</span>
 									</div>
 									<CopyLinkButton
 										link={window.location.href}
+										label={tMatch(matchLocaleKeys.match_waiting_copy_invite_link)}
 										onCopySuccess={tMatch(
 											matchLocaleKeys.match_waiting_copy_success,
 										)}
@@ -323,7 +329,7 @@ function RouteComponent() {
 							) : (
 								<div className="flex flex-col items-center gap-4 w-full px-4">
 									<div className="text-emerald-400 font-medium text-lg animate-pulse">
-										All players connected!
+										{tMatch(matchLocaleKeys.match_waiting_all_players_connected)}
 									</div>
 									{isHost ? (
 										<Button
@@ -334,12 +340,12 @@ function RouteComponent() {
 											{startMatchMutation.isPending ? (
 												<Spinner className="w-6 h-6" />
 											) : (
-												"Start Match"
+												tMatch(matchLocaleKeys.match_waiting_start_game)
 											)}
 										</Button>
 									) : (
 										<div className="text-white/50 text-sm">
-											Waiting for host to start...
+											{tMatch(matchLocaleKeys.match_waiting_for_host_start)}
 										</div>
 									)}
 								</div>
@@ -363,7 +369,7 @@ function RouteComponent() {
 									)}
 								/>
 								<span className="text-sm font-medium text-white/50 uppercase tracking-widest">
-									Status
+									{tMatch(matchLocaleKeys.match_waiting_status_label)}
 								</span>
 							</div>
 						</div>
@@ -412,7 +418,7 @@ function RouteComponent() {
 									: tMatch(matchLocaleKeys.match_waiting_connecting)}
 							</h3>
 							<p className="text-rose-200/60 font-mono mt-1 text-sm">
-								UID: {redPlayer?.ingameUuid || "--------"}
+								{tMatch(matchLocaleKeys.match_waiting_uid_label)}: {redPlayer?.ingameUuid || "--------"}
 							</p>
 						</div>
 					</div>

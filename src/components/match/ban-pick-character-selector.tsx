@@ -1,6 +1,8 @@
 import CharacterContainer from "@/components/player-side/character-container";
 import { Input } from "@/components/ui/input";
+import { matchLocaleKeys } from "@/i18n/keys";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import type {
 	BanPickCharacter,
 	DraftAction,
@@ -36,6 +38,7 @@ export default function BanPickCharacterSelector({
 	currentAction,
 	onSelectCharacter,
 }: BanPickCharacterSelectorProps) {
+	const { t } = useTranslation("match");
 	const activeRingClass =
 		side === "blue"
 			? "rounded-sm ring-2 ring-sky-400 ring-offset-2 ring-offset-transparent"
@@ -55,7 +58,7 @@ export default function BanPickCharacterSelector({
 				<Input
 					value={search}
 					onChange={(event) => onSearchChange(event.target.value)}
-					placeholder="Search character..."
+					placeholder={t(matchLocaleKeys.ban_pick_search_character_placeholder)}
 					className="w-1/3"
 				/>
 				{renderElementFilter}
@@ -92,7 +95,9 @@ export default function BanPickCharacterSelector({
 								name={character.name}
 								rarity={character.rarity}
 							/>
-							<span>Cost: {character.cost}</span>
+							<span>
+								{t(matchLocaleKeys.ban_pick_cost_label)}: {character.cost}
+							</span>
 						</button>
 					);
 				})}

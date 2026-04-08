@@ -5,16 +5,22 @@ import { sessionRecordApi } from "@/apis/session-record";
 import { Button } from "@/components/ui/button";
 import { useAppSelector } from "@/hooks/use-app-selector";
 import { useSocketEvent } from "@/hooks/use-socket-event";
+import { matchLocaleKeys } from "@/i18n/keys";
+import { getTranslationToken } from "@/i18n/namespaces";
 import { MatchStatus, PlayerSide, SocketEvent } from "@/lib/constants";
 import { selectAuthProfile } from "@/lib/redux/auth.slice";
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_userLayout/room/$roomId/result")({
 	component: MatchResultComponent,
 });
 
 function MatchResultComponent() {
+	const { t } = useTranslation();
+	const tMatch = (key: string, options?: Record<string, string | number>) =>
+		t(getTranslationToken("match", key), options);
 	const navigate = Route.useNavigate();
 	const { roomId } = Route.useParams();
 	const { match } = useLoaderData({
@@ -93,7 +99,7 @@ function MatchResultComponent() {
 		return (
 			<div className="flex h-dvh w-full items-center justify-center p-4">
 				<h1 className="animate-pulse text-2xl text-white/50">
-					Loading Results...
+					{tMatch(matchLocaleKeys.match_result_loading)}
 				</h1>
 			</div>
 		);
@@ -127,10 +133,18 @@ function MatchResultComponent() {
 
 	const finalResultLabel =
 		blueWins > redWins
-			? `${bluePlayer?.displayName ?? "Blue"} wins`
+			? tMatch(matchLocaleKeys.match_result_wins, {
+					playerName:
+						bluePlayer?.displayName ??
+						tMatch(matchLocaleKeys.match_result_blue_fallback),
+				})
 			: redWins > blueWins
-				? `${redPlayer?.displayName ?? "Red"} wins`
-				: "Draw";
+				? tMatch(matchLocaleKeys.match_result_wins, {
+						playerName:
+							redPlayer?.displayName ??
+							tMatch(matchLocaleKeys.match_result_red_fallback),
+					})
+				: tMatch(matchLocaleKeys.match_result_draw);
 
 	const finalResultClassName =
 		blueWins > redWins
@@ -142,11 +156,15 @@ function MatchResultComponent() {
 	const sessionRows = report.sessions.map((session, index) => {
 		const isBlueLeft = session.blueParticipant?.id === bluePlayer?.id;
 		const leftName = isBlueLeft
-			? (bluePlayer?.displayName ?? "Blue")
-			: (redPlayer?.displayName ?? "Red");
+			? (bluePlayer?.displayName ??
+				tMatch(matchLocaleKeys.match_result_blue_fallback))
+			: (redPlayer?.displayName ??
+				tMatch(matchLocaleKeys.match_result_red_fallback));
 		const rightName = isBlueLeft
-			? (redPlayer?.displayName ?? "Red")
-			: (bluePlayer?.displayName ?? "Blue");
+			? (redPlayer?.displayName ??
+				tMatch(matchLocaleKeys.match_result_red_fallback))
+			: (bluePlayer?.displayName ??
+				tMatch(matchLocaleKeys.match_result_blue_fallback));
 
 		const leftFinalTime = isBlueLeft
 			? (session.record?.blueFinalTime ?? 0)
@@ -177,7 +195,11 @@ function MatchResultComponent() {
 		}
 
 		const winnerLabel =
-			session.winnerSide === null ? "Draw" : leftWon ? leftName : rightName;
+			session.winnerSide === null
+				? tMatch(matchLocaleKeys.match_result_draw)
+				: leftWon
+					? leftName
+					: rightName;
 
 		return {
 			index,
@@ -204,11 +226,11 @@ function MatchResultComponent() {
 			<div className="mx-auto max-w-4xl w-full">
 				<div className="flex items-center justify-between mb-8">
 					<h1 className="text-4xl font-bold font-serif bg-linear-to-r from-amber-200 to-amber-500 bg-clip-text text-transparent">
-						Match Scoreboard
+						{tMatch(matchLocaleKeys.match_result_scoreboard_title)}
 					</h1>
 					<Link to="/">
 						<Button variant="outline" className="border-white/20">
-							Back to Lobby
+							{tMatch(matchLocaleKeys.match_result_back_to_lobby)}
 						</Button>
 					</Link>
 				</div>
@@ -246,19 +268,25 @@ function MatchResultComponent() {
 
 				<div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-6 mb-8">
 					<div className="text-xs uppercase tracking-[0.2em] text-amber-200/70 mb-2">
-						Total Result
+						{tMatch(matchLocaleKeys.match_result_total_result)}
 					</div>
 					<div className="flex items-center justify-between gap-4">
 						<div className={cn("text-2xl font-bold", finalResultClassName)}>
 							{finalResultLabel}
 						</div>
 						<div className="text-sm text-white/70">
-							{blueWins} - {redWins} across {totalSessions} sessions
+							{tMatch(matchLocaleKeys.match_result_summary, {
+								blueWins,
+								redWins,
+								totalSessions,
+							})}
 						</div>
 					</div>
 				</div>
 
-				<h2 className="text-2xl font-bold mb-4 font-serif">Session Details</h2>
+				<h2 className="text-2xl font-bold mb-4 font-serif">
+					{tMatch(matchLocaleKeys.match_result_session_details)}
+				</h2>
 
 				<div className="grid gap-4">
 					{sessionRows.map((session) => {
@@ -269,7 +297,9 @@ function MatchResultComponent() {
 							>
 								<div className="mb-4 text-center">
 									<h3 className="text-lg font-bold text-white/60">
-										GAME {session.index + 1}
+										{tMatch(matchLocaleKeys.match_result_game_label, {
+											index: session.index + 1,
+										})}
 									</h3>
 								</div>
 
@@ -288,15 +318,22 @@ function MatchResultComponent() {
 											{session.leftTotalTime}s
 										</div>
 										<div className="text-xs text-white/50">
-											Base {session.leftFinalTime}s + Bonus {session.leftBonus}s
+											{tMatch(matchLocaleKeys.match_result_base_bonus, {
+												base: session.leftFinalTime,
+												bonus: session.leftBonus,
+											})}
 										</div>
 									</div>
 
 									{/* Divider */}
 									<div className="text-center min-w-24">
-										<div className="text-sm text-white/30 mb-1">VS</div>
+										<div className="text-sm text-white/30 mb-1">
+											{tMatch(matchLocaleKeys.match_result_vs_label)}
+										</div>
 										<div className="text-xs text-amber-200/90">
-											Winner: {session.winnerLabel}
+											{tMatch(matchLocaleKeys.match_result_winner_label, {
+												winner: session.winnerLabel,
+											})}
 										</div>
 									</div>
 
@@ -314,8 +351,10 @@ function MatchResultComponent() {
 											{session.rightTotalTime}s
 										</div>
 										<div className="text-xs text-white/50">
-											Base {session.rightFinalTime}s + Bonus{" "}
-											{session.rightBonus}s
+											{tMatch(matchLocaleKeys.match_result_base_bonus, {
+												base: session.rightFinalTime,
+												bonus: session.rightBonus,
+											})}
 										</div>
 									</div>
 								</div>

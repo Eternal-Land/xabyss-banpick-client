@@ -1,6 +1,8 @@
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { matchLocaleKeys } from "@/i18n/keys";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 export interface BanPickTimerInputValues {
 	chamber1: string;
@@ -25,6 +27,7 @@ export default function BanPickTimerInputs({
 	values,
 	onValuesChange,
 }: BanPickTimerInputsProps) {
+	const { t } = useTranslation("match");
 	const resolvedValues = useMemo<BanPickTimerInputValues>(
 		() =>
 			values ?? {
@@ -50,7 +53,7 @@ export default function BanPickTimerInputs({
 	if (isRealtimeMatch) {
 		return (
 			<Field>
-				<FieldLabel>Time</FieldLabel>
+				<FieldLabel>{t(matchLocaleKeys.ban_pick_timer_time)}</FieldLabel>
 				<Input
 					value={resolvedValues.chamber1}
 					onChange={(event) => updateField("chamber1", event.target.value)}
@@ -63,7 +66,7 @@ export default function BanPickTimerInputs({
 	return (
 		<>
 			<Field>
-				<FieldLabel>Chamber 1</FieldLabel>
+				<FieldLabel>{t(matchLocaleKeys.ban_pick_timer_chamber_1)}</FieldLabel>
 				<Input
 					value={resolvedValues.chamber1}
 					onChange={(event) => updateField("chamber1", event.target.value)}
@@ -71,7 +74,7 @@ export default function BanPickTimerInputs({
 				/>
 			</Field>
 			<Field>
-				<FieldLabel>Chamber 2</FieldLabel>
+				<FieldLabel>{t(matchLocaleKeys.ban_pick_timer_chamber_2)}</FieldLabel>
 				<Input
 					value={resolvedValues.chamber2}
 					onChange={(event) => updateField("chamber2", event.target.value)}
@@ -79,7 +82,7 @@ export default function BanPickTimerInputs({
 				/>
 			</Field>
 			<Field>
-				<FieldLabel>Chamber 3</FieldLabel>
+				<FieldLabel>{t(matchLocaleKeys.ban_pick_timer_chamber_3)}</FieldLabel>
 				<Input
 					value={resolvedValues.chamber3}
 					onChange={(event) => updateField("chamber3", event.target.value)}
@@ -87,7 +90,7 @@ export default function BanPickTimerInputs({
 				/>
 			</Field>
 			<Field>
-				<FieldLabel>Reset</FieldLabel>
+				<FieldLabel>{t(matchLocaleKeys.ban_pick_timer_reset)}</FieldLabel>
 				<Input
 					value={resolvedValues.reset}
 					onChange={(event) => updateField("reset", event.target.value)}
