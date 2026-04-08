@@ -14,7 +14,7 @@ import {
 	validateSessionCompletionData,
 } from "@/components/match/ban-pick.utils";
 import { matchApi } from "@/apis/match";
-import type { MatchStateResponse } from "@/apis/match/types";
+import type { MatchResponse, MatchStateResponse } from "@/apis/match/types";
 import { sessionCostApi } from "@/apis/session-cost";
 import type { SessionCostResponse } from "@/apis/session-cost/types";
 import { sessionRecordApi } from "@/apis/session-record";
@@ -215,11 +215,12 @@ const parseTimerInputsToRecord = (
 
 function RouteComponent() {
 	const { roomId } = Route.useParams();
-	const { match, matchState } = useLoaderData({
+	const { match: initialMatch, matchState } = useLoaderData({
 		from: "/_userLayout/room/$roomId",
 	});
 	const router = useRouter();
 	const profile = useAppSelector(selectAuthProfile);
+	const [match, setMatch] = useState<MatchResponse | undefined>(initialMatch);
 	const bluePlayer = match?.bluePlayer;
 	const redPlayer = match?.redPlayer;
 	const isRealtimeMatch = match?.type === MatchType.REALTIME;
@@ -332,7 +333,11 @@ function RouteComponent() {
 		setPageMatchState(data);
 	});
 
-	useSocketEvent(SocketEvent.MATCH_UPDATED, (data: any) => {
+	useSocketEvent(SocketEvent.MATCH_UPDATED, (data?: MatchResponse) => {
+		if (data) {
+			setMatch(data);
+		}
+
 		navigateByMatchStatus(data?.status);
 	});
 
@@ -340,12 +345,19 @@ function RouteComponent() {
 		void (async () => {
 			try {
 				const response = await matchApi.getMatch(roomId);
+				if (response.data) {
+					setMatch(response.data);
+				}
 				navigateByMatchStatus(response.data?.status);
 			} catch {
 				// Session update navigation is best-effort.
 			}
 		})();
 	});
+
+	useEffect(() => {
+		setMatch(initialMatch);
+	}, [initialMatch]);
 
 	useEffect(() => {
 		if (!match) {
@@ -1182,6 +1194,9 @@ function RouteComponent() {
 					await matchApi.completeSession(match.id);
 					const refreshedMatchResponse = await matchApi.getMatch(match.id);
 					const refreshedMatch = refreshedMatchResponse.data;
+					if (refreshedMatch) {
+						setMatch(refreshedMatch);
+					}
 					const reportResponse = await sessionRecordApi.getMatchReport(
 						match.id,
 					);
@@ -1204,7 +1219,12 @@ function RouteComponent() {
 						});
 					} else {
 						toast.success("Session completed. Next session started.");
-						void router.invalidate();
+						await router.invalidate();
+
+						const latestMatchResponse = await matchApi.getMatch(match.id);
+						if (latestMatchResponse.data) {
+							setMatch(latestMatchResponse.data);
+						}
 					}
 				}
 			} catch {
