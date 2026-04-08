@@ -3,6 +3,8 @@ import axios from "axios";
 import type { ProfileResponse, UpdateProfileInput } from "./types";
 import { API_BASE, http } from "@/lib/http";
 
+axios.defaults.withCredentials = true;
+
 async function getSelf() {
 	const response = await axios.get<BaseApiResponse<ProfileResponse>>(
 		API_BASE + "/api/self",
