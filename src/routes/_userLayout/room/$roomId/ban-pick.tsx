@@ -690,19 +690,7 @@ function RouteComponent() {
 		};
 	}, [allKnownBanCharacters, blueCharacters, pageMatchState, redCharacters]);
 
-	const draftStep = useMemo(() => {
-		if (!pageMatchState) {
-			return 0;
-		}
-
-		return Math.min(
-			pageMatchState.blueBanChars.length +
-				pageMatchState.blueSelectedChars.length +
-				pageMatchState.redBanChars.length +
-				pageMatchState.redSelectedChars.length,
-			DRAFT_SEQUENCE.length,
-		);
-	}, [pageMatchState]);
+	const draftStep = pageMatchState?.draftStep ?? 0;
 
 	const currentAction =
 		draftStep < DRAFT_SEQUENCE.length ? DRAFT_SEQUENCE[draftStep] : undefined;
@@ -1523,6 +1511,9 @@ function RouteComponent() {
 							leadComparison.blueTotalComparableSeconds
 						}
 						redTotalComparableSeconds={leadComparison.redTotalComparableSeconds}
+						turnStartedAt={pageMatchState?.turnStartedAt ?? null}
+						blueTimeBank={pageMatchState?.blueTimeBank ?? 0}
+						redTimeBank={pageMatchState?.redTimeBank ?? 0}
 						onSubmit={handleSubmit}
 					/>
 
