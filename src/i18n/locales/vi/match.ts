@@ -120,6 +120,25 @@ const matchVi: MatchLocaleObject = {
 	ban_pick_session_completed_next_started:
 		"Hoàn tất ván. Ván tiếp theo đã bắt đầu.",
 	ban_pick_failed_complete_session: "Không thể hoàn tất ván",
+	ban_pick_supachai_title: "Supachai",
+	ban_pick_supachai_target_slot: "Ô pick cần đổi",
+	ban_pick_supachai_replacement: "Nhân vật thay thế",
+	ban_pick_supachai_pick_slot_placeholder: "Chọn nhân vật đã pick",
+	ban_pick_supachai_replacement_placeholder: "Chọn nhân vật thay thế",
+	ban_pick_supachai_no_replacement: "Không có nhân vật thay thế khả dụng",
+	ban_pick_supachai_activate: "Kích hoạt Supachai",
+	ban_pick_supachai_uses_left: "Lượt còn lại: {{count}}",
+	ban_pick_supachai_activating: "Đang kích hoạt...",
+	ban_pick_supachai_success: "Kích hoạt Supachai thành công",
+	ban_pick_supachai_failed: "Không thể kích hoạt Supachai",
+	ban_pick_supachai_pick_label: "Pick {{index}}",
+	ban_pick_supachai_dialog_description:
+		"Chọn ô pick cần thay thế và nhân vật mới từ bộ sưu tập của bạn.",
+	ban_pick_supachai_warning_title: "Xác nhận đổi Supachai",
+	ban_pick_supachai_warning_description:
+		"Thao tác này sẽ thay thế ô pick đã chọn và tiêu tốn một lượt Supachai.",
+	ban_pick_supachai_warning_confirm: "Có, tiếp tục",
+	ban_pick_supachai_warning_back: "Quay lại",
 };
 
 export default matchVi;

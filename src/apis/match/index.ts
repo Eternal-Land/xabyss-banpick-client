@@ -85,6 +85,17 @@ async function completeSession(matchId: string) {
 	return response.data;
 }
 
+async function activateSupachai(
+	matchId: string,
+	fromCharId: string,
+	toCharId: string,
+) {
+	const response = await http.put<BaseApiResponse>(
+		`/api/user/match/${matchId}/activate-supachai/${fromCharId}/${toCharId}`,
+	);
+	return response.data;
+}
+
 export const matchApi = {
 	listMatches,
 	createMatch,
@@ -96,4 +107,5 @@ export const matchApi = {
 	banChar,
 	pickWeapon,
 	completeSession,
+	activateSupachai,
 } as const;

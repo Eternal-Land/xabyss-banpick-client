@@ -118,4 +118,24 @@ export const matchLocaleKeys = {
 	ban_pick_session_completed_next_started:
 		"ban_pick_session_completed_next_started",
 	ban_pick_failed_complete_session: "ban_pick_failed_complete_session",
+	ban_pick_supachai_title: "ban_pick_supachai_title",
+	ban_pick_supachai_target_slot: "ban_pick_supachai_target_slot",
+	ban_pick_supachai_replacement: "ban_pick_supachai_replacement",
+	ban_pick_supachai_pick_slot_placeholder:
+		"ban_pick_supachai_pick_slot_placeholder",
+	ban_pick_supachai_replacement_placeholder:
+		"ban_pick_supachai_replacement_placeholder",
+	ban_pick_supachai_no_replacement: "ban_pick_supachai_no_replacement",
+	ban_pick_supachai_activate: "ban_pick_supachai_activate",
+	ban_pick_supachai_uses_left: "ban_pick_supachai_uses_left",
+	ban_pick_supachai_activating: "ban_pick_supachai_activating",
+	ban_pick_supachai_success: "ban_pick_supachai_success",
+	ban_pick_supachai_failed: "ban_pick_supachai_failed",
+	ban_pick_supachai_pick_label: "ban_pick_supachai_pick_label",
+	ban_pick_supachai_dialog_description: "ban_pick_supachai_dialog_description",
+	ban_pick_supachai_warning_title: "ban_pick_supachai_warning_title",
+	ban_pick_supachai_warning_description:
+		"ban_pick_supachai_warning_description",
+	ban_pick_supachai_warning_confirm: "ban_pick_supachai_warning_confirm",
+	ban_pick_supachai_warning_back: "ban_pick_supachai_warning_back",
 } as const;

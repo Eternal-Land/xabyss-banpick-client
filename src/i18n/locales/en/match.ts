@@ -121,6 +121,25 @@ const matchEn: MatchLocaleObject = {
 	ban_pick_session_completed_next_started:
 		"Session completed. Next session started.",
 	ban_pick_failed_complete_session: "Failed to complete session",
+	ban_pick_supachai_title: "Supachai",
+	ban_pick_supachai_target_slot: "Target pick slot",
+	ban_pick_supachai_replacement: "Replacement character",
+	ban_pick_supachai_pick_slot_placeholder: "Select picked character",
+	ban_pick_supachai_replacement_placeholder: "Select replacement character",
+	ban_pick_supachai_no_replacement: "No replacement character available",
+	ban_pick_supachai_activate: "Activate Supachai",
+	ban_pick_supachai_uses_left: "Uses left: {{count}}",
+	ban_pick_supachai_activating: "Activating...",
+	ban_pick_supachai_success: "Supachai activated successfully",
+	ban_pick_supachai_failed: "Failed to activate Supachai",
+	ban_pick_supachai_pick_label: "Pick {{index}}",
+	ban_pick_supachai_dialog_description:
+		"Choose the pick slot to replace and the new character from your collection.",
+	ban_pick_supachai_warning_title: "Confirm Supachai swap",
+	ban_pick_supachai_warning_description:
+		"This will replace the selected pick slot and consume one Supachai use.",
+	ban_pick_supachai_warning_confirm: "Yes, continue",
+	ban_pick_supachai_warning_back: "Back",
 };
 
 export default matchEn;

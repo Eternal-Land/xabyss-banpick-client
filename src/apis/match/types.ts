@@ -37,6 +37,9 @@ export interface MatchStateResponse {
 	redTimeBank: number;
 	turnStartedAt: string | null;
 	draftStep: number;
+	blueSupachaiUsedCount: number;
+	redSupachaiUsedCount: number;
+	supachaiMaxUses: number;
 }
 
 export const listMatchesQuerySchema = z.object({

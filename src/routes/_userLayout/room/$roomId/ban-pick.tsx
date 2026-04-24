@@ -433,6 +433,13 @@ function RouteComponent() {
 	const [pendingCharacter, setPendingCharacter] =
 		useState<AccountCharacterResponse | null>(null);
 	const [isSubmittingTurnAction, setIsSubmittingTurnAction] = useState(false);
+	const [isActivatingSupachai, setIsActivatingSupachai] = useState(false);
+	const [blueSupachaiFromCharacterId, setBlueSupachaiFromCharacterId] =
+		useState("");
+	const [blueSupachaiToCharacterId, setBlueSupachaiToCharacterId] = useState("");
+	const [redSupachaiFromCharacterId, setRedSupachaiFromCharacterId] =
+		useState("");
+	const [redSupachaiToCharacterId, setRedSupachaiToCharacterId] = useState("");
 	const [pageMatchState, setPageMatchState] = useState<
 		MatchStateResponse | undefined
 	>(matchState);
@@ -799,6 +806,40 @@ function RouteComponent() {
 		[draftState.red.picks],
 	);
 
+	const blueSupachaiReplacementOptions = useMemo(
+		() =>
+			blueCharacters
+				.filter(
+					(character) =>
+						!selectedCharacterIds.has(getBanPickCharacterId(character)),
+				)
+				.map(mapAccountCharacterToBanPickCharacter),
+		[blueCharacters, selectedCharacterIds],
+	);
+
+	const redSupachaiReplacementOptions = useMemo(
+		() =>
+			redCharacters
+				.filter(
+					(character) =>
+						!selectedCharacterIds.has(getBanPickCharacterId(character)),
+				)
+				.map(mapAccountCharacterToBanPickCharacter),
+		[redCharacters, selectedCharacterIds],
+	);
+
+	const blueSupachaiRemainingUses = Math.max(
+		0,
+		(pageMatchState?.supachaiMaxUses ?? 1) -
+			(pageMatchState?.blueSupachaiUsedCount ?? 0),
+	);
+
+	const redSupachaiRemainingUses = Math.max(
+		0,
+		(pageMatchState?.supachaiMaxUses ?? 1) -
+			(pageMatchState?.redSupachaiUsedCount ?? 0),
+	);
+
 	const blueSelectedWeaponByCharacterId = useMemo(
 		() =>
 			pageMatchState
@@ -1015,6 +1056,51 @@ function RouteComponent() {
 		}
 	};
 
+	const onActivateSupachai = async (side: "blue" | "red") => {
+		if (!match?.id) {
+			return;
+		}
+
+		if (isActivatingSupachai) {
+			return;
+		}
+
+		if (side === "blue" && profile?.id !== bluePlayer?.id) {
+			return;
+		}
+
+		if (side === "red" && profile?.id !== redPlayer?.id) {
+			return;
+		}
+
+		const fromCharId =
+			side === "blue" ? blueSupachaiFromCharacterId : redSupachaiFromCharacterId;
+		const toCharId =
+			side === "blue" ? blueSupachaiToCharacterId : redSupachaiToCharacterId;
+
+		if (!fromCharId || !toCharId || fromCharId === toCharId) {
+			toast.error(t(matchLocaleKeys.ban_pick_supachai_failed));
+			return;
+		}
+
+		setIsActivatingSupachai(true);
+		try {
+			await matchApi.activateSupachai(match.id, fromCharId, toCharId);
+			if (side === "blue") {
+				setBlueSupachaiFromCharacterId("");
+				setBlueSupachaiToCharacterId("");
+			} else {
+				setRedSupachaiFromCharacterId("");
+				setRedSupachaiToCharacterId("");
+			}
+			toast.success(t(matchLocaleKeys.ban_pick_supachai_success));
+		} catch {
+			toast.error(t(matchLocaleKeys.ban_pick_supachai_failed));
+		} finally {
+			setIsActivatingSupachai(false);
+		}
+	};
+
 	const onPickBlueWeapon = async (
 		character: BanPickCharacter,
 		weaponId: number,
@@ -1156,6 +1242,10 @@ function RouteComponent() {
 		setSessionCost(null);
 		setBlueSelectedWeaponRefinementByCharacterIdLocal({});
 		setRedSelectedWeaponRefinementByCharacterIdLocal({});
+		setBlueSupachaiFromCharacterId("");
+		setBlueSupachaiToCharacterId("");
+		setRedSupachaiFromCharacterId("");
+		setRedSupachaiToCharacterId("");
 		setTimerInputs(EMPTY_TIMER_INPUTS_BY_SIDE);
 		sessionRecordInputRef.current = EMPTY_SESSION_RECORD_INPUT;
 		lastCalculatedTurnRef.current = null;
@@ -1493,6 +1583,23 @@ function RouteComponent() {
 							blueSelectedWeaponRefinementByCharacterId
 						}
 						onPickWeapon={onPickBlueWeapon}
+						supachaiRemainingUses={blueSupachaiRemainingUses}
+						supachaiPickOptions={blueBanPickPicks}
+						supachaiReplacementOptions={blueSupachaiReplacementOptions}
+						supachaiFromCharacterId={blueSupachaiFromCharacterId}
+						supachaiToCharacterId={blueSupachaiToCharacterId}
+						onSupachaiFromCharacterIdChange={setBlueSupachaiFromCharacterId}
+						onSupachaiToCharacterIdChange={setBlueSupachaiToCharacterId}
+						onActivateSupachai={() => onActivateSupachai("blue")}
+						isActivatingSupachai={isActivatingSupachai}
+						isSupachaiButtonDisabled={
+							isActivatingSupachai ||
+							!isDraftCompleted ||
+							!blueSupachaiFromCharacterId ||
+							!blueSupachaiToCharacterId ||
+							blueSupachaiFromCharacterId === blueSupachaiToCharacterId ||
+							blueSupachaiRemainingUses <= 0
+						}
 					/>
 
 					<BanPickActionPanel
@@ -1548,6 +1655,23 @@ function RouteComponent() {
 							redSelectedWeaponRefinementByCharacterId
 						}
 						onPickWeapon={onPickRedWeapon}
+						supachaiRemainingUses={redSupachaiRemainingUses}
+						supachaiPickOptions={redBanPickPicks}
+						supachaiReplacementOptions={redSupachaiReplacementOptions}
+						supachaiFromCharacterId={redSupachaiFromCharacterId}
+						supachaiToCharacterId={redSupachaiToCharacterId}
+						onSupachaiFromCharacterIdChange={setRedSupachaiFromCharacterId}
+						onSupachaiToCharacterIdChange={setRedSupachaiToCharacterId}
+						onActivateSupachai={() => onActivateSupachai("red")}
+						isActivatingSupachai={isActivatingSupachai}
+						isSupachaiButtonDisabled={
+							isActivatingSupachai ||
+							!isDraftCompleted ||
+							!redSupachaiFromCharacterId ||
+							!redSupachaiToCharacterId ||
+							redSupachaiFromCharacterId === redSupachaiToCharacterId ||
+							redSupachaiRemainingUses <= 0
+						}
 					/>
 				</div>
 			</div>
