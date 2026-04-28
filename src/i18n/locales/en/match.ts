@@ -110,6 +110,8 @@ const matchEn: MatchLocaleObject = {
 	ban_pick_cancel: "Cancel",
 	ban_pick_failed_submit_turn: "Failed to submit turn action",
 	ban_pick_failed_pick_weapon: "Failed to pick weapon for {{characterName}}",
+	ban_pick_traveller_already_picked:
+		"Traveller can only be picked once per side",
 	ban_pick_no_character_auto_pick: "No character available for auto pick",
 	ban_pick_auto_selected: "Time over. Auto selected {{characterName}}",
 	ban_pick_failed_auto_submit: "Failed to auto submit turn action",
@@ -140,6 +142,15 @@ const matchEn: MatchLocaleObject = {
 		"This will replace the selected pick slot and consume one Supachai use.",
 	ban_pick_supachai_warning_confirm: "Yes, continue",
 	ban_pick_supachai_warning_back: "Back",
+	ban_pick_host_pause_match: "Pause Match",
+	ban_pick_host_resume_match: "Resume Match",
+	ban_pick_host_undo_action: "Undo Last Action",
+	ban_pick_host_pause_success: "Match paused successfully",
+	ban_pick_host_pause_failed: "Failed to pause match",
+	ban_pick_host_resume_success: "Match resumed successfully",
+	ban_pick_host_resume_failed: "Failed to resume match",
+	ban_pick_host_undo_success: "Undid last action successfully",
+	ban_pick_host_undo_failed: "Failed to undo last action",
 };
 
 export default matchEn;

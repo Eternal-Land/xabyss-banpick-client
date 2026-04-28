@@ -36,6 +36,8 @@ export interface MatchStateResponse {
 	blueTimeBank: number;
 	redTimeBank: number;
 	turnStartedAt: string | null;
+	isPaused: boolean;
+	pausedElapsedMs: number | null;
 	draftStep: number;
 	blueSupachaiUsedCount: number;
 	redSupachaiUsedCount: number;

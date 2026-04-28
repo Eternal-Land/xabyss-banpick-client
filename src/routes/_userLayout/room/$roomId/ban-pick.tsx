@@ -796,15 +796,32 @@ function RouteComponent() {
 		[draftState.blue.picks],
 	);
 
+	const redBanPickPicks = useMemo(
+		() => draftState.red.picks.map(mapAccountCharacterToBanPickCharacter),
+		[draftState.red.picks],
+	);
+
+	const hasTravellerPicked = (picks: BanPickCharacter[]) => {
+		return picks.some((pick) =>
+			pick.name.toLowerCase().startsWith("traveller"),
+		);
+	};
+
+	const blueHasTravellerPicked = useMemo(
+		() => hasTravellerPicked(blueBanPickPicks),
+		[blueBanPickPicks],
+	);
+
+	const redHasTravellerPicked = useMemo(
+		() => hasTravellerPicked(redBanPickPicks),
+		[redBanPickPicks],
+	);
+
 	const redBanPickBans = useMemo(
 		() => draftState.red.bans.map(mapAccountCharacterToBanPickCharacter),
 		[draftState.red.bans],
 	);
 
-	const redBanPickPicks = useMemo(
-		() => draftState.red.picks.map(mapAccountCharacterToBanPickCharacter),
-		[draftState.red.picks],
-	);
 
 	const blueSupachaiReplacementOptions = useMemo(
 		() =>
@@ -1098,6 +1115,36 @@ function RouteComponent() {
 			toast.error(t(matchLocaleKeys.ban_pick_supachai_failed));
 		} finally {
 			setIsActivatingSupachai(false);
+		}
+	};
+
+	const handlePause = async () => {
+		if (!match?.id || profile?.id !== match?.host?.id) return;
+		try {
+			await matchApi.pauseMatch(match.id);
+			toast.success(t(matchLocaleKeys.ban_pick_host_pause_success));
+		} catch {
+			toast.error(t(matchLocaleKeys.ban_pick_host_pause_failed));
+		}
+	};
+
+	const handleResume = async () => {
+		if (!match?.id || profile?.id !== match?.host?.id) return;
+		try {
+			await matchApi.resumeMatch(match.id);
+			toast.success(t(matchLocaleKeys.ban_pick_host_resume_success));
+		} catch {
+			toast.error(t(matchLocaleKeys.ban_pick_host_resume_failed));
+		}
+	};
+
+	const handleUndo = async () => {
+		if (!match?.id || profile?.id !== match?.host?.id) return;
+		try {
+			await matchApi.undoLastAction(match.id);
+			toast.success(t(matchLocaleKeys.ban_pick_host_undo_success));
+		} catch {
+			toast.error(t(matchLocaleKeys.ban_pick_host_undo_failed));
 		}
 	};
 
@@ -1600,6 +1647,7 @@ function RouteComponent() {
 							blueSupachaiFromCharacterId === blueSupachaiToCharacterId ||
 							blueSupachaiRemainingUses <= 0
 						}
+						hasTravellerPicked={blueHasTravellerPicked}
 					/>
 
 					<BanPickActionPanel
@@ -1622,6 +1670,12 @@ function RouteComponent() {
 						blueTimeBank={pageMatchState?.blueTimeBank ?? 0}
 						redTimeBank={pageMatchState?.redTimeBank ?? 0}
 						onSubmit={handleSubmit}
+						isHost={profile?.id === match?.host?.id}
+						isPaused={pageMatchState?.isPaused ?? false}
+						pausedElapsedMs={pageMatchState?.pausedElapsedMs ?? null}
+						onPause={handlePause}
+						onResume={handleResume}
+						onUndo={handleUndo}
 					/>
 
 					<BanPickSideSection
@@ -1672,6 +1726,7 @@ function RouteComponent() {
 							redSupachaiFromCharacterId === redSupachaiToCharacterId ||
 							redSupachaiRemainingUses <= 0
 						}
+						hasTravellerPicked={redHasTravellerPicked}
 					/>
 				</div>
 			</div>

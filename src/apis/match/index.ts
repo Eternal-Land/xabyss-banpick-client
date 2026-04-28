@@ -96,6 +96,27 @@ async function activateSupachai(
 	return response.data;
 }
 
+async function pauseMatch(matchId: string) {
+	const response = await http.put<BaseApiResponse>(
+		`/api/user/match/${matchId}/pause`,
+	);
+	return response.data;
+}
+
+async function resumeMatch(matchId: string) {
+	const response = await http.put<BaseApiResponse>(
+		`/api/user/match/${matchId}/resume`,
+	);
+	return response.data;
+}
+
+async function undoLastAction(matchId: string) {
+	const response = await http.put<BaseApiResponse>(
+		`/api/user/match/${matchId}/undo`,
+	);
+	return response.data;
+}
+
 export const matchApi = {
 	listMatches,
 	createMatch,
@@ -108,4 +129,7 @@ export const matchApi = {
 	pickWeapon,
 	completeSession,
 	activateSupachai,
+	pauseMatch,
+	resumeMatch,
+	undoLastAction,
 } as const;

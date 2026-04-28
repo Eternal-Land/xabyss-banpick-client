@@ -18,6 +18,12 @@ interface BanPickActionPanelProps {
 	blueTimeBank: number;
 	redTimeBank: number;
 	onSubmit: () => Promise<void> | void;
+	isHost?: boolean;
+	isPaused?: boolean;
+	pausedElapsedMs?: number | null;
+	onPause?: () => void;
+	onResume?: () => void;
+	onUndo?: () => void;
 }
 
 export default function BanPickActionPanel({
@@ -33,6 +39,12 @@ export default function BanPickActionPanel({
 	blueTimeBank,
 	redTimeBank,
 	onSubmit,
+	isHost,
+	isPaused,
+	pausedElapsedMs,
+	onPause,
+	onResume,
+	onUndo,
 }: BanPickActionPanelProps) {
 	const { t } = useTranslation("match");
 	const sideLabel =
@@ -76,6 +88,8 @@ export default function BanPickActionPanel({
 				redTimeBank={redTimeBank}
 				currentAction={currentAction}
 				isDraftCompleted={isDraftCompleted}
+				isPaused={isPaused}
+				pausedElapsedMs={pausedElapsedMs}
 			/>
 
 			<div className="w-full rounded-md p-3 text-center text-white/90">
@@ -102,7 +116,7 @@ export default function BanPickActionPanel({
 			<div className="flex flex-col gap-2 w-full">
 				<Button
 					onClick={onSubmit}
-					disabled={isButtonDisabled}
+					disabled={isButtonDisabled || isPaused}
 					className={
 						isDraftCompleted
 							? "w-full border shadow-[0_0_10px_rgba(255,255,255,0.2)]"
@@ -116,6 +130,28 @@ export default function BanPickActionPanel({
 							? t(matchLocaleKeys.ban_pick_complete_session)
 							: t(matchLocaleKeys.ban_pick_confirm)}
 				</Button>
+
+				{isHost && (
+					<>
+						{isPaused ? (
+							<Button onClick={onResume} className="w-full" variant="outline">
+								{t(matchLocaleKeys.ban_pick_host_resume_match)}
+							</Button>
+						) : (
+							<Button onClick={onPause} className="w-full" variant="outline">
+								{t(matchLocaleKeys.ban_pick_host_pause_match)}
+							</Button>
+						)}
+						<Button
+							onClick={onUndo}
+							disabled={draftStep === 0}
+							className="w-full"
+							variant="destructive"
+						>
+							{t(matchLocaleKeys.ban_pick_host_undo_action)}
+						</Button>
+					</>
+				)}
 			</div>
 		</div>
 	);

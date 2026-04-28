@@ -56,13 +56,13 @@ export default function CharacterContainer({
 			: "bg-linear-180 from-[#4D4280] to-[#935DB1]";
 
 	const containerClassName = showLevel
-		? "flex flex-col justify-center bg-white aspect-4/5 rounded-sm shadow-md-2 overflow-hidden"
-		: "bg-white aspect-square rounded-sm shadow-md-2 overflow-hidden";
+		? "flex flex-col justify-center bg-white aspect-square shadow-md-2 overflow-hidden"
+		: "bg-white aspect-square shadow-md-2 overflow-hidden";
 
 	return (
 		<div className={containerClassName}>
 			<div
-				className={`aspect-square ${rarityBackground} rounded-br-lg overflow-hidden flex items-center justify-center relative`}
+				className={`aspect-square ${rarityBackground} overflow-hidden flex items-center justify-center relative`}
 			>
 				<div
 					className={cn(

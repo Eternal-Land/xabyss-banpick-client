@@ -14,8 +14,8 @@ export const TIME_BANK_SECONDS = 120;
 
 export const DRAFT_SEQUENCE: DraftAction[] = [
 	{ side: "blue", type: "ban" },
-	{ side: "red", type: "ban" },
 	{ side: "blue", type: "ban" },
+	{ side: "red", type: "ban" },
 	{ side: "red", type: "ban" },
 	{ side: "blue", type: "pick" },
 	{ side: "red", type: "pick" },

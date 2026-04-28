@@ -109,6 +109,8 @@ const matchVi: MatchLocaleObject = {
 	ban_pick_cancel: "Hủy",
 	ban_pick_failed_submit_turn: "Không thể xác nhận lượt",
 	ban_pick_failed_pick_weapon: "Không thể chọn vũ khí cho {{characterName}}",
+	ban_pick_traveller_already_picked:
+		"Traveller chỉ có thể được chọn một lần mỗi bên",
 	ban_pick_no_character_auto_pick: "Không có nhân vật khả dụng để tự chọn",
 	ban_pick_auto_selected: "Hết giờ. Đã tự động chọn {{characterName}}",
 	ban_pick_failed_auto_submit: "Không thể tự động xác nhận lượt",
@@ -139,6 +141,15 @@ const matchVi: MatchLocaleObject = {
 		"Thao tác này sẽ thay thế ô pick đã chọn và tiêu tốn một lượt Supachai.",
 	ban_pick_supachai_warning_confirm: "Có, tiếp tục",
 	ban_pick_supachai_warning_back: "Quay lại",
+	ban_pick_host_pause_match: "Tạm dừng trận",
+	ban_pick_host_resume_match: "Tiếp tục trận",
+	ban_pick_host_undo_action: "Hoàn tác hành động cuối",
+	ban_pick_host_pause_success: "Đã tạm dừng trận đấu",
+	ban_pick_host_pause_failed: "Không thể tạm dừng trận đấu",
+	ban_pick_host_resume_success: "Đã tiếp tục trận đấu",
+	ban_pick_host_resume_failed: "Không thể tiếp tục trận đấu",
+	ban_pick_host_undo_success: "Hoàn tác thành công",
+	ban_pick_host_undo_failed: "Không thể hoàn tác",
 };
 
 export default matchVi;

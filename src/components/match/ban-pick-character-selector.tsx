@@ -22,6 +22,7 @@ export interface BanPickCharacterSelectorProps {
 	pendingCharacter: BanPickCharacter | null;
 	isDraftCompleted: boolean;
 	currentAction?: DraftAction;
+	hasTravellerPicked?: boolean;
 	onSelectCharacter: (character: BanPickCharacter) => void;
 }
 
@@ -38,6 +39,7 @@ export default function BanPickCharacterSelector({
 	pendingCharacter,
 	isDraftCompleted,
 	currentAction,
+	hasTravellerPicked,
 	onSelectCharacter,
 }: BanPickCharacterSelectorProps) {
 	const { t } = useTranslation("match");
@@ -69,11 +71,13 @@ export default function BanPickCharacterSelector({
 			<div className="grid grid-cols-7 auto-rows-min gap-4 overflow-y-auto p-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
 				{characters.map((character, index) => {
 					const isSelectedInDraft = selectedCharacterNames.has(character.name);
+					const isTraveller = character.name.toLowerCase().startsWith("traveller");
 					const isDisabled =
 						isDraftCompleted ||
 						!canInteract ||
 						selectableSide !== side ||
-						isSelectedInDraft;
+						isSelectedInDraft ||
+						(isTraveller && hasTravellerPicked && currentAction?.type === "pick");
 
 					return (
 						<button

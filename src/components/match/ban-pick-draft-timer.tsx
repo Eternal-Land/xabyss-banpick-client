@@ -10,6 +10,8 @@ interface BanPickDraftTimerProps {
 	redTimeBank: number;
 	currentAction?: DraftAction;
 	isDraftCompleted: boolean;
+	isPaused?: boolean;
+	pausedElapsedMs?: number | null;
 }
 
 const formatTimer = (seconds: number) => {
@@ -25,6 +27,8 @@ export default function BanPickDraftTimer({
 	redTimeBank,
 	currentAction,
 	isDraftCompleted,
+	isPaused,
+	pausedElapsedMs,
 }: BanPickDraftTimerProps) {
 	const { t } = useTranslation("match");
 	const [now, setNow] = useState(Date.now());
@@ -47,12 +51,18 @@ export default function BanPickDraftTimer({
 	}, [turnStartedAt]);
 
 	const timerState = useMemo(() => {
-		if (isDraftCompleted || !turnStartedAt || !currentAction) {
+		if (isDraftCompleted || (!turnStartedAt && !isPaused) || !currentAction) {
 			return null;
 		}
 
-		const startMs = new Date(turnStartedAt).getTime();
-		const elapsedSeconds = Math.max(0, (now - startMs) / 1000);
+		const elapsedSeconds = Math.max(
+			0,
+			isPaused && pausedElapsedMs !== undefined && pausedElapsedMs !== null
+				? pausedElapsedMs / 1000
+				: turnStartedAt
+					? (now - new Date(turnStartedAt).getTime()) / 1000
+					: 0
+		);
 
 		const sideBank = currentAction.side === "blue" ? blueTimeBank : redTimeBank;
 
@@ -96,11 +106,13 @@ export default function BanPickDraftTimer({
 			{/* Main countdown */}
 			<div
 				className={`text-4xl font-mono font-bold tabular-nums transition-colors ${
-					isCritical
-						? "text-red-500 animate-pulse"
-						: isUrgent
-							? "text-yellow-400"
-							: "text-white"
+					isPaused
+						? "text-gray-400"
+						: isCritical
+							? "text-red-500 animate-pulse"
+							: isUrgent
+								? "text-yellow-400"
+								: "text-white"
 				}`}
 			>
 				{formatTimer(displaySeconds)}

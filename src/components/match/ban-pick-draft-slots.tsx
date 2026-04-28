@@ -119,7 +119,7 @@ export default function BanPickDraftSlots({
                         <div
                             key={index}
                             className={cn(
-                                'bg-gray-800/50 w-full h-full flex flex-col items-center justify-center border border-2 overflow-hidden',
+                                'bg-gray-800/50 w-full aspect-square flex flex-col items-center justify-center border border-2 overflow-hidden',
                                 side === 'blue' && `col-start-${index + 2}`,
                                 getSlotHighlightClasses(
                                     side,
@@ -170,7 +170,7 @@ export default function BanPickDraftSlots({
                         <div
                             key={index}
                             className={cn(
-                                'w-full h-full flex items-center justify-center border border-2',
+                                'w-full aspect-square flex items-center justify-center border border-2',
                                 pickBaseClass,
                                 getSlotHighlightClasses(
                                     side,

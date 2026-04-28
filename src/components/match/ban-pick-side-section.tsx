@@ -102,6 +102,7 @@ interface BanPickSideSectionProps {
 	onActivateSupachai: () => Promise<void>;
 	isActivatingSupachai: boolean;
 	isSupachaiButtonDisabled: boolean;
+	hasTravellerPicked?: boolean;
 }
 
 export default function BanPickSideSection({
@@ -142,6 +143,8 @@ export default function BanPickSideSection({
 	onSupachaiToCharacterIdChange,
 	onActivateSupachai,
 	isActivatingSupachai,
+	isSupachaiButtonDisabled,
+	hasTravellerPicked,
 }: BanPickSideSectionProps) {
 	const { t } = useTranslation("match");
 	const [isSupachaiDialogOpen, setIsSupachaiDialogOpen] = useState(false);
@@ -172,9 +175,9 @@ export default function BanPickSideSection({
 
 	const renderCharacterPreview = (character: BanPickCharacter | null) => (
 		<div className="flex items-center gap-3 rounded-md border border-white/10 bg-white/5 p-3">
-			<Avatar className="size-14">
-				<AvatarImage src={character?.imageUrl} alt={character?.name ?? ""} />
-				<AvatarFallback>{getCharacterInitials(character?.name ?? "?")}</AvatarFallback>
+			<Avatar className="size-14 rounded-none">
+				<AvatarImage src={character?.imageUrl} alt={character?.name ?? ""} className="rounded-none" />
+				<AvatarFallback className="rounded-none">{getCharacterInitials(character?.name ?? "?")}</AvatarFallback>
 			</Avatar>
 			<div className="min-w-0 flex-1">
 				<p className="truncate text-sm font-medium">{character?.name ?? "-"}</p>
@@ -251,7 +254,7 @@ export default function BanPickSideSection({
 									type="button"
 									className="w-full"
 									onClick={() => setIsSupachaiDialogOpen(true)}
-									disabled={supachaiRemainingUses <= 0}
+									disabled={supachaiRemainingUses <= 0 || isSupachaiButtonDisabled}
 								>
 									{t(matchLocaleKeys.ban_pick_supachai_activate)}
 								</Button>
@@ -433,6 +436,7 @@ export default function BanPickSideSection({
 						pendingCharacter={pendingCharacter}
 						isDraftCompleted={isDraftCompleted}
 						currentAction={currentAction}
+						hasTravellerPicked={hasTravellerPicked}
 						onSelectCharacter={(character) => {
 							const selected = filteredCharacters.find(
 								(item) => item.characters.name === character.name,
