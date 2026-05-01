@@ -14,6 +14,7 @@ export const i18nNamespaces = [
 	"users",
 	"weapons",
 	"weapon-costs",
+	"character-weapons",
 ] as const;
 
 export function getTranslationToken(

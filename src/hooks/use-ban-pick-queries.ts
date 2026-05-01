@@ -9,55 +9,31 @@ import { useQuery } from "@tanstack/react-query";
 const ACCOUNT_CHARACTER_QUERY = {};
 
 interface UseBanPickQueriesParams {
-	bluePlayerId?: string;
-	redPlayerId?: string;
+	accountId?: string;
 }
 
 interface UseBanPickQueriesResult {
-	blueCharacters: AccountCharacterResponse[];
-	redCharacters: AccountCharacterResponse[];
+	accountCharacters: AccountCharacterResponse[];
 	globalCharacters: UserCharacterResponse[];
 	weapons: UserWeaponResponse[];
 }
 
 export function useBanPickQueries({
-	bluePlayerId,
-	redPlayerId,
+	accountId,
 }: UseBanPickQueriesParams): UseBanPickQueriesResult {
-	const { data: blueAccountCharactersResponse } = useQuery({
-		queryKey: [
-			"account-characters",
-			{ ...ACCOUNT_CHARACTER_QUERY, accountId: bluePlayerId },
-		],
+	const { data: accountCharactersResponse } = useQuery({
+		queryKey: ["account-characters", { ...ACCOUNT_CHARACTER_QUERY, accountId }],
 		queryFn: () => {
-			if (!bluePlayerId) {
-				return Promise.reject("No blue player ID");
+			if (!accountId) {
+				return Promise.reject("No account ID");
 			}
 
 			return accountCharactersApi.listAccountCharacters({
 				...ACCOUNT_CHARACTER_QUERY,
-				accountId: bluePlayerId,
+				accountId,
 			});
 		},
-		enabled: Boolean(bluePlayerId),
-	});
-
-	const { data: redAccountCharactersResponse } = useQuery({
-		queryKey: [
-			"account-characters",
-			{ ...ACCOUNT_CHARACTER_QUERY, accountId: redPlayerId },
-		],
-		queryFn: () => {
-			if (!redPlayerId) {
-				return Promise.reject("No red player ID");
-			}
-
-			return accountCharactersApi.listAccountCharacters({
-				...ACCOUNT_CHARACTER_QUERY,
-				accountId: redPlayerId,
-			});
-		},
-		enabled: Boolean(redPlayerId),
+		enabled: Boolean(accountId),
 	});
 
 	const { data: userWeaponsResponse } = useQuery({
@@ -71,8 +47,7 @@ export function useBanPickQueries({
 	});
 
 	return {
-		blueCharacters: blueAccountCharactersResponse?.data ?? [],
-		redCharacters: redAccountCharactersResponse?.data ?? [],
+		accountCharacters: accountCharactersResponse?.data ?? [],
 		globalCharacters: globalCharactersResponse?.data ?? [],
 		weapons: userWeaponsResponse?.data ?? [],
 	};

@@ -64,8 +64,17 @@ export const mapAccountCharacterToBanPickCharacter = (
 	weaponType: accountCharacter.characters.weaponType,
 });
 
-export const getBanPickCharacterId = (character: AccountCharacterResponse) =>
-	character.characterId.toString();
+export const getBanPickCharacterId = (
+	character:
+		| AccountCharacterResponse
+		| Pick<BanPickCharacter, "id">
+		| { id: string | number; characterId?: string | number },
+) =>
+	String(
+		"characterId" in character && character.characterId != null
+			? character.characterId
+			: character.id,
+	);
 
 export const mapDraftSideToPlayerSide = (side: DraftAction["side"]) =>
 	side === "blue" ? PlayerSide.BLUE : PlayerSide.RED;
@@ -106,7 +115,7 @@ export function applyDraftActionToMatchState(
 }
 
 export function mapSelectedWeaponsByCharacterId(
-	picks: AccountCharacterResponse[],
+	picks: Array<Pick<BanPickCharacter, "id">>,
 	weaponIds: string[],
 ) {
 	const selectedByCharacterId: Record<string, number | undefined> = {};
@@ -257,6 +266,31 @@ export function filterCharacters(
 	});
 }
 
+export function filterBanPickCharacters(
+	characters: BanPickCharacter[],
+	search: string,
+	elementFilter: string,
+	rarityFilter: string,
+) {
+	const normalizedSearch = search.trim().toLowerCase();
+
+	return characters.filter((character) => {
+		const matchesSearch =
+			!normalizedSearch ||
+			character.name.toLowerCase().includes(normalizedSearch);
+
+		const matchesElement =
+			elementFilter === ELEMENT_FILTER_ALL ||
+			String(character.element) === elementFilter;
+
+		const matchesRarity =
+			rarityFilter === RARITY_FILTER_ALL ||
+			character.rarity.toString() === rarityFilter;
+
+		return matchesSearch && matchesElement && matchesRarity;
+	});
+}
+
 export function mapCharacterNamesToAccountCharacters(
 	characters: AccountCharacterResponse[],
 	characterIdsOrNames: string[],
@@ -273,6 +307,37 @@ export function mapCharacterNamesToAccountCharacters(
 			character.characters.name.toLowerCase(),
 			character,
 		]),
+	);
+
+	return characterIdsOrNames.flatMap((characterIdOrName) => {
+		const normalizedValue = String(characterIdOrName).trim();
+		if (!normalizedValue) {
+			return [];
+		}
+
+		const mappedById = charactersById.get(normalizedValue);
+		if (mappedById) {
+			return [mappedById];
+		}
+
+		const mappedByName = charactersByName.get(normalizedValue.toLowerCase());
+		if (mappedByName) {
+			return [mappedByName];
+		}
+
+		return [];
+	});
+}
+
+export function mapCharacterNamesToBanPickCharacters(
+	characters: BanPickCharacter[],
+	characterIdsOrNames: string[],
+) {
+	const charactersById = new Map(
+		characters.map((character) => [character.id, character]),
+	);
+	const charactersByName = new Map(
+		characters.map((character) => [character.name.toLowerCase(), character]),
 	);
 
 	return characterIdsOrNames.flatMap((characterIdOrName) => {

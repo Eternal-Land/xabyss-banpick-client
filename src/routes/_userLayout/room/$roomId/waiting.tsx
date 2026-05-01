@@ -1,17 +1,26 @@
 import { matchApi } from "@/apis/match";
 import type { MatchStateResponse } from "@/apis/match/types";
+import { sessionRecordApi } from "@/apis/session-record";
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { useAppSelector } from "@/hooks/use-app-selector";
 import { useSocketEvent } from "@/hooks/use-socket-event";
 import { matchLocaleKeys } from "@/i18n/keys";
 import { getTranslationToken } from "@/i18n/namespaces";
-import { MatchStatus, SocketEvent } from "@/lib/constants";
+import { MatchStatus, PlayerSide, SocketEvent } from "@/lib/constants";
 import { IconAssets } from "@/lib/constants/icon-assets";
 import { selectAuthProfile } from "@/lib/redux/auth.slice";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useLoaderData } from "@tanstack/react-router";
-import { Copy, Swords } from "lucide-react";
+import { ArrowRight, Copy, Swords, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -84,6 +93,52 @@ function RouteComponent() {
 		},
 	});
 
+	const continueSessionMutation = useMutation({
+		mutationFn: matchApi.continueSession,
+		onError: () => {
+			toast.error(tMatch(matchLocaleKeys.match_waiting_continue_error));
+		},
+	});
+
+	const { data: reportResponse, isLoading: isReportLoading } = useQuery({
+		queryKey: ["match-report", roomId],
+		queryFn: () => sessionRecordApi.getMatchReport(roomId),
+	});
+
+	const report = reportResponse?.data;
+	const completedSessions =
+		report?.sessions?.filter((session) => session.sessionStatus === 2) ?? [];
+	const latestCompletedSession = completedSessions.at(-1);
+	const isBetweenSessions = Boolean(
+		report &&
+		latestCompletedSession &&
+		completedSessions.length < report.sessionCount,
+	);
+	const sessionWinnerName = latestCompletedSession
+		? latestCompletedSession.winnerSide === PlayerSide.BLUE
+			? latestCompletedSession.blueParticipant?.displayName ??
+				tMatch(matchLocaleKeys.match_result_blue_fallback)
+			: latestCompletedSession.winnerSide === PlayerSide.RED
+				? latestCompletedSession.redParticipant?.displayName ??
+					tMatch(matchLocaleKeys.match_result_red_fallback)
+				: tMatch(matchLocaleKeys.match_result_draw)
+		: tMatch(matchLocaleKeys.match_result_draw);
+	const sessionWinnerLabel = latestCompletedSession
+		? tMatch(matchLocaleKeys.match_result_game_label, {
+				index: latestCompletedSession.sessionIndex,
+			})
+		: "";
+	const sessionScoreLabel = latestCompletedSession
+		? tMatch(matchLocaleKeys.match_result_summary, {
+				blueWins: latestCompletedSession.blueResultTotal ?? 0,
+				redWins: latestCompletedSession.redResultTotal ?? 0,
+				totalSessions: report?.sessionCount ?? 0,
+		  	})
+		: "";
+	const blueSessionResult = latestCompletedSession?.blueResultTotal ?? null;
+	const redSessionResult = latestCompletedSession?.redResultTotal ?? null;
+	const resultDifference = latestCompletedSession?.resultDifference ?? null;
+
 	useSocketEvent(
 		SocketEvent.UPDATE_MATCH_STATE,
 		(nextMatchState: MatchStateResponse) => {
@@ -117,6 +172,22 @@ function RouteComponent() {
 			}
 		})();
 	});
+
+	const handleContinueNextSession = async () => {
+		if (!match?.id) {
+			return;
+		}
+
+		try {
+			await continueSessionMutation.mutateAsync(match.id);
+			navigate({
+				to: "/room/$roomId/ban-pick",
+				params: { roomId },
+			});
+		} catch {
+			// Mutation handles the error toast.
+		}
+	};
 
 	useEffect(() => {
 		setPageMatchState(matchState);
@@ -176,6 +247,101 @@ function RouteComponent() {
 
 	return (
 		<div className="min-h-screen w-full flex items-center justify-center p-6 bg-slate-950/20">
+			<Dialog open={Boolean(isBetweenSessions && !isReportLoading)}>
+				<DialogContent
+					className="overflow-hidden border-white/10 bg-[#090d18]/95 p-0 text-white shadow-[0_40px_120px_rgba(0,0,0,0.65)] backdrop-blur-2xl sm:max-w-2xl"
+					showCloseButton={false}
+				>
+					<div className="border-b border-white/10 bg-gradient-to-r from-sky-500/15 via-white/0 to-rose-500/15 px-6 py-5">
+						<DialogHeader className="text-left">
+							<div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.28em] text-white/70">
+								<Trophy className="size-4 text-amber-300" />
+								<span>{sessionWinnerLabel}</span>
+							</div>
+							<DialogTitle className="text-3xl font-black uppercase tracking-[0.14em] text-white">
+								{tMatch(matchLocaleKeys.match_waiting_session_result_title)}
+							</DialogTitle>
+							<DialogDescription className="mt-2 max-w-xl text-sm leading-6 text-white/65">
+								{tMatch(matchLocaleKeys.match_waiting_session_result_description)}
+							</DialogDescription>
+						</DialogHeader>
+					</div>
+
+					<div className="space-y-5 px-6 py-6">
+						<div className="grid gap-3 sm:grid-cols-3">
+							<div className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 p-4">
+								<p className="text-xs uppercase tracking-[0.2em] text-cyan-200/70">
+									Blue
+								</p>
+								<p className="mt-2 text-3xl font-black text-cyan-100">
+									{blueSessionResult ?? "-"}
+								</p>
+								<p className="mt-1 text-xs text-cyan-100/70">
+									{latestCompletedSession?.blueParticipant?.displayName ?? tMatch(matchLocaleKeys.match_result_blue_fallback)}
+								</p>
+							</div>
+
+							<div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+								<p className="text-xs uppercase tracking-[0.2em] text-white/50">
+									{tMatch(matchLocaleKeys.match_result_total_result)}
+								</p>
+								<p className="mt-2 text-2xl font-bold text-white">
+									{sessionScoreLabel || "-"}
+								</p>
+								{typeof resultDifference === "number" ? (
+									<p className="mt-2 text-xs text-white/60">
+										Gap: {resultDifference}
+									</p>
+								) : null}
+							</div>
+
+							<div className="rounded-2xl border border-rose-400/20 bg-rose-500/10 p-4">
+								<p className="text-xs uppercase tracking-[0.2em] text-rose-200/70">
+									Red
+								</p>
+								<p className="mt-2 text-3xl font-black text-rose-100">
+									{redSessionResult ?? "-"}
+								</p>
+								<p className="mt-1 text-xs text-rose-100/70">
+									{latestCompletedSession?.redParticipant?.displayName ?? tMatch(matchLocaleKeys.match_result_red_fallback)}
+								</p>
+							</div>
+						</div>
+
+						<div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+							<p className="text-xs uppercase tracking-[0.22em] text-white/45">
+								{tMatch(matchLocaleKeys.match_waiting_session_result_winner)}
+							</p>
+							<p className="mt-2 text-2xl font-extrabold text-white">
+								{tMatch(matchLocaleKeys.match_result_winner_label, {
+									winner: sessionWinnerName,
+								})}
+							</p>
+							<p className="mt-2 text-sm leading-6 text-white/70">
+								{tMatch(matchLocaleKeys.match_waiting_session_result_waiting_host)}
+							</p>
+						</div>
+
+						<DialogFooter className="flex items-center justify-between gap-3 sm:justify-between">
+							<div className="text-xs uppercase tracking-[0.22em] text-white/40">
+								{isHost ? "Host action required" : "Waiting for host"}
+							</div>
+							{isHost ? (
+								<Button
+									onClick={handleContinueNextSession}
+									disabled={continueSessionMutation.isPending}
+									className="gap-2 bg-cyan-400 text-slate-950 hover:bg-cyan-300"
+								>
+									{continueSessionMutation.isPending
+										? tMatch(matchLocaleKeys.match_waiting_loading)
+										: tMatch(matchLocaleKeys.match_waiting_session_result_continue)}
+									<ArrowRight className="size-4" />
+								</Button>
+							) : null}
+						</DialogFooter>
+					</div>
+				</DialogContent>
+			</Dialog>
 			{/* Main Glass Panel */}
 			<div className="relative w-full max-w-6xl rounded-3xl overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
 				{/* Top Glow Highlights */}

@@ -23,6 +23,7 @@ interface BanPickPlayerInfoProps {
 	side: "blue" | "red";
 	player?: PlayerInfo;
 	cost?: SideCostInfo;
+	isBanPickFinished?: boolean;
 }
 
 const toCostNumber = (value: number | undefined) =>
@@ -32,6 +33,7 @@ export default function BanPickPlayerInfo({
 	side,
 	player,
 	cost,
+	isBanPickFinished = false,
 }: BanPickPlayerInfoProps) {
 	const { t } = useTranslation("match");
 	const isBlue = side === "blue";
@@ -65,54 +67,56 @@ export default function BanPickPlayerInfo({
 				</div>
 			</div>
 
-			<div className="flex flex-col bg-transparent bg-linear-45 from-white/5 to-white/10 backdrop-blur-md rounded-lg p-4 w-full items-center gap-2 justify-center border border-white">
-				<div className="flex justify-between items-center gap-4 w-full">
-					<h1 className="text-lg">
-						{t(matchLocaleKeys.ban_pick_total_cost)}:
-					</h1>
-					<span className={cn("text-lg font-bold", textColorClass)}>
-						{toCostNumber(cost?.totalCost)}
-					</span>
+			{isBanPickFinished && (
+				<div className="flex flex-col bg-transparent bg-linear-45 from-white/5 to-white/10 backdrop-blur-md rounded-lg p-4 w-full items-center gap-2 justify-center border border-white">
+					<div className="flex justify-between items-center gap-4 w-full">
+						<h1 className="text-lg">
+							{t(matchLocaleKeys.ban_pick_total_cost)}:
+						</h1>
+						<span className={cn("text-lg font-bold", textColorClass)}>
+							{toCostNumber(cost?.totalCost)}
+						</span>
+					</div>
+					<div className="flex justify-between items-center gap-4 w-full">
+						<h1 className="text-lg">
+							{t(matchLocaleKeys.ban_pick_milestone_cost)}:
+						</h1>
+						<span className={cn("text-lg font-bold", textColorClass)}>
+							{toCostNumber(cost?.milestoneCost)}
+						</span>
+					</div>
+					<div className="flex justify-between items-center gap-4 w-full">
+						<h1 className="text-lg">
+							{t(matchLocaleKeys.ban_pick_constellation)}:
+						</h1>
+						<span className={cn("text-lg font-bold", textColorClass)}>
+							{toCostNumber(cost?.constellationCost)}
+						</span>
+					</div>
+					<div className="flex justify-between items-center gap-4 w-full">
+						<h1 className="text-lg">
+							{t(matchLocaleKeys.ban_pick_refinement)}:
+						</h1>
+						<span className={cn("text-lg font-bold", textColorClass)}>
+							{toCostNumber(cost?.refinementCost)} s
+						</span>
+					</div>
+					<div className="flex justify-between items-center gap-4 w-full">
+						<h1 className="text-lg">{t(matchLocaleKeys.ban_pick_level)}:</h1>
+						<span className={cn("text-lg font-bold", textColorClass)}>
+							{toCostNumber(cost?.levelCost)} s
+						</span>
+					</div>
+					<div className="flex justify-between items-center gap-4 w-full">
+						<h1 className="text-2xl text-yellow-400">
+							{t(matchLocaleKeys.ban_pick_time_bonus)}:
+						</h1>
+						<span className="text-2xl font-bold text-yellow-400">
+							{toCostNumber(cost?.timeBonusCost)}
+						</span>
+					</div>
 				</div>
-				<div className="flex justify-between items-center gap-4 w-full">
-					<h1 className="text-lg">
-						{t(matchLocaleKeys.ban_pick_milestone_cost)}:
-					</h1>
-					<span className={cn("text-lg font-bold", textColorClass)}>
-						{toCostNumber(cost?.milestoneCost)}
-					</span>
-				</div>
-				<div className="flex justify-between items-center gap-4 w-full">
-					<h1 className="text-lg">
-						{t(matchLocaleKeys.ban_pick_constellation)}:
-					</h1>
-					<span className={cn("text-lg font-bold", textColorClass)}>
-						{toCostNumber(cost?.constellationCost)}
-					</span>
-				</div>
-				<div className="flex justify-between items-center gap-4 w-full">
-					<h1 className="text-lg">
-						{t(matchLocaleKeys.ban_pick_refinement)}:
-					</h1>
-					<span className={cn("text-lg font-bold", textColorClass)}>
-						{toCostNumber(cost?.refinementCost)} s
-					</span>
-				</div>
-				<div className="flex justify-between items-center gap-4 w-full">
-					<h1 className="text-lg">{t(matchLocaleKeys.ban_pick_level)}:</h1>
-					<span className={cn("text-lg font-bold", textColorClass)}>
-						{toCostNumber(cost?.levelCost)} s
-					</span>
-				</div>
-				<div className="flex justify-between items-center gap-4 w-full">
-					<h1 className="text-2xl text-yellow-400">
-						{t(matchLocaleKeys.ban_pick_time_bonus)}:
-					</h1>
-					<span className="text-2xl font-bold text-yellow-400">
-						{toCostNumber(cost?.timeBonusCost)}
-					</span>
-				</div>
-			</div>
+			)}
 		</div>
 	);
 }

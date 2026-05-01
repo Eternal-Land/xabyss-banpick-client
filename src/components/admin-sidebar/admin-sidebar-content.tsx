@@ -19,6 +19,7 @@ import {
 	SwordIcon,
 	UsersIcon,
 	WrenchIcon,
+	Link2Icon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { adminLocaleKeys } from "@/i18n/keys";
@@ -118,6 +119,14 @@ const adminRouteGroups: AdminSidebarRouteGroup[] = [
 					adminLocaleKeys.admin_sidebar_weapon_costs,
 				),
 				icon: <ChartCandlestick className="size-4" />,
+			},
+			{
+				to: "/admin/character-weapons",
+				label: getTranslationToken(
+					"admin",
+					adminLocaleKeys.admin_sidebar_character_weapons,
+				),
+				icon: <Link2Icon className="size-4" />,
 			},
 		],
 	},

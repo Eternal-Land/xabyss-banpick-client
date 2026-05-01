@@ -4,10 +4,10 @@ import {
 	applyDraftActionToMatchState,
 	DRAFT_SEQUENCE,
 	EMPTY_SESSION_RECORD_INPUT,
-	filterCharacters,
+	filterBanPickCharacters,
 	getBanPickCharacterId,
 	mapAccountCharacterToBanPickCharacter,
-	mapCharacterNamesToAccountCharacters,
+	mapCharacterNamesToBanPickCharacters,
 	mapDraftSideToPlayerSide,
 	mapSelectedWeaponsByCharacterId,
 	validateSessionCompletionData,
@@ -50,8 +50,8 @@ export const Route = createFileRoute("/_userLayout/room/$roomId/ban-pick")({
 });
 
 interface AccountDraftSideState {
-	bans: AccountCharacterResponse[];
-	picks: AccountCharacterResponse[];
+	bans: BanPickCharacter[];
+	picks: BanPickCharacter[];
 }
 
 interface AccountDraftState {
@@ -140,74 +140,18 @@ const parseResetStrict = (value: string) => {
 	};
 };
 
-const mapDraftBanCharacters = (
-	preferredCharacters: AccountCharacterResponse[],
-	fallbackCharacters: AccountCharacterResponse[],
-	characterIdsOrNames: string[],
-) => {
-	const preferredById = new Map(
-		preferredCharacters.flatMap((character) => [
-			[getBanPickCharacterId(character), character] as const,
-			[character.id, character] as const,
-		]),
-	);
-	const preferredByName = new Map(
-		preferredCharacters.map((character) => [
-			character.characters.name.toLowerCase(),
-			character,
-		]),
-	);
-
-	const fallbackById = new Map(
-		fallbackCharacters.flatMap((character) => [
-			[getBanPickCharacterId(character), character] as const,
-			[character.id, character] as const,
-		]),
-	);
-	const fallbackByName = new Map(
-		fallbackCharacters.map((character) => [
-			character.characters.name.toLowerCase(),
-			character,
-		]),
-	);
-
-	return characterIdsOrNames.flatMap((characterIdOrName) => {
-		const normalizedValue = String(characterIdOrName).trim();
-		if (!normalizedValue) {
-			return [];
-		}
-
-		const mappedPreferred =
-			preferredById.get(normalizedValue) ??
-			preferredByName.get(normalizedValue.toLowerCase());
-		if (mappedPreferred) {
-			return [mappedPreferred];
-		}
-
-		const mappedFallback =
-			fallbackById.get(normalizedValue) ??
-			fallbackByName.get(normalizedValue.toLowerCase());
-		if (mappedFallback) {
-			return [mappedFallback];
-		}
-
-		return [];
-	});
-};
-
 const mapGlobalCharacterToDraftCharacter = (
 	character: UserCharacterResponse,
-): AccountCharacterResponse => ({
-	id: `global-${character.id}`,
-	accountId: "",
-	characterId: character.id,
-	activatedConstellation: 0,
-	characterLevel: 0,
-	characterCost: 0,
-	notes: undefined,
-	createdAt: character.createdAt,
-	updatedAt: character.updatedAt,
-	characters: character,
+): BanPickCharacter => ({
+	id: character.id.toString(),
+	name: character.name,
+	imageUrl: character.iconUrl,
+	rarity: (character.rarity === 5 ? 5 : 4) as 4 | 5,
+	level: 0,
+	constellation: 0,
+	cost: 0,
+	element: character.element,
+	weaponType: character.weaponType,
 });
 
 const parseTimerInputsToRecord = (
@@ -635,67 +579,67 @@ function RouteComponent() {
 		navigateByMatchStatus(match.status);
 	}, [match, navigateByMatchStatus, profile?.id, router]);
 
-	const { blueCharacters, redCharacters, globalCharacters, weapons } =
-		useBanPickQueries({
-			bluePlayerId: bluePlayer?.id,
-			redPlayerId: redPlayer?.id,
-		});
+	const { accountCharacters, globalCharacters, weapons } = useBanPickQueries({
+		accountId: profile?.id,
+	});
 	const globalDraftCharacters = useMemo(
 		() => globalCharacters.map(mapGlobalCharacterToDraftCharacter),
 		[globalCharacters],
 	);
-	const allKnownBanCharacters = useMemo(() => {
-		const mappedCharacters = new Map<string, AccountCharacterResponse>();
-
-		[...globalDraftCharacters, ...blueCharacters, ...redCharacters].forEach(
-			(character) => {
-				mappedCharacters.set(getBanPickCharacterId(character), character);
-			},
-		);
-
-		return [...mappedCharacters.values()];
-	}, [globalDraftCharacters, blueCharacters, redCharacters]);
+	const accountDraftCharacters = useMemo(
+		() => accountCharacters.map(mapAccountCharacterToBanPickCharacter),
+		[accountCharacters],
+	);
 
 	const isBlueViewer = profile?.id === bluePlayer?.id;
 	const isRedViewer = profile?.id === redPlayer?.id;
 
 	const bluePanelCharacters = isBlueViewer
-		? blueCharacters
+		? accountDraftCharacters
 		: globalDraftCharacters;
 	const redPanelCharacters = isRedViewer
-		? redCharacters
+		? accountDraftCharacters
 		: globalDraftCharacters;
+	const blueSelectableCharacters = isBlueViewer ? accountCharacters : [];
+	const redSelectableCharacters = isRedViewer ? accountCharacters : [];
 
 	const draftState = useMemo<AccountDraftState>(() => {
 		if (!pageMatchState) {
 			return EMPTY_DRAFT_STATE;
 		}
 
+		// For picks: use the respective player's character roster (account or global)
+		// For bans: always use global characters since players can ban any character
+		const blueDraftCharactersForPicks = isBlueViewer
+			? accountDraftCharacters
+			: globalDraftCharacters;
+		const redDraftCharactersForPicks = isRedViewer
+			? accountDraftCharacters
+			: globalDraftCharacters;
+
 		return {
 			blue: {
-				bans: mapDraftBanCharacters(
-					allKnownBanCharacters,
-					allKnownBanCharacters,
+				bans: mapCharacterNamesToBanPickCharacters(
+					globalDraftCharacters,
 					pageMatchState.blueBanChars,
 				),
-				picks: mapCharacterNamesToAccountCharacters(
-					blueCharacters,
+				picks: mapCharacterNamesToBanPickCharacters(
+					blueDraftCharactersForPicks,
 					pageMatchState.blueSelectedChars,
 				),
 			},
 			red: {
-				bans: mapDraftBanCharacters(
-					allKnownBanCharacters,
-					allKnownBanCharacters,
+				bans: mapCharacterNamesToBanPickCharacters(
+					globalDraftCharacters,
 					pageMatchState.redBanChars,
 				),
-				picks: mapCharacterNamesToAccountCharacters(
-					redCharacters,
+				picks: mapCharacterNamesToBanPickCharacters(
+					redDraftCharactersForPicks,
 					pageMatchState.redSelectedChars,
 				),
 			},
 		};
-	}, [allKnownBanCharacters, blueCharacters, pageMatchState, redCharacters]);
+	}, [accountDraftCharacters, globalDraftCharacters, isBlueViewer, isRedViewer, pageMatchState]);
 
 	const draftStep = pageMatchState?.draftStep ?? 0;
 
@@ -728,19 +672,6 @@ function RouteComponent() {
 		redPlayer?.id,
 	]);
 
-	const selectedCharacterNames = useMemo(() => {
-		const selected = new Set<string>();
-
-		[
-			...draftState.blue.bans,
-			...draftState.blue.picks,
-			...draftState.red.bans,
-			...draftState.red.picks,
-		].forEach((character) => selected.add(character.characters.name));
-
-		return selected;
-	}, [draftState]);
-
 	const selectedCharacterIds = useMemo(() => {
 		const selected = new Set<string>();
 
@@ -754,9 +685,55 @@ function RouteComponent() {
 		return selected;
 	}, [draftState]);
 
+	const bluePreviouslyUsedCharacterIds = useMemo(
+		() => new Set(pageMatchState?.blueUsedChars ?? []),
+		[pageMatchState?.blueUsedChars],
+	);
+
+	const redPreviouslyUsedCharacterIds = useMemo(
+		() => new Set(pageMatchState?.redUsedChars ?? []),
+		[pageMatchState?.redUsedChars],
+	);
+
+	const bluePickedCharacterIds = useMemo(() => {
+		const selected = new Set<string>();
+		draftState.blue.picks.forEach((character) =>
+			selected.add(getBanPickCharacterId(character)),
+		);
+		return selected;
+	}, [draftState.blue.picks]);
+
+	const redPickedCharacterIds = useMemo(() => {
+		const selected = new Set<string>();
+		draftState.red.picks.forEach((character) =>
+			selected.add(getBanPickCharacterId(character)),
+		);
+		return selected;
+	}, [draftState.red.picks]);
+
+	const blueDisabledCharacterIds = useMemo(
+		() =>
+			new Set([
+				...bluePickedCharacterIds,
+				...bluePreviouslyUsedCharacterIds,
+				...selectedCharacterIds,
+			]),
+		[bluePickedCharacterIds, bluePreviouslyUsedCharacterIds, selectedCharacterIds],
+	);
+
+	const redDisabledCharacterIds = useMemo(
+		() =>
+			new Set([
+				...redPickedCharacterIds,
+				...redPreviouslyUsedCharacterIds,
+				...selectedCharacterIds,
+			]),
+		[redPickedCharacterIds, redPreviouslyUsedCharacterIds, selectedCharacterIds],
+	);
+
 	const leftFilteredCharacters = useMemo(
 		() =>
-			filterCharacters(
+			filterBanPickCharacters(
 				bluePanelCharacters,
 				leftSearch,
 				leftElementFilter,
@@ -767,7 +744,7 @@ function RouteComponent() {
 
 	const rightFilteredCharacters = useMemo(
 		() =>
-			filterCharacters(
+			filterBanPickCharacters(
 				redPanelCharacters,
 				rightSearch,
 				rightElementFilter,
@@ -777,28 +754,23 @@ function RouteComponent() {
 	);
 
 	const leftFilteredBanPickCharacters = useMemo(
-		() => leftFilteredCharacters.map(mapAccountCharacterToBanPickCharacter),
+		() => leftFilteredCharacters,
 		[leftFilteredCharacters],
 	);
 
 	const rightFilteredBanPickCharacters = useMemo(
-		() => rightFilteredCharacters.map(mapAccountCharacterToBanPickCharacter),
+		() => rightFilteredCharacters,
 		[rightFilteredCharacters],
 	);
 
 	const blueBanPickBans = useMemo(
-		() => draftState.blue.bans.map(mapAccountCharacterToBanPickCharacter),
+		() => draftState.blue.bans,
 		[draftState.blue.bans],
 	);
 
 	const blueBanPickPicks = useMemo(
-		() => draftState.blue.picks.map(mapAccountCharacterToBanPickCharacter),
+		() => draftState.blue.picks,
 		[draftState.blue.picks],
-	);
-
-	const redBanPickPicks = useMemo(
-		() => draftState.red.picks.map(mapAccountCharacterToBanPickCharacter),
-		[draftState.red.picks],
 	);
 
 	const hasTravellerPicked = (picks: BanPickCharacter[]) => {
@@ -812,50 +784,77 @@ function RouteComponent() {
 		[blueBanPickPicks],
 	);
 
+	const redBanPickPicks = useMemo(
+		() => draftState.red.picks,
+		[draftState.red.picks],
+	);
+
 	const redHasTravellerPicked = useMemo(
 		() => hasTravellerPicked(redBanPickPicks),
 		[redBanPickPicks],
 	);
 
 	const redBanPickBans = useMemo(
-		() => draftState.red.bans.map(mapAccountCharacterToBanPickCharacter),
+		() => draftState.red.bans,
 		[draftState.red.bans],
 	);
 
-
 	const blueSupachaiReplacementOptions = useMemo(
 		() =>
-			blueCharacters
+			accountCharacters
 				.filter(
 					(character) =>
-						!selectedCharacterIds.has(getBanPickCharacterId(character)),
-				)
+						!blueDisabledCharacterIds.has(getBanPickCharacterId(character)),
+					)
 				.map(mapAccountCharacterToBanPickCharacter),
-		[blueCharacters, selectedCharacterIds],
+		[accountCharacters, blueDisabledCharacterIds],
 	);
 
 	const redSupachaiReplacementOptions = useMemo(
 		() =>
-			redCharacters
+			accountCharacters
 				.filter(
 					(character) =>
-						!selectedCharacterIds.has(getBanPickCharacterId(character)),
+						!redDisabledCharacterIds.has(getBanPickCharacterId(character)),
 				)
 				.map(mapAccountCharacterToBanPickCharacter),
-		[redCharacters, selectedCharacterIds],
+		[accountCharacters, redDisabledCharacterIds],
 	);
 
 	const blueSupachaiRemainingUses = Math.max(
 		0,
-		(pageMatchState?.supachaiMaxUses ?? 1) -
-			(pageMatchState?.blueSupachaiUsedCount ?? 0),
+		Math.min(
+			(pageMatchState?.supachaiMaxUses ?? 1) -
+				(pageMatchState?.blueSupachaiUsedCount ?? 0),
+			1 - (pageMatchState?.blueSupachaiUsedSessionCount ?? 0),
+		),
 	);
 
 	const redSupachaiRemainingUses = Math.max(
 		0,
-		(pageMatchState?.supachaiMaxUses ?? 1) -
-			(pageMatchState?.redSupachaiUsedCount ?? 0),
+		Math.min(
+			(pageMatchState?.supachaiMaxUses ?? 1) -
+				(pageMatchState?.redSupachaiUsedCount ?? 0),
+			1 - (pageMatchState?.redSupachaiUsedSessionCount ?? 0),
+		),
 	);
+
+	// Debug: log supachai-related match state to help diagnose disabled button
+	useEffect(() => {
+		console.debug("supachai-state", {
+			supachaiMaxUses: pageMatchState?.supachaiMaxUses,
+			blueSupachaiUsedCount: pageMatchState?.blueSupachaiUsedCount,
+			blueSupachaiUsedSessionCount: pageMatchState?.blueSupachaiUsedSessionCount,
+			redSupachaiUsedCount: pageMatchState?.redSupachaiUsedCount,
+			redSupachaiUsedSessionCount: pageMatchState?.redSupachaiUsedSessionCount,
+		});
+	}, [
+		pageMatchState?.supachaiMaxUses,
+		pageMatchState?.blueSupachaiUsedCount,
+		pageMatchState?.blueSupachaiUsedSessionCount,
+		pageMatchState?.redSupachaiUsedCount,
+		pageMatchState?.redSupachaiUsedSessionCount,
+	]);
 
 	const blueSelectedWeaponByCharacterId = useMemo(
 		() =>
@@ -937,13 +936,38 @@ function RouteComponent() {
 		],
 	);
 
-	const pendingBanPickCharacter = useMemo(
-		() =>
-			pendingCharacter
-				? mapAccountCharacterToBanPickCharacter(pendingCharacter)
-				: null,
-		[pendingCharacter],
-	);
+	const pendingBanPickCharacter = useMemo(() => {
+		if (!pendingCharacter) return null;
+
+		// If the pending object includes `characters`, it's a full AccountCharacterResponse
+		if ((pendingCharacter as any).characters) {
+			return mapAccountCharacterToBanPickCharacter(
+				pendingCharacter as AccountCharacterResponse,
+			);
+		}
+
+		// Viewer may have selected an opponent-panel character; try to resolve from global catalog
+		const candidateId = String((pendingCharacter as any).characterId ?? (pendingCharacter as any).id);
+		const byGlobal = globalCharacters.find(
+			(g) => String(g.id) === candidateId || g.name === (pendingCharacter as any).name,
+		);
+		if (byGlobal) {
+			return mapGlobalCharacterToDraftCharacter(byGlobal);
+		}
+
+		// Fallback minimal mapping when no metadata is available
+		return {
+			id: candidateId,
+			name: (pendingCharacter as any).name ?? `#${candidateId}`,
+			imageUrl: "",
+			rarity: 4 as 4 | 5,
+			level: 0,
+			constellation: 0,
+			cost: 0,
+			element: (globalCharacters[0]?.element as any) ?? (0 as any),
+			weaponType: (globalCharacters[0]?.weaponType as any) ?? ("" as any),
+		};
+	}, [pendingCharacter, globalCharacters]);
 
 	const blueSideCost = useMemo(
 		() => ({
@@ -1018,10 +1042,7 @@ function RouteComponent() {
 	]);
 
 	const onSelectCharacter = (character: AccountCharacterResponse) => {
-		if (
-			!currentAction ||
-			selectedCharacterIds.has(getBanPickCharacterId(character))
-		) {
+		if (!currentAction) {
 			return;
 		}
 
@@ -1469,9 +1490,9 @@ function RouteComponent() {
 				const response = await sessionCostApi.calculateSessionCost(
 					matchSessionId,
 					{
-						characterId: latestCharacter.characterId,
-						activatedConstellation: latestCharacter.activatedConstellation,
-						characterLevel: latestCharacter.characterLevel,
+						characterId: Number(latestCharacter.id),
+						activatedConstellation: latestCharacter.constellation,
+						characterLevel: latestCharacter.level,
 						weaponId: selectedWeapon?.id,
 						weaponRefinement:
 							selectedWeaponRefinement ?? (selectedWeapon ? 1 : undefined),
@@ -1549,26 +1570,24 @@ function RouteComponent() {
 					if (refreshedMatch) {
 						setMatch(refreshedMatch);
 					}
-					const reportResponse = await sessionRecordApi.getMatchReport(
-						match.id,
-					);
-					const report = reportResponse.data;
-					const completedSessionCount =
-						report?.sessions?.filter((session) => session.sessionStatus === 2)
-							.length ?? 0;
-					const isReportFullyCompleted =
-						Boolean(report) &&
-						completedSessionCount >= (report?.sessionCount ?? 0);
 
 					if (
 						refreshedMatch?.status === MatchStatus.COMPLETED ||
-						isReportFullyCompleted
+						refreshedMatch?.status === MatchStatus.CANCELED
 					) {
 						toast.success(
 							t(matchLocaleKeys.ban_pick_session_completed_match_finished),
 						);
 						void router.navigate({
 							to: "/room/$roomId/result",
+							params: { roomId: match.id },
+						});
+					} else if (refreshedMatch?.status === MatchStatus.WAITING) {
+						toast.success(
+							t(matchLocaleKeys.ban_pick_session_completed_next_started),
+						);
+						void router.navigate({
+							to: "/room/$roomId/waiting",
 							params: { roomId: match.id },
 						});
 					} else {
@@ -1619,8 +1638,10 @@ function RouteComponent() {
 						selectedRarity={leftRarityFilter}
 						onSelectRarity={setLeftRarityFilter}
 						characters={leftFilteredBanPickCharacters}
-						selectedCharacterNames={selectedCharacterNames}
-						filteredCharacters={leftFilteredCharacters}
+						disabledCharacterIds={blueDisabledCharacterIds}
+						usedCharacterIds={bluePreviouslyUsedCharacterIds}
+						pickedCharacterIds={bluePickedCharacterIds}
+						filteredCharacters={blueSelectableCharacters}
 						onSelectCharacter={onSelectCharacter}
 						weapons={weapons}
 						canReorderTeam={canReorderBlueTeam}
@@ -1698,8 +1719,10 @@ function RouteComponent() {
 						selectedRarity={rightRarityFilter}
 						onSelectRarity={setRightRarityFilter}
 						characters={rightFilteredBanPickCharacters}
-						selectedCharacterNames={selectedCharacterNames}
-						filteredCharacters={rightFilteredCharacters}
+						disabledCharacterIds={redDisabledCharacterIds}
+						usedCharacterIds={redPreviouslyUsedCharacterIds}
+						pickedCharacterIds={redPickedCharacterIds}
+						filteredCharacters={redSelectableCharacters}
 						onSelectCharacter={onSelectCharacter}
 						weapons={weapons}
 						canReorderTeam={canReorderRedTeam}

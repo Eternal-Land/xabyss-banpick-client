@@ -85,6 +85,13 @@ async function completeSession(matchId: string) {
 	return response.data;
 }
 
+async function continueSession(matchId: string) {
+	const response = await http.post<BaseApiResponse>(
+		`/api/user/match/${matchId}/continue-session`,
+	);
+	return response.data;
+}
+
 async function activateSupachai(
 	matchId: string,
 	fromCharId: string,
@@ -128,6 +135,7 @@ export const matchApi = {
 	banChar,
 	pickWeapon,
 	completeSession,
+	continueSession,
 	activateSupachai,
 	pauseMatch,
 	resumeMatch,
