@@ -92,26 +92,28 @@ export default function BanPickActionPanel({
 				pausedElapsedMs={pausedElapsedMs}
 			/>
 
-			<div className="w-full rounded-md p-3 text-center text-white/90">
-				<p className="text-[11px] text-white/70">
-					{t(matchLocaleKeys.ban_pick_lead_title)}
-				</p>
-				<div className="mt-2 flex justify-center">
-					{isBlueLower ? (
-						<div className="flex gap-2 items-center text-sky-400">
-							<StepBack className="h-8 w-8 text-sky-400" />
-							<h1 className="text-bold text-2xl">{leadDifferenceSeconds}s</h1>
-						</div>
-					) : isBlueHigher ? (
-						<div className="flex gap-2 items-center text-red-400">
-							<h1 className="text-bold text-2xl">{leadDifferenceSeconds}s</h1>
-							<StepForward className="h-8 w-8" />
-						</div>
-					) : (
-						<ArrowLeftRight className="h-8 w-8 text-white/70" />
-					)}
+			{isDraftCompleted ? (
+				<div className="w-full rounded-md p-3 text-center text-white/90">
+					<p className="text-[11px] text-white/70">
+						{t(matchLocaleKeys.ban_pick_lead_title)}
+					</p>
+					<div className="mt-2 flex justify-center">
+						{isBlueLower ? (
+							<div className="flex gap-2 items-center text-sky-400">
+								<StepBack className="h-8 w-8 text-sky-400" />
+								<h1 className="text-bold text-2xl">{leadDifferenceSeconds}s</h1>
+							</div>
+						) : isBlueHigher ? (
+							<div className="flex gap-2 items-center text-red-400">
+								<h1 className="text-bold text-2xl">{leadDifferenceSeconds}s</h1>
+								<StepForward className="h-8 w-8" />
+							</div>
+						) : (
+							<ArrowLeftRight className="h-8 w-8 text-white/70" />
+						)}
+					</div>
 				</div>
-			</div>
+			) : null}
 
 			<div className="flex flex-col gap-2 w-full">
 				<Button

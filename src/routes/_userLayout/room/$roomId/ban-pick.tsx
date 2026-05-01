@@ -10,7 +10,6 @@ import {
 	mapCharacterNamesToBanPickCharacters,
 	mapDraftSideToPlayerSide,
 	mapSelectedWeaponsByCharacterId,
-	validateSessionCompletionData,
 } from "@/components/match/ban-pick.utils";
 import { matchApi } from "@/apis/match";
 import type { MatchResponse, MatchStateResponse } from "@/apis/match/types";
@@ -42,43 +41,49 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { socket } from "@/lib/socket";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 dayjs.extend(customParseFormat);
 
-export const Route = createFileRoute("/_userLayout/room/$roomId/ban-pick")({
-	component: RouteComponent,
-});
+type TimerInputs = {
+	chamber1: string;
+	chamber2: string;
+	chamber3: string;
+	reset: string;
+};
 
-interface AccountDraftSideState {
-	bans: BanPickCharacter[];
-	picks: BanPickCharacter[];
-}
-
-interface AccountDraftState {
-	blue: AccountDraftSideState;
-	red: AccountDraftSideState;
-}
-
-interface BanPickTimerInputsBySide {
-	blue: BanPickTimerInputValues;
-	red: BanPickTimerInputValues;
-}
-
-interface MatchTimerInputsSyncPayload {
-	timerInputs: BanPickTimerInputsBySide;
-	updatedBy?: string;
-}
-
-const EMPTY_TIMER_SIDE_VALUES: BanPickTimerInputValues = {
-	chamber1: "",
-	chamber2: "",
-	chamber3: "",
-	reset: "",
+type BanPickTimerInputsBySide = {
+	blue: TimerInputs;
+	red: TimerInputs;
 };
 
 const EMPTY_TIMER_INPUTS_BY_SIDE: BanPickTimerInputsBySide = {
-	blue: EMPTY_TIMER_SIDE_VALUES,
-	red: EMPTY_TIMER_SIDE_VALUES,
+	blue: { chamber1: "", chamber2: "", chamber3: "", reset: "" },
+	red: { chamber1: "", chamber2: "", chamber3: "", reset: "" },
+};
+
+const formatClockFromSeconds = (seconds: number) => {
+	const m = Math.floor(seconds / 60);
+	const s = seconds % 60;
+	return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+};
+
+type MatchTimerInputsSyncPayload = {
+	timerInputs?: BanPickTimerInputsBySide;
+	updatedBy?: string;
+};
+
+type AccountDraftState = {
+	blue: { bans: BanPickCharacter[]; picks: BanPickCharacter[] };
+	red: { bans: BanPickCharacter[]; picks: BanPickCharacter[] };
 };
 
 const EMPTY_DRAFT_STATE: AccountDraftState = {
@@ -86,59 +91,9 @@ const EMPTY_DRAFT_STATE: AccountDraftState = {
 	red: { bans: [], picks: [] },
 };
 
-const formatClockFromSeconds = (value: number) => {
-	const normalized = Number.isFinite(value)
-		? Math.max(0, Math.floor(value))
-		: 0;
-	const minutes = Math.floor(normalized / 60);
-	const seconds = normalized % 60;
-	return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-};
-
-const parseClockToSecondsStrict = (value: string) => {
-	const normalized = value.trim();
-	if (!normalized) {
-		return {
-			value: 0,
-			error: "Time is required in mm:ss format.",
-		};
-	}
-
-	const parsed = dayjs(normalized, "mm:ss", true);
-	if (!parsed.isValid()) {
-		return {
-			value: 0,
-			error: "Time must be in mm:ss format.",
-		};
-	}
-
-	return {
-		value: parsed.minute() * 60 + parsed.second(),
-		error: null,
-	};
-};
-
-const parseResetStrict = (value: string) => {
-	const normalized = value.trim();
-	if (!normalized) {
-		return {
-			value: 0,
-			error: null,
-		};
-	}
-
-	if (!/^\d+$/.test(normalized)) {
-		return {
-			value: 0,
-			error: "Reset must be a non-negative integer.",
-		};
-	}
-
-	return {
-		value: Number(normalized),
-		error: null,
-	};
-};
+export const Route = createFileRoute("/_userLayout/room/$roomId/ban-pick")({
+	component: RouteComponent,
+});
 
 const mapGlobalCharacterToDraftCharacter = (
 	character: UserCharacterResponse,
@@ -153,88 +108,6 @@ const mapGlobalCharacterToDraftCharacter = (
 	element: character.element,
 	weaponType: character.weaponType,
 });
-
-const parseTimerInputsToRecord = (
-	timerInputs: BanPickTimerInputsBySide,
-	isRealtimeMatch: boolean,
-) => {
-	const errors: string[] = [];
-
-	const blueChamber1 = parseClockToSecondsStrict(timerInputs.blue.chamber1);
-	if (blueChamber1.error) {
-		errors.push(`Blue ${blueChamber1.error}`);
-	}
-
-	const redChamber1 = parseClockToSecondsStrict(timerInputs.red.chamber1);
-	if (redChamber1.error) {
-		errors.push(`Red ${redChamber1.error}`);
-	}
-
-	if (isRealtimeMatch) {
-		return {
-			record: {
-				blueChamber1: blueChamber1.value,
-				blueChamber2: 0,
-				blueChamber3: 0,
-				blueResetTimes: 0,
-				blueFinalTime: blueChamber1.value,
-				redChamber1: redChamber1.value,
-				redChamber2: 0,
-				redChamber3: 0,
-				redResetTimes: 0,
-				redFinalTime: redChamber1.value,
-			},
-			errors,
-		};
-	}
-
-	const blueChamber2 = parseClockToSecondsStrict(timerInputs.blue.chamber2);
-	if (blueChamber2.error) {
-		errors.push(`Blue chamber 2 ${blueChamber2.error.toLowerCase()}`);
-	}
-
-	const blueChamber3 = parseClockToSecondsStrict(timerInputs.blue.chamber3);
-	if (blueChamber3.error) {
-		errors.push(`Blue chamber 3 ${blueChamber3.error.toLowerCase()}`);
-	}
-
-	const redChamber2 = parseClockToSecondsStrict(timerInputs.red.chamber2);
-	if (redChamber2.error) {
-		errors.push(`Red chamber 2 ${redChamber2.error.toLowerCase()}`);
-	}
-
-	const redChamber3 = parseClockToSecondsStrict(timerInputs.red.chamber3);
-	if (redChamber3.error) {
-		errors.push(`Red chamber 3 ${redChamber3.error.toLowerCase()}`);
-	}
-
-	const blueReset = parseResetStrict(timerInputs.blue.reset);
-	if (blueReset.error) {
-		errors.push(`Blue ${blueReset.error}`);
-	}
-
-	const redReset = parseResetStrict(timerInputs.red.reset);
-	if (redReset.error) {
-		errors.push(`Red ${redReset.error}`);
-	}
-
-	return {
-		record: {
-			blueChamber1: blueChamber1.value,
-			blueChamber2: blueChamber2.value,
-			blueChamber3: blueChamber3.value,
-			blueResetTimes: blueReset.value,
-			blueFinalTime:
-				blueChamber1.value + blueChamber2.value + blueChamber3.value,
-			redChamber1: redChamber1.value,
-			redChamber2: redChamber2.value,
-			redChamber3: redChamber3.value,
-			redResetTimes: redReset.value,
-			redFinalTime: redChamber1.value + redChamber2.value + redChamber3.value,
-		},
-		errors,
-	};
-};
 
 const parseClockToSecondsForAutosave = (value: string) => {
 	const normalized = value.trim();
@@ -356,6 +229,9 @@ function RouteComponent() {
 	const [match, setMatch] = useState<MatchResponse | undefined>(initialMatch);
 	const bluePlayer = match?.bluePlayer;
 	const redPlayer = match?.redPlayer;
+	const isHost = profile?.id === match?.host?.id;
+	// Host must also be one of the two players to manage completed session actions
+	const hostIsPlayer = profile?.id === bluePlayer?.id || profile?.id === redPlayer?.id;
 	const isRealtimeMatch = match?.type === MatchType.REALTIME;
 	const canReorderBlueTeam = profile?.id === bluePlayer?.id;
 	const canReorderRedTeam = profile?.id === redPlayer?.id;
@@ -562,6 +438,52 @@ function RouteComponent() {
 	useEffect(() => {
 		setMatch(initialMatch);
 	}, [initialMatch]);
+
+	const [showWinnerDialog, setShowWinnerDialog] = useState(false);
+	const [selectedWinnerSide, setSelectedWinnerSide] = useState<number | null>(null);
+
+	const confirmWinnerAndComplete = async () => {
+		if (!match?.id) return;
+		if (selectedWinnerSide === null) {
+			toast.error(t("ban_pick_select_winner"));
+			return;
+		}
+
+		setIsSubmittingTurnAction(true);
+		try {
+			await matchApi.completeSession(match.id, { winnerSide: selectedWinnerSide });
+			const refreshedMatchResponse = await matchApi.getMatch(match.id);
+			const refreshedMatch = refreshedMatchResponse.data;
+			if (refreshedMatch) {
+				setMatch(refreshedMatch);
+			}
+
+			if (
+				refreshedMatch?.status === MatchStatus.COMPLETED ||
+				refreshedMatch?.status === MatchStatus.CANCELED
+			) {
+				toast.success(t(matchLocaleKeys.ban_pick_session_completed_match_finished));
+				void router.navigate({ to: "/room/$roomId/result", params: { roomId: match.id } });
+			} else if (refreshedMatch?.status === MatchStatus.WAITING) {
+				toast.success(t(matchLocaleKeys.ban_pick_session_completed_next_started));
+				void router.navigate({ to: "/room/$roomId/waiting", params: { roomId: match.id } });
+			} else {
+				toast.success(t(matchLocaleKeys.ban_pick_session_completed_next_started));
+				await router.invalidate();
+
+				const latestMatchResponse = await matchApi.getMatch(match.id);
+				if (latestMatchResponse.data) {
+					setMatch(latestMatchResponse.data);
+				}
+			}
+		} catch {
+			toast.error(t(matchLocaleKeys.ban_pick_failed_complete_session));
+		} finally {
+			setIsSubmittingTurnAction(false);
+			setShowWinnerDialog(false);
+			setSelectedWinnerSide(null);
+		}
+	};
 
 	useEffect(() => {
 		if (!match) {
@@ -800,25 +722,37 @@ function RouteComponent() {
 	);
 
 	const blueSupachaiReplacementOptions = useMemo(
-		() =>
-			accountCharacters
+		() => {
+			const characterPool = isBlueViewer ? accountCharacters : globalCharacters;
+			return characterPool
 				.filter(
 					(character) =>
 						!blueDisabledCharacterIds.has(getBanPickCharacterId(character)),
-					)
-				.map(mapAccountCharacterToBanPickCharacter),
-		[accountCharacters, blueDisabledCharacterIds],
+				)
+				.map((character) =>
+					isBlueViewer
+						? mapAccountCharacterToBanPickCharacter(character as AccountCharacterResponse)
+						: mapGlobalCharacterToDraftCharacter(character as UserCharacterResponse),
+				);
+		},
+		[isBlueViewer, accountCharacters, globalCharacters, blueDisabledCharacterIds],
 	);
 
 	const redSupachaiReplacementOptions = useMemo(
-		() =>
-			accountCharacters
+		() => {
+			const characterPool = isRedViewer ? accountCharacters : globalCharacters;
+			return characterPool
 				.filter(
 					(character) =>
 						!redDisabledCharacterIds.has(getBanPickCharacterId(character)),
 				)
-				.map(mapAccountCharacterToBanPickCharacter),
-		[accountCharacters, redDisabledCharacterIds],
+				.map((character) =>
+					isRedViewer
+						? mapAccountCharacterToBanPickCharacter(character as AccountCharacterResponse)
+						: mapGlobalCharacterToDraftCharacter(character as UserCharacterResponse),
+				);
+		},
+		[isRedViewer, accountCharacters, globalCharacters, redDisabledCharacterIds],
 	);
 
 	const blueSupachaiRemainingUses = Math.max(
@@ -1103,11 +1037,11 @@ function RouteComponent() {
 			return;
 		}
 
-		if (side === "blue" && profile?.id !== bluePlayer?.id) {
+		if (side === "blue" && profile?.id !== bluePlayer?.id && !isHost) {
 			return;
 		}
 
-		if (side === "red" && profile?.id !== redPlayer?.id) {
+		if (side === "red" && profile?.id !== redPlayer?.id && !isHost) {
 			return;
 		}
 
@@ -1524,90 +1458,76 @@ function RouteComponent() {
 		weapons,
 	]);
 
+	// Debug: Log supachai button disabled status for both sides
+	useEffect(() => {
+		const blueSupachaiButtonDisabled =
+			isActivatingSupachai ||
+			!isDraftCompleted ||
+			!!blueSupachaiFromCharacterId ||
+			!!blueSupachaiToCharacterId ||
+			blueSupachaiRemainingUses <= 0;
+
+		const redSupachaiButtonDisabled =
+			isActivatingSupachai ||
+			!isDraftCompleted ||
+			!!redSupachaiFromCharacterId ||
+			!!redSupachaiToCharacterId ||
+			redSupachaiRemainingUses <= 0;
+
+		console.log("[SUPACHAI-BUTTON-DISABLED]", {
+			blue: {
+				isDisabled: blueSupachaiButtonDisabled,
+				reasons: {
+					isActivatingSupachai,
+					isDraftCompleted,
+					hasFromCharacter: !!blueSupachaiFromCharacterId,
+					hasToCharacter: !!blueSupachaiToCharacterId,
+					charactersAreDifferent: blueSupachaiFromCharacterId !== blueSupachaiToCharacterId,
+					hasRemainingUses: blueSupachaiRemainingUses > 0,
+				},
+				values: {
+					isActivatingSupachai,
+					isDraftCompleted,
+					blueSupachaiFromCharacterId: !!blueSupachaiFromCharacterId ,
+					blueSupachaiToCharacterId: !!blueSupachaiToCharacterId ,
+					blueSupachaiRemainingUses,
+				},
+			},
+			red: {
+				isDisabled: redSupachaiButtonDisabled,
+				reasons: {
+					isActivatingSupachai,
+					isDraftCompleted,
+					hasFromCharacter: !!redSupachaiFromCharacterId,
+					hasToCharacter: !!redSupachaiToCharacterId,
+					charactersAreDifferent: redSupachaiFromCharacterId !== redSupachaiToCharacterId,
+					hasRemainingUses: redSupachaiRemainingUses > 0,
+				},
+				values: {
+					isActivatingSupachai,
+					isDraftCompleted,
+					redSupachaiFromCharacterId,
+					redSupachaiToCharacterId,
+					redSupachaiRemainingUses,
+				},
+			},
+		});
+	}, [
+		isActivatingSupachai,
+		isDraftCompleted,
+		blueSupachaiFromCharacterId,
+		blueSupachaiToCharacterId,
+		blueSupachaiRemainingUses,
+		redSupachaiFromCharacterId,
+		redSupachaiToCharacterId,
+		redSupachaiRemainingUses,
+	]);
+
 	const handleSubmit = async () => {
 		if (isDraftCompleted) {
 			if (profile?.id !== match?.host?.id) return;
-			if (!pageMatchState) {
-				toast.error(t(matchLocaleKeys.ban_pick_match_state_unavailable));
-				return;
-			}
-
-			const parsedTimer = parseTimerInputsToRecord(
-				timerInputs,
-				isRealtimeMatch,
-			);
-
-			if (parsedTimer.errors.length > 0) {
-				toast.error(parsedTimer.errors[0]);
-				return;
-			}
-
-			const record = parsedTimer.record;
-			sessionRecordInputRef.current = record;
-			const sessionValidationErrors = validateSessionCompletionData(
-				pageMatchState,
-				record,
-				isRealtimeMatch,
-			);
-			if (sessionValidationErrors.length > 0) {
-				toast.error(
-					sessionValidationErrors[0] ??
-						t(matchLocaleKeys.ban_pick_session_data_incomplete),
-				);
-				return;
-			}
-
-			try {
-				setIsSubmittingTurnAction(true);
-				const matchSessionId = Number(pageMatchState?.currentSession);
-				if (Number.isInteger(matchSessionId) && matchSessionId > 0) {
-					await sessionRecordApi.saveSessionRecord(matchSessionId, record);
-				}
-				if (match?.id) {
-					await matchApi.completeSession(match.id);
-					const refreshedMatchResponse = await matchApi.getMatch(match.id);
-					const refreshedMatch = refreshedMatchResponse.data;
-					if (refreshedMatch) {
-						setMatch(refreshedMatch);
-					}
-
-					if (
-						refreshedMatch?.status === MatchStatus.COMPLETED ||
-						refreshedMatch?.status === MatchStatus.CANCELED
-					) {
-						toast.success(
-							t(matchLocaleKeys.ban_pick_session_completed_match_finished),
-						);
-						void router.navigate({
-							to: "/room/$roomId/result",
-							params: { roomId: match.id },
-						});
-					} else if (refreshedMatch?.status === MatchStatus.WAITING) {
-						toast.success(
-							t(matchLocaleKeys.ban_pick_session_completed_next_started),
-						);
-						void router.navigate({
-							to: "/room/$roomId/waiting",
-							params: { roomId: match.id },
-						});
-					} else {
-						toast.success(
-							t(matchLocaleKeys.ban_pick_session_completed_next_started),
-						);
-						await router.invalidate();
-
-						const latestMatchResponse = await matchApi.getMatch(match.id);
-						if (latestMatchResponse.data) {
-							setMatch(latestMatchResponse.data);
-						}
-					}
-				}
-			} catch {
-				toast.error(t(matchLocaleKeys.ban_pick_failed_complete_session));
-			} finally {
-				setIsSubmittingTurnAction(false);
-			}
-
+			// Open winner selection dialog instead of processing timer inputs
+			setShowWinnerDialog(true);
 			return;
 		}
 
@@ -1618,17 +1538,18 @@ function RouteComponent() {
 		<>
 			<div className="min-h-screen max-w-screen overflow-hidden">
 				<div className="grid grid-cols-7 h-dvh gap-4">
-					<BanPickSideSection
-						side="blue"
-						player={bluePlayer}
-						cost={blueSideCost}
-						isRealtimeMatch={isRealtimeMatch}
-						timerValues={timerInputs.blue}
-						onTimerValuesChange={onTimerValuesChange}
-						bans={blueBanPickBans}
+				<BanPickSideSection
+					side="blue"
+					player={bluePlayer}
+					cost={blueSideCost}
+					isRealtimeMatch={isRealtimeMatch}
+					timerValues={timerInputs.blue}
+					onTimerValuesChange={onTimerValuesChange}
+					bans={blueBanPickBans}
 						picks={blueBanPickPicks}
 						currentAction={currentAction}
 						isDraftCompleted={isDraftCompleted}
+						canManageCompletedSession={isHost && hostIsPlayer && profile?.id === bluePlayer?.id}
 						pendingCharacter={pendingBanPickCharacter}
 						canInteract={isCurrentUserTurn}
 						search={leftSearch}
@@ -1663,9 +1584,8 @@ function RouteComponent() {
 						isSupachaiButtonDisabled={
 							isActivatingSupachai ||
 							!isDraftCompleted ||
-							!blueSupachaiFromCharacterId ||
-							!blueSupachaiToCharacterId ||
-							blueSupachaiFromCharacterId === blueSupachaiToCharacterId ||
+							blueSupachaiFromCharacterId !== ""  ||
+							blueSupachaiToCharacterId !== "" ||
 							blueSupachaiRemainingUses <= 0
 						}
 						hasTravellerPicked={blueHasTravellerPicked}
@@ -1710,6 +1630,7 @@ function RouteComponent() {
 						picks={redBanPickPicks}
 						currentAction={currentAction}
 						isDraftCompleted={isDraftCompleted}
+						canManageCompletedSession={isHost && hostIsPlayer && profile?.id === redPlayer?.id}
 						pendingCharacter={pendingBanPickCharacter}
 						canInteract={isCurrentUserTurn}
 						search={rightSearch}
@@ -1744,15 +1665,49 @@ function RouteComponent() {
 						isSupachaiButtonDisabled={
 							isActivatingSupachai ||
 							!isDraftCompleted ||
-							!redSupachaiFromCharacterId ||
-							!redSupachaiToCharacterId ||
-							redSupachaiFromCharacterId === redSupachaiToCharacterId ||
+							redSupachaiFromCharacterId !== "" ||
+							redSupachaiToCharacterId !== "" ||
 							redSupachaiRemainingUses <= 0
 						}
 						hasTravellerPicked={redHasTravellerPicked}
 					/>
 				</div>
 			</div>
-		</>
+
+				<Dialog open={showWinnerDialog} onOpenChange={setShowWinnerDialog}>
+					<DialogContent className="sm:max-w-lg">
+							<DialogHeader>
+								<DialogTitle>{t("ban_pick_select_winner_title")}</DialogTitle>
+								<DialogDescription>
+									{t("ban_pick_select_winner_description")}
+								</DialogDescription>
+							</DialogHeader>
+
+						<div className="grid gap-4 mt-4">
+							<Button
+								variant={selectedWinnerSide === PlayerSide.BLUE ? "default" : "outline"}
+								onClick={() => setSelectedWinnerSide(PlayerSide.BLUE)}
+							>
+								{bluePlayer?.displayName ?? t("ban_pick_side_blue")}
+							</Button>
+							<Button
+								variant={selectedWinnerSide === PlayerSide.RED ? "default" : "outline"}
+								onClick={() => setSelectedWinnerSide(PlayerSide.RED)}
+							>
+								{redPlayer?.displayName ?? t("ban_pick_side_red")}
+							</Button>
+						</div>
+
+						<DialogFooter>
+							<Button type="button" variant="outline" onClick={() => setShowWinnerDialog(false)}>
+								{t("ban_pick_cancel")}
+							</Button>
+							<Button type="button" onClick={confirmWinnerAndComplete}>
+								{t("ban_pick_confirm")}
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+			</>
 	);
 }

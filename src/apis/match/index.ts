@@ -78,9 +78,13 @@ async function pickWeapon(
 	return response.data;
 }
 
-async function completeSession(matchId: string) {
+async function completeSession(
+	matchId: string,
+	body?: { winnerSide?: number },
+) {
 	const response = await http.post<BaseApiResponse>(
 		`/api/user/match/${matchId}/complete-session`,
+		body ?? undefined,
 	);
 	return response.data;
 }

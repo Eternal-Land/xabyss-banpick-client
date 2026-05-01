@@ -63,9 +63,7 @@ function RouteComponent() {
 	const [sessionCount, setSessionCount] = useState<number | undefined>(
 		undefined,
 	);
-	const [matchType, setMatchType] = useState<MatchTypeEnum | undefined>(
-		undefined,
-	);
+	const matchType: MatchTypeEnum = MatchType.REALTIME;
 
 	const triggerSearchA = useDebounce((value: string) => {
 		setPlayerQueryA(value.trim());
@@ -281,16 +279,7 @@ function RouteComponent() {
 		</div>
 	);
 
-	const matchTypeOptions = [
-		{
-			value: String(MatchType.TURN_BASED),
-			label: tMatch(matchLocaleKeys.match_type_turn_based),
-		},
-		{
-			value: String(MatchType.REALTIME),
-			label: tMatch(matchLocaleKeys.match_type_real_time),
-		},
-	];
+
 
 	const sessionOptions = [
 		{
@@ -355,25 +344,7 @@ function RouteComponent() {
 				{tMatch(matchLocaleKeys.match_create_title)}
 			</h1>
 			<div className="flex gap-6">
-				<Select
-					value={matchType !== undefined ? String(matchType) : undefined}
-					onValueChange={(value) =>
-						setMatchType(Number(value) as MatchTypeEnum)
-					}
-				>
-					<SelectTrigger className="w-full max-w-[25vw] min-w-[10vw]">
-						<SelectValue
-							placeholder={tMatch(matchLocaleKeys.match_type_placeholder)}
-						/>
-					</SelectTrigger>
-					<SelectContent>
-						{matchTypeOptions.map((option) => (
-							<SelectItem key={option.value} value={option.value}>
-								{option.label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+				{/* match type removed: default to REALTIME on create */}
 
 				<Select
 					value={sessionCount ? String(sessionCount) : undefined}

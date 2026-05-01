@@ -6,9 +6,7 @@ import BanPickElementFilter from "@/components/match/ban-pick-element-filter";
 import BanPickPlayerInfo from "@/components/match/ban-pick-player-info";
 import BanPickRarityFilter from "@/components/match/ban-pick-rarity-filter";
 import BanPickTeamBuild from "@/components/match/ban-pick-team-build";
-import BanPickTimerInputs, {
-	type BanPickTimerInputValues,
-} from "@/components/match/ban-pick-timer-inputs";
+// Timer inputs intentionally removed from side section (host chooses winner)
 import {
 	Avatar,
 	AvatarFallback,
@@ -23,13 +21,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+import SearchSelect from "@/components/search-select";
 import { matchLocaleKeys } from "@/i18n/keys";
 import type {
 	BanPickCharacter,
@@ -37,8 +29,11 @@ import type {
 	DraftSide,
 } from "@/components/match/ban-pick.types";
 import { useTranslation } from "react-i18next";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { BanPickTimerInputValues } from "@/components/match/ban-pick-timer-inputs";
 import { ArrowRightLeft } from "lucide-react";
+import supachaiIcon from "@/assets/image/supachai.png";
+import { cn } from "@/lib/utils";
 
 interface BanPickSideCostInfo {
 	totalCost?: number;
@@ -70,6 +65,7 @@ interface BanPickSideSectionProps {
 	picks: BanPickCharacter[];
 	currentAction?: DraftAction;
 	isDraftCompleted: boolean;
+	canManageCompletedSession: boolean;
 	pendingCharacter: BanPickCharacter | null;
 	canInteract: boolean;
 	search: string;
@@ -118,6 +114,7 @@ export default function BanPickSideSection({
 	picks,
 	currentAction,
 	isDraftCompleted,
+	canManageCompletedSession,
 	pendingCharacter,
 	canInteract,
 	search,
@@ -151,13 +148,19 @@ export default function BanPickSideSection({
 	hasTravellerPicked,
 }: BanPickSideSectionProps) {
 	const { t } = useTranslation("match");
+	void isRealtimeMatch;
+	void timerValues;
+	void onTimerValuesChange;
 	const [isSupachaiDialogOpen, setIsSupachaiDialogOpen] = useState(false);
 	const [isSupachaiWarningOpen, setIsSupachaiWarningOpen] = useState(false);
 	const isBlue = side === "blue";
 	const backgroundClassName = isBlue
 		? "bg-transparent bg-radial from-sky-400/50 from-0% to-white/0 to-70% fixed inset-0 z-[-2] left-[-500px] top-0 h-screen aspect-square rounded-full"
 		: "bg-transparent bg-radial from-red-400/50 from-0% to-white/0 to-70% fixed inset-0 z-[-2] left-[1500px] top-0 h-screen aspect-square rounded-full";
-	const canShowSupachaiControls = isDraftCompleted && canPickWeapon;
+	// Show supachai controls if draft completed and either side player can pick weapons
+	// or the parent explicitly allowed management for this side (host-as-player for that side)
+	const canShowSupachaiControls = isDraftCompleted && (canPickWeapon || canManageCompletedSession);
+	const isSupachaiUsedThisSession = supachaiRemainingUses <= 0;
 
 	const supachaiTargetCharacter = useMemo(
 		() => supachaiPickOptions.find((character) => character.id === supachaiFromCharacterId) ?? null,
@@ -169,6 +172,26 @@ export default function BanPickSideSection({
 		[supachaiReplacementOptions, supachaiToCharacterId],
 	);
 
+	const supachaiPickSearchOptions = useMemo(
+		() =>
+			supachaiPickOptions.map((character, index) => ({
+				value: character.id,
+				label: `${t(matchLocaleKeys.ban_pick_supachai_pick_label, {
+					index: index + 1,
+				})}: ${character.name}`,
+			})),
+		[supachaiPickOptions, t],
+	);
+
+	const supachaiReplacementSearchOptions = useMemo(
+		() =>
+			supachaiReplacementOptions.map((character) => ({
+				value: character.id,
+				label: character.name,
+			})),
+		[supachaiReplacementOptions],
+	);
+
 	const getCharacterInitials = (name: string) =>
 		name
 			.split(" ")
@@ -176,6 +199,42 @@ export default function BanPickSideSection({
 			.map((part) => part[0]?.toUpperCase())
 			.slice(0, 2)
 			.join("") || "?";
+
+	// Debug: Log supachai disabled status
+	useEffect(() => {
+		console.log(`[Supachai-${side}] Status:`, {
+			canShowSupachaiControls,
+			isSupachaiButtonDisabled,
+			isSupachaiUsedThisSession,
+			supachaiRemainingUses,
+			isDraftCompleted,
+			canPickWeapon,
+			canManageCompletedSession,
+			isBlue,
+			supachaiFromCharacterId,
+			supachaiToCharacterId,
+			isActivatingSupachai,
+			conditions: {
+				hasFromCharacter: !!supachaiFromCharacterId,
+				hasToCharacter: !!supachaiToCharacterId,
+				charactersAreDifferent: supachaiFromCharacterId !== supachaiToCharacterId,
+				hasRemainingUses: supachaiRemainingUses > 0,
+			},
+		});
+	}, [
+		canShowSupachaiControls,
+		isSupachaiButtonDisabled,
+		isSupachaiUsedThisSession,
+		supachaiRemainingUses,
+		isDraftCompleted,
+		canPickWeapon,
+		canManageCompletedSession,
+		isBlue,
+		supachaiFromCharacterId,
+		supachaiToCharacterId,
+		isActivatingSupachai,
+		side,
+	]);
 
 	const renderCharacterPreview = (character: BanPickCharacter | null) => (
 		<div className="flex items-center gap-3 rounded-md border border-white/10 bg-white/5 p-3">
@@ -194,14 +253,7 @@ export default function BanPickSideSection({
 		<div className="col-span-3 flex flex-col h-dvh p-4 gap-4">
 			<div className={backgroundClassName}></div>
 
-			<div className="timer-side flex items-center gap-4">
-				<BanPickTimerInputs
-					isRealtimeMatch={isRealtimeMatch}
-					side={side}
-					values={timerValues}
-					onValuesChange={onTimerValuesChange}
-				/>
-			</div>
+			{/* Timer inputs removed: host will choose winner manually */}
 
 			<div className="grid grid-rows-2 gap-4 h-full overflow-hidden">
 				<div className="grid grid-cols-7 gap-8">
@@ -253,15 +305,23 @@ export default function BanPickSideSection({
 						/>
 
 						{canShowSupachaiControls ? (
-							<>
-								<Button
+							<div className={cn(isBlue ? "" : "justify-end", "flex items-center")}>
+								<button
 									type="button"
-									className="w-full"
+									className="w-24 h-auto relative rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-transform"
 									onClick={() => setIsSupachaiDialogOpen(true)}
-									disabled={supachaiRemainingUses <= 0 || isSupachaiButtonDisabled}
+									disabled={isSupachaiUsedThisSession || isSupachaiButtonDisabled}
+									title={t(matchLocaleKeys.ban_pick_supachai_activate)}
 								>
-									{t(matchLocaleKeys.ban_pick_supachai_activate)}
-								</Button>
+									<img
+										src={supachaiIcon}
+										alt={t(matchLocaleKeys.ban_pick_supachai_activate)}
+										className={cn(
+											"w-full h-auto object-contain transition-[filter] duration-200",
+											isSupachaiUsedThisSession ? "grayscale" : "",
+										)}
+									/>
+								</button>
 
 								<Dialog
 									open={isSupachaiDialogOpen}
@@ -283,28 +343,17 @@ export default function BanPickSideSection({
 													{t(matchLocaleKeys.ban_pick_supachai_target_slot)}
 												</p>
 												{renderCharacterPreview(supachaiTargetCharacter)}
-												<Select
+												<SearchSelect
 													value={supachaiFromCharacterId}
 													onValueChange={onSupachaiFromCharacterIdChange}
-												>
-													<SelectTrigger className="w-full">
-														<SelectValue
-															placeholder={t(
-																matchLocaleKeys.ban_pick_supachai_pick_slot_placeholder,
-															)}
-														/>
-													</SelectTrigger>
-													<SelectContent>
-														{supachaiPickOptions.map((character, index) => (
-															<SelectItem key={character.id} value={character.id}>
-																{t(matchLocaleKeys.ban_pick_supachai_pick_label, {
-																	index: index + 1,
-																})}
-																: {character.name}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
+													options={supachaiPickSearchOptions}
+													placeholder={t(matchLocaleKeys.ban_pick_supachai_pick_slot_placeholder)}
+													searchPlaceholder={t(matchLocaleKeys.ban_pick_supachai_pick_slot_placeholder)}
+													ariaLabel={t(matchLocaleKeys.ban_pick_supachai_target_slot)}
+													className="w-full"
+													triggerClassName="w-full"
+													contentClassName="w-full"
+												/>
 											</div>
 
 											<div className="space-y-3 flex items-center justify-center">
@@ -316,31 +365,18 @@ export default function BanPickSideSection({
 													{t(matchLocaleKeys.ban_pick_supachai_replacement)}
 												</p>
 												{renderCharacterPreview(supachaiReplacementCharacter)}
-												<Select
+												<SearchSelect
 													value={supachaiToCharacterId}
 													onValueChange={onSupachaiToCharacterIdChange}
-												>
-													<SelectTrigger className="w-full">
-														<SelectValue
-															placeholder={t(
-																matchLocaleKeys.ban_pick_supachai_replacement_placeholder,
-															)}
-														/>
-													</SelectTrigger>
-													<SelectContent>
-														{supachaiReplacementOptions.length ? (
-															supachaiReplacementOptions.map((character) => (
-																<SelectItem key={character.id} value={character.id}>
-																	{character.name}
-																</SelectItem>
-															))
-														) : (
-															<SelectItem value="__empty__" disabled>
-																{t(matchLocaleKeys.ban_pick_supachai_no_replacement)}
-															</SelectItem>
-														)}
-													</SelectContent>
-												</Select>
+													options={supachaiReplacementSearchOptions}
+													placeholder={t(matchLocaleKeys.ban_pick_supachai_replacement_placeholder)}
+													searchPlaceholder={t(matchLocaleKeys.ban_pick_supachai_replacement_placeholder)}
+													emptyText={t(matchLocaleKeys.ban_pick_supachai_no_replacement)}
+													ariaLabel={t(matchLocaleKeys.ban_pick_supachai_replacement)}
+													className="w-full"
+													triggerClassName="w-full"
+													contentClassName="w-full"
+												/>
 											</div>
 										</div>
 
@@ -413,7 +449,7 @@ export default function BanPickSideSection({
 										</DialogFooter>
 									</DialogContent>
 								</Dialog>
-							</>
+							</div>
 						) : null}
 					</div>
 				) : (

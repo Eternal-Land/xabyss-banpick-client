@@ -137,6 +137,9 @@ const matchEn: MatchLocaleObject = {
 	ban_pick_supachai_replacement_placeholder: "Select replacement character",
 	ban_pick_supachai_no_replacement: "No replacement character available",
 	ban_pick_supachai_activate: "Activate Supachai",
+	ban_pick_select_winner_title: "Select winner",
+	ban_pick_select_winner_description:
+		"Choose which side should be declared the winner for this session.",
 	ban_pick_supachai_uses_left: "Uses left: {{count}}",
 	ban_pick_supachai_activating: "Activating...",
 	ban_pick_supachai_success: "Supachai activated successfully",

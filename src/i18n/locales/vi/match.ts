@@ -136,6 +136,9 @@ const matchVi: MatchLocaleObject = {
 	ban_pick_supachai_replacement_placeholder: "Chọn nhân vật thay thế",
 	ban_pick_supachai_no_replacement: "Không có nhân vật thay thế khả dụng",
 	ban_pick_supachai_activate: "Kích hoạt Supachai",
+	ban_pick_select_winner_title: "Chọn người thắng",
+	ban_pick_select_winner_description:
+		"Chọn bên sẽ được tuyên bố là người thắng cho ván này.",
 	ban_pick_supachai_uses_left: "Lượt còn lại: {{count}}",
 	ban_pick_supachai_activating: "Đang kích hoạt...",
 	ban_pick_supachai_success: "Kích hoạt Supachai thành công",

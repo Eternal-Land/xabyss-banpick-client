@@ -143,6 +143,9 @@ export const matchLocaleKeys = {
 	ban_pick_supachai_failed: "ban_pick_supachai_failed",
 	ban_pick_supachai_pick_label: "ban_pick_supachai_pick_label",
 	ban_pick_supachai_dialog_description: "ban_pick_supachai_dialog_description",
+	ban_pick_select_winner_title: "ban_pick_select_winner_title",
+	ban_pick_select_winner_description: "ban_pick_select_winner_description",
+
 	ban_pick_supachai_warning_title: "ban_pick_supachai_warning_title",
 	ban_pick_supachai_warning_description:
 		"ban_pick_supachai_warning_description",
