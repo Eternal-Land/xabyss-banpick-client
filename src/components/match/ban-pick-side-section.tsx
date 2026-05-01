@@ -79,7 +79,9 @@ interface BanPickSideSectionProps {
 	selectedRarity: string;
 	onSelectRarity: (value: string) => void;
 	characters: BanPickCharacter[];
-	selectedCharacterNames: Set<string>;
+	disabledCharacterIds: Set<string>;
+	usedCharacterIds: Set<string>;
+	pickedCharacterIds: Set<string>;
 	filteredCharacters: AccountCharacterResponse[];
 	onSelectCharacter: (character: AccountCharacterResponse) => void;
 	weapons: UserWeaponResponse[];
@@ -125,7 +127,9 @@ export default function BanPickSideSection({
 	selectedRarity,
 	onSelectRarity,
 	characters,
-	selectedCharacterNames,
+	disabledCharacterIds,
+	usedCharacterIds,
+	pickedCharacterIds,
 	filteredCharacters,
 	onSelectCharacter,
 	weapons,
@@ -203,7 +207,7 @@ export default function BanPickSideSection({
 				<div className="grid grid-cols-7 gap-8">
 					{isBlue ? (
 						<>
-							<BanPickPlayerInfo side={side} player={player} cost={cost} />
+							<BanPickPlayerInfo side={side} player={player} cost={cost} isBanPickFinished={isDraftCompleted} />
 							<BanPickDraftSlots
 								side={side}
 								bans={bans}
@@ -223,7 +227,7 @@ export default function BanPickSideSection({
 								isDraftCompleted={isDraftCompleted}
 								pendingCharacter={pendingCharacter}
 							/>
-							<BanPickPlayerInfo side={side} player={player} cost={cost} />
+							<BanPickPlayerInfo side={side} player={player} cost={cost} isBanPickFinished={isDraftCompleted} />
 						</>
 					)}
 				</div>
@@ -432,7 +436,9 @@ export default function BanPickSideSection({
 							/>
 						}
 						characters={characters}
-						selectedCharacterNames={selectedCharacterNames}
+							disabledCharacterIds={disabledCharacterIds}
+							usedCharacterIds={usedCharacterIds}
+							pickedCharacterIds={pickedCharacterIds}
 						pendingCharacter={pendingCharacter}
 						isDraftCompleted={isDraftCompleted}
 						currentAction={currentAction}
@@ -441,10 +447,15 @@ export default function BanPickSideSection({
 							const selected = filteredCharacters.find(
 								(item) => item.characters.name === character.name,
 							);
-							if (!selected) {
+							if (selected) {
+								onSelectCharacter(selected);
 								return;
 							}
-							onSelectCharacter(selected);
+							// Viewer may not have the opponent's account roster loaded. In that
+							// case, construct a minimal fallback containing `characterId` so the
+							// caller can derive the correct character id to send to the API.
+							const fallback = { characterId: Number(character.id) } as unknown as AccountCharacterResponse;
+							onSelectCharacter(fallback);
 						}}
 					/>
 				)}

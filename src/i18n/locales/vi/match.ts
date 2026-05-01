@@ -48,6 +48,13 @@ const matchVi: MatchLocaleObject = {
 	match_waiting_for_players: "Đang chờ {{count}} người chơi...",
 	match_waiting_all_players_connected: "Tất cả người chơi đã kết nối!",
 	match_waiting_for_host_start: "Đang chờ chủ phòng bắt đầu...",
+	match_waiting_continue_error: "Không thể tiếp tục ván tiếp theo",
+	match_waiting_session_result_title: "Hoàn tất ván đấu",
+	match_waiting_session_result_description:
+		"Ván hiện tại đã kết thúc. Xem kết quả và chờ chủ phòng tiếp tục ván tiếp theo.",
+	match_waiting_session_result_winner: "Người thắng: {{winner}}",
+	match_waiting_session_result_waiting_host: "Đang chờ chủ phòng tiếp tục...",
+	match_waiting_session_result_continue: "Tiếp tục ván tiếp theo",
 	match_result_loading: "Đang tải kết quả...",
 	match_result_scoreboard_title: "Bảng tỉ số trận đấu",
 	match_result_back_to_lobby: "Về sảnh",
@@ -120,7 +127,7 @@ const matchVi: MatchLocaleObject = {
 	ban_pick_session_completed_match_finished:
 		"Hoàn tất ván. Trận đấu đã kết thúc.",
 	ban_pick_session_completed_next_started:
-		"Hoàn tất ván. Ván tiếp theo đã bắt đầu.",
+		"Hoàn tất ván. Đang chờ chủ phòng tiếp tục.",
 	ban_pick_failed_complete_session: "Không thể hoàn tất ván",
 	ban_pick_supachai_title: "Supachai",
 	ban_pick_supachai_target_slot: "Ô pick cần đổi",

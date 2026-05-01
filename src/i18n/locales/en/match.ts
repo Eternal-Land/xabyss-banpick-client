@@ -48,6 +48,13 @@ const matchEn: MatchLocaleObject = {
 	match_waiting_for_players: "Waiting for {{count}} player{{suffix}}...",
 	match_waiting_all_players_connected: "All players connected!",
 	match_waiting_for_host_start: "Waiting for host to start...",
+	match_waiting_continue_error: "Failed to continue next session",
+	match_waiting_session_result_title: "Session completed",
+	match_waiting_session_result_description:
+		"The current session has ended. Review the result and wait for the host to continue.",
+	match_waiting_session_result_winner: "Winner: {{winner}}",
+	match_waiting_session_result_waiting_host: "Waiting for host to continue...",
+	match_waiting_session_result_continue: "Continue next session",
 	match_result_loading: "Loading Results...",
 	match_result_scoreboard_title: "Match Scoreboard",
 	match_result_back_to_lobby: "Back to Lobby",
@@ -121,7 +128,7 @@ const matchEn: MatchLocaleObject = {
 	ban_pick_session_completed_match_finished:
 		"Session completed. Match is finished.",
 	ban_pick_session_completed_next_started:
-		"Session completed. Next session started.",
+		"Session completed. Waiting for host to continue.",
 	ban_pick_failed_complete_session: "Failed to complete session",
 	ban_pick_supachai_title: "Supachai",
 	ban_pick_supachai_target_slot: "Target pick slot",

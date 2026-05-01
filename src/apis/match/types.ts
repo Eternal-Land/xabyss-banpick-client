@@ -41,6 +41,10 @@ export interface MatchStateResponse {
 	draftStep: number;
 	blueSupachaiUsedCount: number;
 	redSupachaiUsedCount: number;
+	blueSupachaiUsedSessionCount: number;
+	redSupachaiUsedSessionCount: number;
+	blueUsedChars: string[];
+	redUsedChars: string[];
 	supachaiMaxUses: number;
 }
 

@@ -22,6 +22,7 @@ const adminEn: AdminLocaleObject = {
 	admin_sidebar_character_costs: "Character Costs",
 	admin_sidebar_match_settings: "Match Settings",
 	admin_sidebar_weapon_costs: "Weapon Costs",
+	admin_sidebar_character_weapons: "Character Weapons",
 };
 
 export default adminEn;

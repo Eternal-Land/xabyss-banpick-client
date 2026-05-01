@@ -46,6 +46,15 @@ export const matchLocaleKeys = {
 	match_waiting_for_players: "match_waiting_for_players",
 	match_waiting_all_players_connected: "match_waiting_all_players_connected",
 	match_waiting_for_host_start: "match_waiting_for_host_start",
+	match_waiting_continue_error: "match_waiting_continue_error",
+	match_waiting_session_result_title: "match_waiting_session_result_title",
+	match_waiting_session_result_description:
+		"match_waiting_session_result_description",
+	match_waiting_session_result_winner: "match_waiting_session_result_winner",
+	match_waiting_session_result_waiting_host:
+		"match_waiting_session_result_waiting_host",
+	match_waiting_session_result_continue:
+		"match_waiting_session_result_continue",
 	match_result_loading: "match_result_loading",
 	match_result_scoreboard_title: "match_result_scoreboard_title",
 	match_result_back_to_lobby: "match_result_back_to_lobby",

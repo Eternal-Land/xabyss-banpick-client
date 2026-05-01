@@ -18,7 +18,9 @@ export interface BanPickCharacterSelectorProps {
 	renderElementFilter: React.ReactNode;
 	renderRarityFilter: React.ReactNode;
 	characters: BanPickCharacter[];
-	selectedCharacterNames: Set<string>;
+	disabledCharacterIds: Set<string>;
+	usedCharacterIds: Set<string>;
+	pickedCharacterIds: Set<string>;
 	pendingCharacter: BanPickCharacter | null;
 	isDraftCompleted: boolean;
 	currentAction?: DraftAction;
@@ -35,7 +37,9 @@ export default function BanPickCharacterSelector({
 	renderElementFilter,
 	renderRarityFilter,
 	characters,
-	selectedCharacterNames,
+	disabledCharacterIds,
+	usedCharacterIds,
+	pickedCharacterIds,
 	pendingCharacter,
 	isDraftCompleted,
 	currentAction,
@@ -48,6 +52,8 @@ export default function BanPickCharacterSelector({
 			? "rounded-sm ring-2 ring-sky-400 ring-offset-2 ring-offset-transparent"
 			: "rounded-sm ring-2 ring-red-600 ring-offset-2 ring-offset-transparent";
 
+	// During ban turn, the acting side bans a character from the opponent.
+	// So make the selectable side the opposite side for ban actions.
 	const selectableSide = currentAction
 		? currentAction.type === "ban"
 			? currentAction.side === "blue"
@@ -70,13 +76,15 @@ export default function BanPickCharacterSelector({
 			</div>
 			<div className="grid grid-cols-7 auto-rows-min gap-4 overflow-y-auto p-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
 				{characters.map((character, index) => {
-					const isSelectedInDraft = selectedCharacterNames.has(character.name);
+					const isDisabledByCharacter = disabledCharacterIds.has(character.id);
+					const isUsedByPreviousSessions = usedCharacterIds.has(character.id);
+					const isSidePick = pickedCharacterIds.has(character.id);
 					const isTraveller = character.name.toLowerCase().startsWith("traveller");
 					const isDisabled =
 						isDraftCompleted ||
 						!canInteract ||
 						selectableSide !== side ||
-						isSelectedInDraft ||
+						isDisabledByCharacter ||
 						(isTraveller && hasTravellerPicked && currentAction?.type === "pick");
 
 					return (
@@ -89,8 +97,19 @@ export default function BanPickCharacterSelector({
 								"text-left flex flex-col items-center gap-2",
 								pendingCharacter?.name === character.name && activeRingClass,
 								isDisabled
-									? "cursor-not-allowed opacity-60 grayscale"
+									? "cursor-not-allowed"
 									: "cursor-pointer",
+							isDisabledByCharacter
+								? "grayscale"
+								: "",
+							isDisabledByCharacter && isSidePick
+								? side === "blue"
+									? "opacity-75 ring-1 ring-sky-400/60"
+									: "opacity-75 ring-1 ring-red-600/60"
+								: "",
+							isDisabled && !isDisabledByCharacter && !isUsedByPreviousSessions
+								? "opacity-60"
+									: "",
 							)}
 						>
 							<CharacterContainer

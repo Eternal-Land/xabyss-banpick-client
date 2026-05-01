@@ -32,6 +32,8 @@ import viUsers from "@/i18n/locales/vi/users";
 import viWeapons from "@/i18n/locales/vi/weapons";
 import weaponCostsVi from "./locales/vi/weapon-costs";
 import weaponCostsEn from "./locales/en/weapon-costs";
+import characterWeaponsEn from "./locales/en/character-weapons";
+import characterWeaponsVi from "./locales/vi/character-weapons";
 
 i18n
 	.use(LanguageDetector)
@@ -56,6 +58,7 @@ i18n
 				users: enUsers,
 				weapons: enWeapons,
 				"weapon-costs": weaponCostsEn,
+				"character-weapons": characterWeaponsEn,
 			},
 			vi: {
 				common: viCommon,
@@ -73,6 +76,7 @@ i18n
 				users: viUsers,
 				weapons: viWeapons,
 				"weapon-costs": weaponCostsVi,
+				"character-weapons": characterWeaponsVi,
 			},
 		},
 		ns: i18nNamespaces,

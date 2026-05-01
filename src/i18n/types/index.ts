@@ -12,4 +12,5 @@ export * from "./character-costs";
 export * from "./cost-milestones";
 export * from "./common";
 export * from "./weapon-costs";
+export * from "./character-weapons";
 export * from "./match";
