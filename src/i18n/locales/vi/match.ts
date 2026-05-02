@@ -93,6 +93,7 @@ const matchVi: MatchLocaleObject = {
 	ban_pick_player_avatar_alt: "Ảnh đại diện người chơi {{side}}",
 	ban_pick_total_cost: "Tổng cost",
 	ban_pick_milestone_cost: "Mốc cost",
+	ban_pick_special_cost: "Cost đặc biệt",
 	ban_pick_constellation: "Cung mệnh",
 	ban_pick_refinement: "Tinh luyện",
 	ban_pick_level: "Cấp độ",

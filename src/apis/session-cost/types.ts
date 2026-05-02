@@ -9,6 +9,7 @@ export interface CalculateSessionCostInput {
 	weaponRarity?: WeaponRarityEnum;
 	side: PlayerSideEnum;
 	currentTurn?: number;
+	specialCost?: number;
 }
 
 export interface SessionCostResponse {
@@ -20,10 +21,12 @@ export interface SessionCostResponse {
 	blueRefinementCost: number;
 	blueLevelCost: number;
 	blueTimeBonusCost: number;
+	blueSpecialCost: number;
 	redTotalCost: number;
 	redCostMilestone: number;
 	redConstellationCost: number;
 	redRefinementCost: number;
 	redLevelCost: number;
 	redTimeBonusCost: number;
+	redSpecialCost: number;
 }

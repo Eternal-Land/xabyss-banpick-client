@@ -65,6 +65,11 @@ type BanPickTimerInputsBySide = {
 	red: TimerInputs;
 };
 
+type BanPickSpecialCostInputsBySide = {
+	blue: string;
+	red: string;
+};
+
 const EMPTY_TIMER_INPUTS_BY_SIDE: BanPickTimerInputsBySide = {
 	blue: { chamber1: "", chamber2: "", chamber3: "", reset: "" },
 	red: { chamber1: "", chamber2: "", chamber3: "", reset: "" },
@@ -269,7 +274,14 @@ function RouteComponent() {
 	const [timerInputs, setTimerInputs] = useState<BanPickTimerInputsBySide>(
 		EMPTY_TIMER_INPUTS_BY_SIDE,
 	);
+	const [specialCostInputs, setSpecialCostInputs] = useState<BanPickSpecialCostInputsBySide>(
+		() => ({ blue: "0", red: "0" }),
+	);
 	const isApplyingRemoteTimerSyncRef = useRef(false);
+	const isApplyingRemoteSpecialCostSyncRef = useRef(false);
+	const previousSpecialCostInputsRef = useRef<BanPickSpecialCostInputsBySide>(
+		{ blue: "0", red: "0" },
+	);
 	const [
 		blueSelectedWeaponRefinementByCharacterIdLocal,
 		setBlueSelectedWeaponRefinementByCharacterIdLocal,
@@ -309,6 +321,100 @@ function RouteComponent() {
 			});
 		},
 		[],
+	);
+
+	const onSpecialCostValuesChange = useCallback(
+		(side: "blue" | "red", value: string) => {
+			setSpecialCostInputs((prev) => {
+				if (prev[side] === value) {
+					return prev;
+				}
+
+				return {
+					...prev,
+					[side]: value,
+				};
+			});
+		},
+		[],
+	);
+
+	const emitBlueSpecialCostSyncDebounced = useDebounce(
+		(nextSpecialCost: string) => {
+			if (!match?.id) {
+				return;
+			}
+
+			const matchSessionId = Number(pageMatchState?.currentSession);
+			if (!Number.isInteger(matchSessionId) || matchSessionId <= 0) {
+				return;
+			}
+
+			void (async () => {
+				try {
+					const response = await sessionCostApi.calculateSessionCost(
+						matchSessionId,
+						{
+							side: PlayerSide.BLUE,
+							specialCost: Math.max(0, Number(nextSpecialCost) || 0),
+						},
+					);
+					const sessionCostResponse = response.data;
+
+					if (sessionCostResponse) {
+						setSessionCost(sessionCostResponse);
+						setSpecialCostInputs((prev) => ({
+							...prev,
+							blue: String(sessionCostResponse.blueSpecialCost ?? 0),
+							red: String(sessionCostResponse.redSpecialCost ?? 0),
+						}));
+					}
+				} catch (error) {
+					console.error("Blue special cost calculation failed:", error);
+					toast.error(t(matchLocaleKeys.ban_pick_failed_complete_session));
+				}
+			})();
+		},
+		350,
+	);
+
+	const emitRedSpecialCostSyncDebounced = useDebounce(
+		(nextSpecialCost: string) => {
+			if (!match?.id) {
+				return;
+			}
+
+			const matchSessionId = Number(pageMatchState?.currentSession);
+			if (!Number.isInteger(matchSessionId) || matchSessionId <= 0) {
+				return;
+			}
+
+			void (async () => {
+				try {
+					const response = await sessionCostApi.calculateSessionCost(
+						matchSessionId,
+						{
+							side: PlayerSide.RED,
+							specialCost: Math.max(0, Number(nextSpecialCost) || 0),
+						},
+					);
+					const sessionCostResponse = response.data;
+
+					if (sessionCostResponse) {
+						setSessionCost(sessionCostResponse);
+						setSpecialCostInputs((prev) => ({
+							...prev,
+							blue: String(sessionCostResponse.blueSpecialCost ?? 0),
+							red: String(sessionCostResponse.redSpecialCost ?? 0),
+						}));
+					}
+				} catch (error) {
+					console.error("Red special cost calculation failed:", error);
+					toast.error(t(matchLocaleKeys.ban_pick_failed_complete_session));
+				}
+			})();
+		},
+		350,
 	);
 
 	const emitTimerInputsSyncDebounced = useDebounce(
@@ -372,10 +478,6 @@ function RouteComponent() {
 		[profile?.id, roomId, router],
 	);
 
-	useSocketEvent(SocketEvent.UPDATE_MATCH_STATE, (data: MatchStateResponse) => {
-		setPageMatchState(data);
-	});
-
 	useSocketEvent(SocketEvent.MATCH_UPDATED, (data?: MatchResponse) => {
 		if (data) {
 			setMatch(data);
@@ -392,6 +494,13 @@ function RouteComponent() {
 						match.id,
 					);
 					setSessionCost(currentSessionCost.data ?? null);
+					if (currentSessionCost.data) {
+						isApplyingRemoteSpecialCostSyncRef.current = true;
+						setSpecialCostInputs({
+							blue: String(currentSessionCost.data.blueSpecialCost ?? 0),
+							red: String(currentSessionCost.data.redSpecialCost ?? 0),
+						});
+					}
 
 					const latestMatchState = await matchApi.getMatchState(match.id);
 					if (latestMatchState.data) {
@@ -434,6 +543,30 @@ function RouteComponent() {
 
 		emitTimerInputsSyncDebounced(timerInputs);
 	}, [emitTimerInputsSyncDebounced, timerInputs]);
+
+	useEffect(() => {
+		if (isApplyingRemoteSpecialCostSyncRef.current) {
+			isApplyingRemoteSpecialCostSyncRef.current = false;
+			previousSpecialCostInputsRef.current = specialCostInputs;
+			return;
+		}
+
+		const previous = previousSpecialCostInputsRef.current;
+		if (previous.blue !== specialCostInputs.blue) {
+			emitBlueSpecialCostSyncDebounced(specialCostInputs.blue);
+		}
+
+		if (previous.red !== specialCostInputs.red) {
+			emitRedSpecialCostSyncDebounced(specialCostInputs.red);
+		}
+
+		previousSpecialCostInputsRef.current = specialCostInputs;
+	}, [
+		emitBlueSpecialCostSyncDebounced,
+		emitRedSpecialCostSyncDebounced,
+		specialCostInputs.blue,
+		specialCostInputs.red,
+	]);
 
 	useEffect(() => {
 		setMatch(initialMatch);
@@ -934,6 +1067,7 @@ function RouteComponent() {
 			refinementCost: sessionCost?.blueRefinementCost,
 			levelCost: sessionCost?.blueLevelCost,
 			timeBonusCost: sessionCost?.blueTimeBonusCost,
+			specialCost: sessionCost?.blueSpecialCost,
 		}),
 		[sessionCost],
 	);
@@ -946,9 +1080,13 @@ function RouteComponent() {
 			refinementCost: sessionCost?.redRefinementCost,
 			levelCost: sessionCost?.redLevelCost,
 			timeBonusCost: sessionCost?.redTimeBonusCost,
+			specialCost: sessionCost?.redSpecialCost,
 		}),
 		[sessionCost],
 	);
+
+	const canEditBlueSpecialCost = profile?.id === match?.host?.id;
+	const canEditRedSpecialCost = profile?.id === match?.host?.id;
 
 	const leadComparison = useMemo(() => {
 		const parsedRecord = parseTimerInputsToRecordForAutosave(
@@ -1359,6 +1497,12 @@ function RouteComponent() {
 				const response = await sessionCostApi.getCurrentSessionCost(match.id);
 				if (!isCancelled) {
 					setSessionCost(response.data ?? null);
+					if (response.data) {
+						setSpecialCostInputs({
+							blue: String(response.data.blueSpecialCost ?? 0),
+							red: String(response.data.redSpecialCost ?? 0),
+						});
+					}
 				}
 			} catch {
 				if (!isCancelled) {
@@ -1461,6 +1605,11 @@ function RouteComponent() {
 
 				if (response.data) {
 					setSessionCost(response.data);
+					isApplyingRemoteSpecialCostSyncRef.current = true;
+					setSpecialCostInputs({
+						blue: String(response.data.blueSpecialCost ?? 0),
+						red: String(response.data.redSpecialCost ?? 0),
+					});
 				}
 			} catch {
 				if (lastCalculatedTurnRef.current === lastCalculatedKey) {
@@ -1561,14 +1710,17 @@ function RouteComponent() {
 		<>
 			<div className="min-h-screen max-w-screen overflow-hidden">
 				<div className="grid grid-cols-7 h-dvh gap-4">
-					<BanPickSideSection
-						side="blue"
-						player={bluePlayer}
-						cost={blueSideCost}
-						isRealtimeMatch={isRealtimeMatch}
-						timerValues={timerInputs.blue}
-						onTimerValuesChange={onTimerValuesChange}
-						bans={blueBanPickBans}
+				<BanPickSideSection
+					side="blue"
+					player={bluePlayer}
+					cost={blueSideCost}
+					specialCostValue={specialCostInputs.blue}
+					onSpecialCostChange={onSpecialCostValuesChange}
+					canEditSpecialCost={canEditBlueSpecialCost}
+					isRealtimeMatch={isRealtimeMatch}
+					timerValues={timerInputs.blue}
+					onTimerValuesChange={onTimerValuesChange}
+					bans={blueBanPickBans}
 						picks={blueBanPickPicks}
 						currentAction={currentAction}
 						isDraftCompleted={isDraftCompleted}
@@ -1646,6 +1798,9 @@ function RouteComponent() {
 						side="red"
 						player={redPlayer}
 						cost={redSideCost}
+						specialCostValue={specialCostInputs.red}
+						onSpecialCostChange={onSpecialCostValuesChange}
+						canEditSpecialCost={canEditRedSpecialCost}
 						isRealtimeMatch={isRealtimeMatch}
 						timerValues={timerInputs.red}
 						onTimerValuesChange={onTimerValuesChange}

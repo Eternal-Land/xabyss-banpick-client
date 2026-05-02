@@ -94,6 +94,7 @@ export const matchLocaleKeys = {
 	ban_pick_player_avatar_alt: "ban_pick_player_avatar_alt",
 	ban_pick_total_cost: "ban_pick_total_cost",
 	ban_pick_milestone_cost: "ban_pick_milestone_cost",
+	ban_pick_special_cost: "ban_pick_special_cost",
 	ban_pick_constellation: "ban_pick_constellation",
 	ban_pick_refinement: "ban_pick_refinement",
 	ban_pick_level: "ban_pick_level",

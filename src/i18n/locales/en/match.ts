@@ -94,6 +94,7 @@ const matchEn: MatchLocaleObject = {
 	ban_pick_player_avatar_alt: "{{side}} Player Avatar",
 	ban_pick_total_cost: "Total cost",
 	ban_pick_milestone_cost: "Milestone cost",
+	ban_pick_special_cost: "Special cost",
 	ban_pick_constellation: "Constellation",
 	ban_pick_refinement: "Refinement",
 	ban_pick_level: "Level",
