@@ -15,6 +15,8 @@ const characterWeaponsVi: CharacterWeaponsLocaleObject = {
 	character_weapons_weapon_key_placeholder: "Ví dụ: peak_patrol_song",
 	character_weapons_constellation: "Điều kiện cung mệnh",
 	character_weapons_constellation_placeholder: "Bỏ trống nếu không yêu cầu",
+	character_weapons_weapon_refinement_note:
+		"Nếu chỉ chọn vũ khí mà không chọn nhân vật, vũ khí đó sẽ không được tính thêm thời gian tinh luyện.",
 	character_weapons_list_title: "Danh sách liên kết",
 	character_weapons_count: "{{count}} mục",
 	character_weapons_column_character: "Nhân vật",

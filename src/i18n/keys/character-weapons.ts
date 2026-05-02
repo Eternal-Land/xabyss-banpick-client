@@ -15,6 +15,8 @@ export const characterWeaponsLocaleKeys = {
 	character_weapons_constellation: "character_weapons_constellation",
 	character_weapons_constellation_placeholder:
 		"character_weapons_constellation_placeholder",
+	character_weapons_weapon_refinement_note:
+		"character_weapons_weapon_refinement_note",
 	character_weapons_list_title: "character_weapons_list_title",
 	character_weapons_count: "character_weapons_count",
 	character_weapons_column_character: "character_weapons_column_character",

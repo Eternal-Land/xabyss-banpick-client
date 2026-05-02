@@ -15,6 +15,8 @@ const characterWeaponsEn: CharacterWeaponsLocaleObject = {
 	character_weapons_weapon_key_placeholder: "e.g. peak_patrol_song",
 	character_weapons_constellation: "Constellation Condition",
 	character_weapons_constellation_placeholder: "Leave empty for none",
+	character_weapons_weapon_refinement_note:
+		"If you choose a weapon without choosing a character, that weapon will not be included in refinement cost calculation.",
 	character_weapons_list_title: "Association List",
 	character_weapons_count: "{{count}} items",
 	character_weapons_column_character: "Character",
