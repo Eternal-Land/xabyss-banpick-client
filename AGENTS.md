@@ -31,3 +31,4 @@ Routes in `src/routes/` use file-based routing. Auto-generates `src/routeTree.ge
 ## Environment
 
 Copy `.env.example` to `.env.local` before dev.
+- Ban-pick special-cost inputs are side-scoped, debounced, and synced through match-state updates; keep them in the existing side info card.

@@ -56,7 +56,7 @@ export default function CharacterContainer({
 			: "bg-linear-180 from-[#4D4280] to-[#935DB1]";
 
 	const containerClassName = showLevel
-		? "flex flex-col justify-center bg-white aspect-square shadow-md-2 overflow-hidden"
+		? "flex flex-col justify-center bg-white aspect-square shadow-md-2 overflow-hidden rounded"
 		: "bg-white aspect-square shadow-md-2 overflow-hidden";
 
 	return (

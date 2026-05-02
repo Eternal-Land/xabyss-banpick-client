@@ -55,6 +55,9 @@ interface BanPickSideSectionProps {
 	side: DraftSide;
 	player?: BanPickSidePlayerInfo;
 	cost: BanPickSideCostInfo;
+	specialCostValue: string;
+	onSpecialCostChange: (side: DraftSide, value: string) => void;
+	canEditSpecialCost: boolean;
 	isRealtimeMatch: boolean;
 	timerValues: BanPickTimerInputValues;
 	onTimerValuesChange: (
@@ -107,6 +110,9 @@ export default function BanPickSideSection({
 	side,
 	player,
 	cost,
+	specialCostValue,
+	onSpecialCostChange,
+	canEditSpecialCost,
 	isRealtimeMatch,
 	timerValues,
 	onTimerValuesChange,
@@ -259,7 +265,15 @@ export default function BanPickSideSection({
 				<div className="grid grid-cols-7 gap-8">
 					{isBlue ? (
 						<>
-							<BanPickPlayerInfo side={side} player={player} cost={cost} isBanPickFinished={isDraftCompleted} />
+							<BanPickPlayerInfo
+								side={side}
+								player={player}
+								cost={cost}
+								specialCostValue={specialCostValue}
+								onSpecialCostChange={onSpecialCostChange}
+								canEditSpecialCost={canEditSpecialCost}
+								isBanPickFinished={isDraftCompleted}
+							/>
 							<BanPickDraftSlots
 								side={side}
 								bans={bans}
@@ -279,7 +293,15 @@ export default function BanPickSideSection({
 								isDraftCompleted={isDraftCompleted}
 								pendingCharacter={pendingCharacter}
 							/>
-							<BanPickPlayerInfo side={side} player={player} cost={cost} isBanPickFinished={isDraftCompleted} />
+							<BanPickPlayerInfo
+								side={side}
+								player={player}
+								cost={cost}
+								specialCostValue={specialCostValue}
+								onSpecialCostChange={onSpecialCostChange}
+								canEditSpecialCost={canEditSpecialCost}
+								isBanPickFinished={isDraftCompleted}
+							/>
 						</>
 					)}
 				</div>
