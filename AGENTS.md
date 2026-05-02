@@ -26,6 +26,7 @@ Routes in `src/routes/` use file-based routing. Auto-generates `src/routeTree.ge
 - Dev proxy: `/api` -> `http://localhost:3000`
 - shadcn/ui uses "new-york" style
 - Tailwind CSS v4 (configured in `vite.config.ts`)
+- Admin character-weapon screens should hydrate character and weapon avatar/name display from the list APIs instead of relying on relation keys alone, and the create/edit flow uses a dialog with `SearchSelect` inputs.
 
 ## Environment
 
