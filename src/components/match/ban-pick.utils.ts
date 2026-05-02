@@ -294,7 +294,7 @@ export function filterBanPickCharacters(
 export function mapCharacterNamesToAccountCharacters(
 	characters: AccountCharacterResponse[],
 	characterIdsOrNames: string[],
-) {
+): (AccountCharacterResponse | null)[] {
 	const charactersById = new Map(
 		characters.flatMap((character) => [
 			[getBanPickCharacterId(character), character] as const,
@@ -309,23 +309,23 @@ export function mapCharacterNamesToAccountCharacters(
 		]),
 	);
 
-	return characterIdsOrNames.flatMap((characterIdOrName) => {
+	return characterIdsOrNames.map((characterIdOrName) => {
 		const normalizedValue = String(characterIdOrName).trim();
 		if (!normalizedValue) {
-			return [];
+			return null;
 		}
 
 		const mappedById = charactersById.get(normalizedValue);
 		if (mappedById) {
-			return [mappedById];
+			return mappedById;
 		}
 
 		const mappedByName = charactersByName.get(normalizedValue.toLowerCase());
 		if (mappedByName) {
-			return [mappedByName];
+			return mappedByName;
 		}
 
-		return [];
+		return null;
 	});
 }
 

@@ -695,9 +695,9 @@ function RouteComponent() {
 		[draftState.blue.picks],
 	);
 
-	const hasTravellerPicked = (picks: BanPickCharacter[]) => {
+	const hasTravellerPicked = (picks: (BanPickCharacter | null)[]) => {
 		return picks.some((pick) =>
-			pick.name.toLowerCase().startsWith("traveller"),
+			pick && pick.name.toLowerCase().startsWith("traveller"),
 		);
 	};
 
@@ -759,7 +759,7 @@ function RouteComponent() {
 		0,
 		Math.min(
 			(pageMatchState?.supachaiMaxUses ?? 1) -
-				(pageMatchState?.blueSupachaiUsedCount ?? 0),
+			(pageMatchState?.blueSupachaiUsedCount ?? 0),
 			1 - (pageMatchState?.blueSupachaiUsedSessionCount ?? 0),
 		),
 	);
@@ -768,7 +768,7 @@ function RouteComponent() {
 		0,
 		Math.min(
 			(pageMatchState?.supachaiMaxUses ?? 1) -
-				(pageMatchState?.redSupachaiUsedCount ?? 0),
+			(pageMatchState?.redSupachaiUsedCount ?? 0),
 			1 - (pageMatchState?.redSupachaiUsedSessionCount ?? 0),
 		),
 	);
@@ -794,9 +794,9 @@ function RouteComponent() {
 		() =>
 			pageMatchState
 				? mapSelectedWeaponsByCharacterId(
-						draftState.blue.picks,
-						pageMatchState.blueSelectedWeapons,
-					)
+					draftState.blue.picks.filter((c): c is AccountCharacterResponse => c !== null),
+					pageMatchState.blueSelectedWeapons,
+				)
 				: {},
 		[draftState.blue.picks, pageMatchState],
 	);
@@ -805,9 +805,9 @@ function RouteComponent() {
 		() =>
 			pageMatchState
 				? mapSelectedWeaponsByCharacterId(
-						draftState.red.picks,
-						pageMatchState.redSelectedWeapons,
-					)
+					draftState.red.picks.filter((c): c is AccountCharacterResponse => c !== null),
+					pageMatchState.redSelectedWeapons,
+				)
 				: {},
 		[draftState.red.picks, pageMatchState],
 	);
@@ -821,6 +821,7 @@ function RouteComponent() {
 		const mapped: Record<string, number | undefined> = {};
 
 		draftState.blue.picks.forEach((character, index) => {
+			if (!character) return;
 			const refinement = refinements[index];
 			if (typeof refinement === "number" && refinement > 0) {
 				mapped[getBanPickCharacterId(character)] = refinement;
@@ -839,6 +840,7 @@ function RouteComponent() {
 		const mapped: Record<string, number | undefined> = {};
 
 		draftState.red.picks.forEach((character, index) => {
+			if (!character) return;
 			const refinement = refinements[index];
 			if (typeof refinement === "number" && refinement > 0) {
 				mapped[getBanPickCharacterId(character)] = refinement;
@@ -1140,10 +1142,10 @@ function RouteComponent() {
 					...(isUnequip
 						? {}
 						: {
-								weaponId,
-								weaponRefinement,
-								weaponRarity: pickedWeapon?.rarity,
-							}),
+							weaponId,
+							weaponRefinement,
+							weaponRarity: pickedWeapon?.rarity,
+						}),
 					side: PlayerSide.BLUE,
 				},
 			);
@@ -1202,10 +1204,10 @@ function RouteComponent() {
 					...(isUnequip
 						? {}
 						: {
-								weaponId,
-								weaponRefinement,
-								weaponRarity: pickedWeapon?.rarity,
-							}),
+							weaponId,
+							weaponRefinement,
+							weaponRarity: pickedWeapon?.rarity,
+						}),
 					side: PlayerSide.RED,
 				},
 			);
@@ -1488,8 +1490,8 @@ function RouteComponent() {
 				values: {
 					isActivatingSupachai,
 					isDraftCompleted,
-					blueSupachaiFromCharacterId: !!blueSupachaiFromCharacterId ,
-					blueSupachaiToCharacterId: !!blueSupachaiToCharacterId ,
+					blueSupachaiFromCharacterId: !!blueSupachaiFromCharacterId,
+					blueSupachaiToCharacterId: !!blueSupachaiToCharacterId,
 					blueSupachaiRemainingUses,
 				},
 			},
@@ -1538,14 +1540,14 @@ function RouteComponent() {
 		<>
 			<div className="min-h-screen max-w-screen overflow-hidden">
 				<div className="grid grid-cols-7 h-dvh gap-4">
-				<BanPickSideSection
-					side="blue"
-					player={bluePlayer}
-					cost={blueSideCost}
-					isRealtimeMatch={isRealtimeMatch}
-					timerValues={timerInputs.blue}
-					onTimerValuesChange={onTimerValuesChange}
-					bans={blueBanPickBans}
+					<BanPickSideSection
+						side="blue"
+						player={bluePlayer}
+						cost={blueSideCost}
+						isRealtimeMatch={isRealtimeMatch}
+						timerValues={timerInputs.blue}
+						onTimerValuesChange={onTimerValuesChange}
+						bans={blueBanPickBans}
 						picks={blueBanPickPicks}
 						currentAction={currentAction}
 						isDraftCompleted={isDraftCompleted}
@@ -1584,7 +1586,7 @@ function RouteComponent() {
 						isSupachaiButtonDisabled={
 							isActivatingSupachai ||
 							!isDraftCompleted ||
-							blueSupachaiFromCharacterId !== ""  ||
+							blueSupachaiFromCharacterId !== "" ||
 							blueSupachaiToCharacterId !== "" ||
 							blueSupachaiRemainingUses <= 0
 						}
@@ -1674,40 +1676,40 @@ function RouteComponent() {
 				</div>
 			</div>
 
-				<Dialog open={showWinnerDialog} onOpenChange={setShowWinnerDialog}>
-					<DialogContent className="sm:max-w-lg">
-							<DialogHeader>
-								<DialogTitle>{t("ban_pick_select_winner_title")}</DialogTitle>
-								<DialogDescription>
-									{t("ban_pick_select_winner_description")}
-								</DialogDescription>
-							</DialogHeader>
+			<Dialog open={showWinnerDialog} onOpenChange={setShowWinnerDialog}>
+				<DialogContent className="sm:max-w-lg">
+					<DialogHeader>
+						<DialogTitle>{t("ban_pick_select_winner_title")}</DialogTitle>
+						<DialogDescription>
+							{t("ban_pick_select_winner_description")}
+						</DialogDescription>
+					</DialogHeader>
 
-						<div className="grid gap-4 mt-4">
-							<Button
-								variant={selectedWinnerSide === PlayerSide.BLUE ? "default" : "outline"}
-								onClick={() => setSelectedWinnerSide(PlayerSide.BLUE)}
-							>
-								{bluePlayer?.displayName ?? t("ban_pick_side_blue")}
-							</Button>
-							<Button
-								variant={selectedWinnerSide === PlayerSide.RED ? "default" : "outline"}
-								onClick={() => setSelectedWinnerSide(PlayerSide.RED)}
-							>
-								{redPlayer?.displayName ?? t("ban_pick_side_red")}
-							</Button>
-						</div>
+					<div className="grid gap-4 mt-4">
+						<Button
+							variant={selectedWinnerSide === PlayerSide.BLUE ? "default" : "outline"}
+							onClick={() => setSelectedWinnerSide(PlayerSide.BLUE)}
+						>
+							{bluePlayer?.displayName ?? t("ban_pick_side_blue")}
+						</Button>
+						<Button
+							variant={selectedWinnerSide === PlayerSide.RED ? "default" : "outline"}
+							onClick={() => setSelectedWinnerSide(PlayerSide.RED)}
+						>
+							{redPlayer?.displayName ?? t("ban_pick_side_red")}
+						</Button>
+					</div>
 
-						<DialogFooter>
-							<Button type="button" variant="outline" onClick={() => setShowWinnerDialog(false)}>
-								{t("ban_pick_cancel")}
-							</Button>
-							<Button type="button" onClick={confirmWinnerAndComplete}>
-								{t("ban_pick_confirm")}
-							</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
-			</>
+					<DialogFooter>
+						<Button type="button" variant="outline" onClick={() => setShowWinnerDialog(false)}>
+							{t("ban_pick_cancel")}
+						</Button>
+						<Button type="button" onClick={confirmWinnerAndComplete}>
+							{t("ban_pick_confirm")}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</>
 	);
 }

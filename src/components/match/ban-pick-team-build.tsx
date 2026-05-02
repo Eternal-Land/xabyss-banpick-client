@@ -28,7 +28,7 @@ interface WeaponRefinementPickerState {
 }
 
 export interface BanPickTeamBuildProps {
-	picks: BanPickCharacter[];
+	picks: (BanPickCharacter | null)[];
 	weapons: UserWeaponResponse[];
 	titleClassName: string;
 	slotClassName: string;
@@ -43,7 +43,7 @@ export interface BanPickTeamBuildProps {
 	) => Promise<void> | void;
 }
 
-function toFixedTeamSlots(members: BanPickCharacter[]) {
+function toFixedTeamSlots(members: (BanPickCharacter | null)[]) {
 	return Array.from({ length: 8 }).map((_, index) => members[index] ?? null);
 }
 
@@ -97,6 +97,7 @@ export default function BanPickTeamBuild({
 		setSelectedWeaponByCharacterIdState((prev) => {
 			const next: Record<string, number | undefined> = {};
 			picks.forEach((character) => {
+				if (!character) return;
 				if (selectedWeaponByCharacterId) {
 					// In controlled mode, trust server-synced mapping to avoid stale duplicates.
 					next[character.id] = selectedWeaponByCharacterId[character.id];
@@ -113,6 +114,7 @@ export default function BanPickTeamBuild({
 		setSelectedWeaponRefinementByCharacterIdState((prev) => {
 			const next: Record<string, number | undefined> = {};
 			picks.forEach((character) => {
+				if (!character) return;
 				if (selectedWeaponRefinementByCharacterId) {
 					next[character.id] =
 						selectedWeaponRefinementByCharacterId[character.id];
@@ -190,7 +192,7 @@ export default function BanPickTeamBuild({
 			return null;
 		}
 
-		return picks.find((member) => member.id === weaponPicker.characterId) ?? null;
+		return picks.find((member) => member?.id === weaponPicker.characterId) ?? null;
 	}, [weaponPicker, picks]);
 
 	const renderConstellationBadge = (member: BanPickCharacter | null) => {

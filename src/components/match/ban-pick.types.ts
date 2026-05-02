@@ -15,8 +15,8 @@ export interface BanPickCharacter {
 }
 
 export interface SideDraftState {
-	bans: BanPickCharacter[];
-	picks: BanPickCharacter[];
+	bans: (BanPickCharacter | null)[];
+	picks: (BanPickCharacter | null)[];
 }
 
 export interface DraftState {

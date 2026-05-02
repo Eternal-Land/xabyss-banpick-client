@@ -61,8 +61,8 @@ interface BanPickSideSectionProps {
 		side: DraftSide,
 		values: BanPickTimerInputValues,
 	) => void;
-	bans: BanPickCharacter[];
-	picks: BanPickCharacter[];
+	bans: (BanPickCharacter | null)[];
+	picks: (BanPickCharacter | null)[];
 	currentAction?: DraftAction;
 	isDraftCompleted: boolean;
 	canManageCompletedSession: boolean;
@@ -91,7 +91,7 @@ interface BanPickSideSectionProps {
 		weaponRefinement: number,
 	) => Promise<void>;
 	supachaiRemainingUses: number;
-	supachaiPickOptions: BanPickCharacter[];
+	supachaiPickOptions: (BanPickCharacter | null)[];
 	supachaiReplacementOptions: BanPickCharacter[];
 	supachaiFromCharacterId: string;
 	supachaiToCharacterId: string;
@@ -163,7 +163,7 @@ export default function BanPickSideSection({
 	const isSupachaiUsedThisSession = supachaiRemainingUses <= 0;
 
 	const supachaiTargetCharacter = useMemo(
-		() => supachaiPickOptions.find((character) => character.id === supachaiFromCharacterId) ?? null,
+		() => supachaiPickOptions.find((character) => character?.id === supachaiFromCharacterId) ?? null,
 		[supachaiFromCharacterId, supachaiPickOptions],
 	);
 
@@ -472,9 +472,9 @@ export default function BanPickSideSection({
 							/>
 						}
 						characters={characters}
-							disabledCharacterIds={disabledCharacterIds}
-							usedCharacterIds={usedCharacterIds}
-							pickedCharacterIds={pickedCharacterIds}
+						disabledCharacterIds={disabledCharacterIds}
+						usedCharacterIds={usedCharacterIds}
+						pickedCharacterIds={pickedCharacterIds}
 						pendingCharacter={pendingCharacter}
 						isDraftCompleted={isDraftCompleted}
 						currentAction={currentAction}

@@ -11,8 +11,8 @@ import type {
 
 export interface BanPickDraftSlotsProps {
     side: DraftSide
-    bans: BanPickCharacter[]
-    picks: BanPickCharacter[]
+    bans: (BanPickCharacter | null)[]
+    picks: (BanPickCharacter | null)[]
     currentAction?: DraftAction
     isDraftCompleted: boolean
     pendingCharacter: BanPickCharacter | null
@@ -22,8 +22,8 @@ function getSlotHighlightClasses(
     side: DraftSide,
     type: DraftActionType,
     slotIndex: number,
-    bans: BanPickCharacter[],
-    picks: BanPickCharacter[],
+    bans: (BanPickCharacter | null)[],
+    picks: (BanPickCharacter | null)[],
     currentAction: DraftAction | undefined,
     isDraftCompleted: boolean,
 ) {
@@ -62,8 +62,8 @@ function getSlotCharacter(
     side: DraftSide,
     type: DraftActionType,
     slotIndex: number,
-    bans: BanPickCharacter[],
-    picks: BanPickCharacter[],
+    bans: (BanPickCharacter | null)[],
+    picks: (BanPickCharacter | null)[],
     currentAction: DraftAction | undefined,
     isDraftCompleted: boolean,
     pendingCharacter: BanPickCharacter | null,
