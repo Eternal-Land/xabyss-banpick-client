@@ -174,21 +174,27 @@ export default function BanPickSideSection({
 
 	const supachaiPickSearchOptions = useMemo(
 		() =>
-			supachaiPickOptions.map((character, index) => ({
-				value: character.id,
-				label: `${t(matchLocaleKeys.ban_pick_supachai_pick_label, {
-					index: index + 1,
-				})}: ${character.name}`,
-			})),
+			supachaiPickOptions.map((character, index) => {
+				if (!character) return null;
+				return {
+					value: character.id,
+					label: `${t(matchLocaleKeys.ban_pick_supachai_pick_label, {
+						index: index + 1,
+					})}: ${character.name}`,
+				};
+			}).filter((opt): opt is NonNullable<typeof opt> => opt !== null),
 		[supachaiPickOptions, t],
 	);
 
 	const supachaiReplacementSearchOptions = useMemo(
 		() =>
-			supachaiReplacementOptions.map((character) => ({
-				value: character.id,
-				label: character.name,
-			})),
+			supachaiReplacementOptions.map((character) => {
+				if (!character) return null;
+				return {
+					value: character.id,
+					label: character.name,
+				};
+			}).filter((opt): opt is NonNullable<typeof opt> => opt !== null),
 		[supachaiReplacementOptions],
 	);
 

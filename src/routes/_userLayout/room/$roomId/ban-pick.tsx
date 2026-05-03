@@ -82,8 +82,8 @@ type MatchTimerInputsSyncPayload = {
 };
 
 type AccountDraftState = {
-	blue: { bans: BanPickCharacter[]; picks: BanPickCharacter[] };
-	red: { bans: BanPickCharacter[]; picks: BanPickCharacter[] };
+	blue: { bans: (BanPickCharacter | null)[]; picks: (BanPickCharacter | null)[] };
+	red: { bans: (BanPickCharacter | null)[]; picks: (BanPickCharacter | null)[] };
 };
 
 const EMPTY_DRAFT_STATE: AccountDraftState = {
@@ -570,6 +570,19 @@ function RouteComponent() {
 
 	const isDraftCompleted = draftStep >= DRAFT_SEQUENCE.length;
 
+	const hasShownWinnerDialogRef = useRef(false);
+
+	useEffect(() => {
+		if (isDraftCompleted && profile?.id === match?.host?.id) {
+			if (!hasShownWinnerDialogRef.current) {
+				setShowWinnerDialog(true);
+				hasShownWinnerDialogRef.current = true;
+			}
+		} else if (!isDraftCompleted) {
+			hasShownWinnerDialogRef.current = false;
+		}
+	}, [isDraftCompleted, profile?.id, match?.host?.id]);
+
 	const isCurrentUserTurn = useMemo(() => {
 		if (isDraftCompleted || !profile?.id || !currentAction) {
 			return false;
@@ -602,7 +615,11 @@ function RouteComponent() {
 			...draftState.blue.picks,
 			...draftState.red.bans,
 			...draftState.red.picks,
-		].forEach((character) => selected.add(getBanPickCharacterId(character)));
+		].forEach((character) => {
+			if (character) {
+				selected.add(getBanPickCharacterId(character));
+			}
+		});
 
 		return selected;
 	}, [draftState]);
@@ -619,17 +636,21 @@ function RouteComponent() {
 
 	const bluePickedCharacterIds = useMemo(() => {
 		const selected = new Set<string>();
-		draftState.blue.picks.forEach((character) =>
-			selected.add(getBanPickCharacterId(character)),
-		);
+		draftState.blue.picks.forEach((character) => {
+			if (character) {
+				selected.add(getBanPickCharacterId(character));
+			}
+		});
 		return selected;
 	}, [draftState.blue.picks]);
 
 	const redPickedCharacterIds = useMemo(() => {
 		const selected = new Set<string>();
-		draftState.red.picks.forEach((character) =>
-			selected.add(getBanPickCharacterId(character)),
-		);
+		draftState.red.picks.forEach((character) => {
+			if (character) {
+				selected.add(getBanPickCharacterId(character));
+			}
+		});
 		return selected;
 	}, [draftState.red.picks]);
 
@@ -794,22 +815,22 @@ function RouteComponent() {
 		() =>
 			pageMatchState
 				? mapSelectedWeaponsByCharacterId(
-					draftState.blue.picks.filter((c): c is AccountCharacterResponse => c !== null),
+					blueBanPickPicks.filter((c): c is BanPickCharacter => c !== null),
 					pageMatchState.blueSelectedWeapons,
 				)
 				: {},
-		[draftState.blue.picks, pageMatchState],
+		[blueBanPickPicks, pageMatchState],
 	);
 
 	const redSelectedWeaponByCharacterId = useMemo(
 		() =>
 			pageMatchState
 				? mapSelectedWeaponsByCharacterId(
-					draftState.red.picks.filter((c): c is AccountCharacterResponse => c !== null),
+					redBanPickPicks.filter((c): c is BanPickCharacter => c !== null),
 					pageMatchState.redSelectedWeapons,
 				)
 				: {},
-		[draftState.red.picks, pageMatchState],
+		[redBanPickPicks, pageMatchState],
 	);
 
 	const blueSelectedWeaponRefinementByCharacterIdFromState = useMemo(() => {

@@ -117,27 +117,26 @@ function RouteComponent() {
 	const sessionWinnerName = latestCompletedSession
 		? latestCompletedSession.winnerSide === PlayerSide.BLUE
 			? latestCompletedSession.blueParticipant?.displayName ??
-				tMatch(matchLocaleKeys.match_result_blue_fallback)
+			tMatch(matchLocaleKeys.match_result_blue_fallback)
 			: latestCompletedSession.winnerSide === PlayerSide.RED
 				? latestCompletedSession.redParticipant?.displayName ??
-					tMatch(matchLocaleKeys.match_result_red_fallback)
+				tMatch(matchLocaleKeys.match_result_red_fallback)
 				: tMatch(matchLocaleKeys.match_result_draw)
 		: tMatch(matchLocaleKeys.match_result_draw);
 	const sessionWinnerLabel = latestCompletedSession
 		? tMatch(matchLocaleKeys.match_result_game_label, {
-				index: latestCompletedSession.sessionIndex,
-			})
+			index: latestCompletedSession.sessionIndex,
+		})
 		: "";
 	const sessionScoreLabel = latestCompletedSession
 		? tMatch(matchLocaleKeys.match_result_summary, {
-				blueWins: latestCompletedSession.blueResultTotal ?? 0,
-				redWins: latestCompletedSession.redResultTotal ?? 0,
-				totalSessions: report?.sessionCount ?? 0,
-		  	})
+			blueWins: latestCompletedSession.blueResultTotal ?? 0,
+			redWins: latestCompletedSession.redResultTotal ?? 0,
+			totalSessions: report?.sessionCount ?? 0,
+		})
 		: "";
 	const blueSessionResult = latestCompletedSession?.blueResultTotal ?? null;
 	const redSessionResult = latestCompletedSession?.redResultTotal ?? null;
-	const resultDifference = latestCompletedSession?.resultDifference ?? null;
 
 	useSocketEvent(
 		SocketEvent.UPDATE_MATCH_STATE,
@@ -271,7 +270,7 @@ function RouteComponent() {
 						<div className="grid gap-3 sm:grid-cols-3">
 							<div className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 p-4">
 								<p className="text-xs uppercase tracking-[0.2em] text-cyan-200/70">
-									Blue
+									{tMatch(matchLocaleKeys.match_result_blue_fallback)}
 								</p>
 								<p className="mt-2 text-3xl font-black text-cyan-100">
 									{blueSessionResult ?? "-"}
@@ -285,19 +284,14 @@ function RouteComponent() {
 								<p className="text-xs uppercase tracking-[0.2em] text-white/50">
 									{tMatch(matchLocaleKeys.match_result_total_result)}
 								</p>
-								<p className="mt-2 text-2xl font-bold text-white">
-									{sessionScoreLabel || "-"}
-								</p>
-								{typeof resultDifference === "number" ? (
-									<p className="mt-2 text-xs text-white/60">
-										Gap: {resultDifference}
-									</p>
-								) : null}
-							</div>
+							<p className="mt-2 text-2xl font-bold text-white">
+								{sessionScoreLabel || "-"}
+							</p>
+						</div>
 
 							<div className="rounded-2xl border border-rose-400/20 bg-rose-500/10 p-4">
 								<p className="text-xs uppercase tracking-[0.2em] text-rose-200/70">
-									Red
+									{tMatch(matchLocaleKeys.match_result_red_fallback)}
 								</p>
 								<p className="mt-2 text-3xl font-black text-rose-100">
 									{redSessionResult ?? "-"}
@@ -309,9 +303,6 @@ function RouteComponent() {
 						</div>
 
 						<div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-							<p className="text-xs uppercase tracking-[0.22em] text-white/45">
-								{tMatch(matchLocaleKeys.match_waiting_session_result_winner)}
-							</p>
 							<p className="mt-2 text-2xl font-extrabold text-white">
 								{tMatch(matchLocaleKeys.match_result_winner_label, {
 									winner: sessionWinnerName,
@@ -324,7 +315,7 @@ function RouteComponent() {
 
 						<DialogFooter className="flex items-center justify-between gap-3 sm:justify-between">
 							<div className="text-xs uppercase tracking-[0.22em] text-white/40">
-								{isHost ? "Host action required" : "Waiting for host"}
+								{isHost ? tMatch(matchLocaleKeys.match_waiting_host_action_required) : tMatch(matchLocaleKeys.match_waiting_waiting_for_host)}
 							</div>
 							{isHost ? (
 								<Button

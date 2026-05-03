@@ -166,23 +166,6 @@ function MatchResultComponent() {
 			: (bluePlayer?.displayName ??
 				tMatch(matchLocaleKeys.match_result_blue_fallback));
 
-		const leftFinalTime = isBlueLeft
-			? (session.record?.blueFinalTime ?? 0)
-			: (session.record?.redFinalTime ?? 0);
-		const rightFinalTime = isBlueLeft
-			? (session.record?.redFinalTime ?? 0)
-			: (session.record?.blueFinalTime ?? 0);
-
-		const leftBonus = isBlueLeft
-			? Number(session.cost?.blueTimeBonusCost ?? 0)
-			: Number(session.cost?.redTimeBonusCost ?? 0);
-		const rightBonus = isBlueLeft
-			? Number(session.cost?.redTimeBonusCost ?? 0)
-			: Number(session.cost?.blueTimeBonusCost ?? 0);
-
-		const leftTotalTime = leftFinalTime + leftBonus;
-		const rightTotalTime = rightFinalTime + rightBonus;
-
 		let leftWon = false;
 		let rightWon = false;
 
@@ -206,12 +189,6 @@ function MatchResultComponent() {
 			id: session.matchSessionId,
 			leftName,
 			rightName,
-			leftFinalTime,
-			rightFinalTime,
-			leftBonus,
-			rightBonus,
-			leftTotalTime,
-			rightTotalTime,
 			leftWon,
 			rightWon,
 			winnerLabel,
@@ -228,7 +205,7 @@ function MatchResultComponent() {
 					<h1 className="text-4xl font-bold font-serif bg-linear-to-r from-amber-200 to-amber-500 bg-clip-text text-transparent">
 						{tMatch(matchLocaleKeys.match_result_scoreboard_title)}
 					</h1>
-					<Link to="/">
+					<Link to="/match" search={{ page: 1, take: 10 }}>
 						<Button variant="outline" className="border-white/20">
 							{tMatch(matchLocaleKeys.match_result_back_to_lobby)}
 						</Button>
@@ -311,19 +288,10 @@ function MatchResultComponent() {
 											session.leftWon ? "text-amber-300" : "text-white/80",
 										)}
 									>
-										<div className="text-sm uppercase tracking-wider text-white/50">
-											{session.leftName}
-										</div>
-										<div className="text-xl font-mono font-semibold">
-											{session.leftTotalTime}s
-										</div>
-										<div className="text-xs text-white/50">
-											{tMatch(matchLocaleKeys.match_result_base_bonus, {
-												base: session.leftFinalTime,
-												bonus: session.leftBonus,
-											})}
-										</div>
+									<div className="text-sm uppercase tracking-wider text-white/50">
+										{session.leftName}
 									</div>
+								</div>
 
 									{/* Divider */}
 									<div className="text-center min-w-24">
@@ -344,21 +312,12 @@ function MatchResultComponent() {
 											session.rightWon ? "text-amber-300" : "text-white/80",
 										)}
 									>
-										<div className="text-sm uppercase tracking-wider text-white/50">
-											{session.rightName}
-										</div>
-										<div className="text-xl font-mono font-semibold">
-											{session.rightTotalTime}s
-										</div>
-										<div className="text-xs text-white/50">
-											{tMatch(matchLocaleKeys.match_result_base_bonus, {
-												base: session.rightFinalTime,
-												bonus: session.rightBonus,
-											})}
-										</div>
+									<div className="text-sm uppercase tracking-wider text-white/50">
+										{session.rightName}
 									</div>
 								</div>
 							</div>
+						</div>
 						);
 					})}
 				</div>

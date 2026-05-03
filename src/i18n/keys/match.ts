@@ -160,4 +160,8 @@ export const matchLocaleKeys = {
 	ban_pick_host_resume_failed: "ban_pick_host_resume_failed",
 	ban_pick_host_undo_success: "ban_pick_host_undo_success",
 	ban_pick_host_undo_failed: "ban_pick_host_undo_failed",
+	match_waiting_host_action_required: "match_waiting_host_action_required",
+	match_waiting_waiting_for_host: "match_waiting_waiting_for_host",
+	match_waiting_result_gap: "match_waiting_result_gap",
+	ban_pick_select_winner: "ban_pick_select_winner",
 } as const;

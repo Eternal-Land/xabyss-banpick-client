@@ -311,7 +311,7 @@ export function mapCharacterNamesToAccountCharacters(
 
 	return characterIdsOrNames.map((characterIdOrName) => {
 		const normalizedValue = String(characterIdOrName).trim();
-		if (!normalizedValue) {
+		if (!normalizedValue || normalizedValue === "SKIPPED") {
 			return null;
 		}
 
@@ -340,22 +340,22 @@ export function mapCharacterNamesToBanPickCharacters(
 		characters.map((character) => [character.name.toLowerCase(), character]),
 	);
 
-	return characterIdsOrNames.flatMap((characterIdOrName) => {
+	return characterIdsOrNames.map((characterIdOrName) => {
 		const normalizedValue = String(characterIdOrName).trim();
-		if (!normalizedValue) {
-			return [];
+		if (!normalizedValue || normalizedValue === "SKIPPED") {
+			return null;
 		}
 
 		const mappedById = charactersById.get(normalizedValue);
 		if (mappedById) {
-			return [mappedById];
+			return mappedById;
 		}
 
 		const mappedByName = charactersByName.get(normalizedValue.toLowerCase());
 		if (mappedByName) {
-			return [mappedByName];
+			return mappedByName;
 		}
 
-		return [];
+		return null;
 	});
 }

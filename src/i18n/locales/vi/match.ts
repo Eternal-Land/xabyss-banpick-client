@@ -160,6 +160,10 @@ const matchVi: MatchLocaleObject = {
 	ban_pick_host_resume_failed: "Không thể tiếp tục trận đấu",
 	ban_pick_host_undo_success: "Hoàn tác thành công",
 	ban_pick_host_undo_failed: "Không thể hoàn tác",
+	match_waiting_host_action_required: "Chủ phòng cần thao tác",
+	match_waiting_waiting_for_host: "Đang chờ chủ phòng",
+	match_waiting_result_gap: "Chênh lệch: {{gap}}",
+	ban_pick_select_winner: "Vui lòng chọn người thắng",
 };
 
 export default matchVi;

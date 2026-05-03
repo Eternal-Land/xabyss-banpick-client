@@ -161,6 +161,10 @@ const matchEn: MatchLocaleObject = {
 	ban_pick_host_resume_failed: "Failed to resume match",
 	ban_pick_host_undo_success: "Undid last action successfully",
 	ban_pick_host_undo_failed: "Failed to undo last action",
+	match_waiting_host_action_required: "Host action required",
+	match_waiting_waiting_for_host: "Waiting for host",
+	match_waiting_result_gap: "Gap: {{gap}}",
+	ban_pick_select_winner: "Please select a winner",
 };
 
 export default matchEn;
