@@ -5,6 +5,7 @@ import { MatchStatus, SocketEvent } from "@/lib/constants";
 import { store } from "@/lib/redux";
 import { socket } from "@/lib/socket";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/_userLayout/room/$roomId")({
 	component: RouteComponent,
@@ -25,7 +26,7 @@ export const Route = createFileRoute("/_userLayout/room/$roomId")({
 			}
 
 			return { match: matchResponse.data, matchState: matchStateResponse };
-		} catch (err) {
+		} catch {
 			const { profile } = store.getState().auth;
 			throw redirect({
 				to: "/match",
@@ -44,6 +45,32 @@ export const Route = createFileRoute("/_userLayout/room/$roomId")({
 });
 
 function RouteComponent() {
+	const { roomId } = Route.useParams();
+
+	useEffect(() => {
+		const joinMatchRoom = async () => {
+			try {
+				await socket.emitWithAck(SocketEvent.JOIN_MATCH_ROOM, roomId);
+			} catch {
+				// Best-effort room rejoin after reconnect.
+			}
+		};
+
+		const onConnect = () => {
+			void joinMatchRoom();
+		};
+
+		socket.on("connect", onConnect);
+
+		if (socket.connected) {
+			void joinMatchRoom();
+		}
+
+		return () => {
+			socket.off("connect", onConnect);
+		};
+	}, [roomId]);
+
 	useSocketEvent(SocketEvent.MATCH_DELETED, () => {
 		window.location.href = "/match";
 	});

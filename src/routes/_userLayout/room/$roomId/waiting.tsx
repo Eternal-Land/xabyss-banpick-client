@@ -128,15 +128,6 @@ function RouteComponent() {
 			index: latestCompletedSession.sessionIndex,
 		})
 		: "";
-	const sessionScoreLabel = latestCompletedSession
-		? tMatch(matchLocaleKeys.match_result_summary, {
-			blueWins: latestCompletedSession.blueResultTotal ?? 0,
-			redWins: latestCompletedSession.redResultTotal ?? 0,
-			totalSessions: report?.sessionCount ?? 0,
-		})
-		: "";
-	const blueSessionResult = latestCompletedSession?.blueResultTotal ?? null;
-	const redSessionResult = latestCompletedSession?.redResultTotal ?? null;
 
 	useSocketEvent(
 		SocketEvent.UPDATE_MATCH_STATE,
@@ -267,7 +258,7 @@ function RouteComponent() {
 					</div>
 
 					<div className="space-y-5 px-6 py-6">
-						<div className="grid gap-3 sm:grid-cols-3">
+						{/* <div className="grid gap-3 sm:grid-cols-3">
 							<div className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 p-4">
 								<p className="text-xs uppercase tracking-[0.2em] text-cyan-200/70">
 									{tMatch(matchLocaleKeys.match_result_blue_fallback)}
@@ -284,10 +275,10 @@ function RouteComponent() {
 								<p className="text-xs uppercase tracking-[0.2em] text-white/50">
 									{tMatch(matchLocaleKeys.match_result_total_result)}
 								</p>
-							<p className="mt-2 text-2xl font-bold text-white">
-								{sessionScoreLabel || "-"}
-							</p>
-						</div>
+								<p className="mt-2 text-2xl font-bold text-white">
+									{sessionScoreLabel || "-"}
+								</p>
+							</div>
 
 							<div className="rounded-2xl border border-rose-400/20 bg-rose-500/10 p-4">
 								<p className="text-xs uppercase tracking-[0.2em] text-rose-200/70">
@@ -300,7 +291,7 @@ function RouteComponent() {
 									{latestCompletedSession?.redParticipant?.displayName ?? tMatch(matchLocaleKeys.match_result_red_fallback)}
 								</p>
 							</div>
-						</div>
+						</div> */}
 
 						<div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
 							<p className="mt-2 text-2xl font-extrabold text-white">

@@ -486,6 +486,17 @@ function RouteComponent() {
 		navigateByMatchStatus(data?.status);
 	});
 
+	useSocketEvent(
+		SocketEvent.UPDATE_MATCH_STATE,
+		(nextMatchState?: MatchStateResponse) => {
+			if (!nextMatchState) {
+				return;
+			}
+
+			setPageMatchState(nextMatchState);
+		},
+	);
+
 	useSocketEvent(SocketEvent.UPDATE_MATCH_SESSION, () => {
 		void (async () => {
 			try {
