@@ -1,6 +1,5 @@
 import { userCharacterCostsApi } from "@/apis/user-character-costs";
 import { userCharactersApi } from "@/apis/user-characters";
-import { userWeaponCostsApi } from "@/apis/user-weapon-costs";
 import { userWeaponApis } from "@/apis/user-weapons";
 import {
 	Table,
@@ -18,14 +17,12 @@ import {
 	SelectInputOption,
 } from "@/components/select-input";
 import { useElementLabel } from "@/hooks/use-element-label";
-import { useWeaponRarityLabel } from "@/hooks/use-weapon-rarity-label";
 import { useWeaponTypeLabel } from "@/hooks/use-weapon-type-label";
 import {
 	characterCostsLocaleKeys,
 	charactersLocaleKeys,
 	commonLocaleKeys,
 	weaponsLocaleKeys,
-	weaponCostsLocaleKeys,
 } from "@/i18n/keys";
 import { getTranslationToken } from "@/i18n/namespaces";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,10 +30,8 @@ import {
 	CharacterElementDetail,
 	CharacterElement,
 	IconAssets,
-	WeaponCostUnit,
 	WeaponType,
 	WeaponTypeDetail,
-	type WeaponRarityEnum,
 } from "@/lib/constants";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -51,7 +46,6 @@ function RouteComponent() {
 	const { t } = useTranslation();
 	const elementLabels = useElementLabel();
 	const weaponTypeLabels = useWeaponTypeLabel();
-	const weaponRarityLabels = useWeaponRarityLabel();
 
 	const charactersQuery = useQuery({
 		queryKey: ["user", "characters"],
@@ -65,27 +59,20 @@ function RouteComponent() {
 		queryKey: ["user", "character-costs"],
 		queryFn: userCharacterCostsApi.listCharacterCosts,
 	});
-	const weaponCostsQuery = useQuery({
-		queryKey: ["user", "weapon-costs"],
-		queryFn: userWeaponCostsApi.listWeaponCosts,
-	});
 
 	const isLoading =
 		charactersQuery.isLoading ||
 		weaponsQuery.isLoading ||
-		characterCostsQuery.isLoading ||
-		weaponCostsQuery.isLoading;
+		characterCostsQuery.isLoading;
 
 	const hasError =
 		charactersQuery.isError ||
 		weaponsQuery.isError ||
-		characterCostsQuery.isError ||
-		weaponCostsQuery.isError;
+		characterCostsQuery.isError;
 
 	const characters = charactersQuery.data?.data ?? [];
 	const weapons = weaponsQuery.data?.data ?? [];
 	const characterCosts = characterCostsQuery.data?.data ?? [];
-	const weaponCosts = weaponCostsQuery.data?.data ?? [];
 
 	const characterMeta = useMemo(() => {
 		return new Map(characters.map((character) => [character.id, character]));
@@ -97,16 +84,8 @@ function RouteComponent() {
 	const [sortBy, setSortBy] = useState("name-asc");
 	const [weaponSearch, setWeaponSearch] = useState("");
 	const [weaponTypeTableFilter, setWeaponTypeTableFilter] = useState("all");
-	const [weaponRarityTableFilter, setWeaponRarityTableFilter] = useState("all");
+	const [weaponRarityTableFilter] = useState("all");
 	const [weaponTableSortBy, setWeaponTableSortBy] = useState("name-asc");
-
-	const weaponRarityKeys = useMemo(
-		() =>
-			Object.keys(weaponRarityLabels).map(
-				(key) => Number(key) as WeaponRarityEnum,
-			),
-		[weaponRarityLabels],
-	);
 
 	const characterCostRange = useMemo(() => {
 		const values = characterCosts.flatMap((character) =>
@@ -137,23 +116,6 @@ function RouteComponent() {
 		return "text-purple-600";
 	};
 
-	const getUnitLabel = (unit: number) => {
-		if (unit === WeaponCostUnit.SECONDS) {
-			return t(
-				getTranslationToken(
-					"weapon-costs",
-					weaponCostsLocaleKeys.weapon_costs_unit_seconds,
-				),
-			);
-		}
-		return t(
-			getTranslationToken(
-				"weapon-costs",
-				weaponCostsLocaleKeys.weapon_costs_unit_cost,
-			),
-		);
-	};
-
 	const getCharacterCostCellStyle = (cost: number) => {
 		if (cost === 0) {
 			return undefined;
@@ -176,41 +138,49 @@ function RouteComponent() {
 
 	const elementFilterLabel =
 		elementFilter === "all"
-			? "All Elements"
+			? t(getTranslationToken("common", commonLocaleKeys.filter_all_elements))
 			: elementLabels[Number(elementFilter) as keyof typeof elementLabels];
 
 	const weaponFilterLabel =
 		weaponFilter === "all"
-			? "All Weapon Types"
+			? t(getTranslationToken("common", commonLocaleKeys.filter_all_weapon_types))
 			: weaponTypeLabels[Number(weaponFilter) as keyof typeof weaponTypeLabels];
 
 	const rarityFilterLabel =
-		rarityFilter === "all" ? "All Rarities" : `${rarityFilter}★`;
+		rarityFilter === "all"
+			? t(getTranslationToken("common", commonLocaleKeys.filter_all_rarities))
+			: `${rarityFilter}★`;
 
 	const sortByLabelMap: Record<string, string> = {
-		"name-asc": "Name A-Z",
-		"name-desc": "Name Z-A",
-		"cost-asc": "Total Cost Low-High",
-		"cost-desc": "Total Cost High-Low",
+		"name-asc": t(getTranslationToken("common", commonLocaleKeys.filter_name_asc)),
+		"name-desc": t(
+			getTranslationToken("common", commonLocaleKeys.filter_name_desc),
+		),
+		"cost-asc": t(
+			getTranslationToken("common", commonLocaleKeys.filter_total_cost_low_high),
+		),
+		"cost-desc": t(
+			getTranslationToken("common", commonLocaleKeys.filter_total_cost_high_low),
+		),
 	};
 
 	const weaponTableTypeLabel =
 		weaponTypeTableFilter === "all"
-			? "All Weapon Types"
+			? t(
+					getTranslationToken(
+						"common",
+						commonLocaleKeys.filter_all_weapon_types,
+					),
+				)
 			: weaponTypeLabels[
 					Number(weaponTypeTableFilter) as keyof typeof weaponTypeLabels
 				];
 
-	const weaponTableRarityLabel =
-		weaponRarityTableFilter === "all"
-			? "All Rarities"
-			: weaponRarityLabels[
-					Number(weaponRarityTableFilter) as keyof typeof weaponRarityLabels
-				];
-
 	const weaponTableSortByLabelMap: Record<string, string> = {
-		"name-asc": "Name A-Z",
-		"name-desc": "Name Z-A",
+		"name-asc": t(getTranslationToken("common", commonLocaleKeys.filter_name_asc)),
+		"name-desc": t(
+			getTranslationToken("common", commonLocaleKeys.filter_name_desc),
+		),
 		"rarity-asc": "Rarity Low-High",
 		"rarity-desc": "Rarity High-Low",
 	};
@@ -407,7 +377,9 @@ function RouteComponent() {
 							>
 								<SelectInputContent>
 									<SelectInputOption onSelect={() => setElementFilter("all")}>
-										All Elements
+										{t(
+											getTranslationToken("common", commonLocaleKeys.filter_all_elements),
+										)}
 									</SelectInputOption>
 									<SelectInputOption
 										onSelect={() =>
@@ -456,7 +428,12 @@ function RouteComponent() {
 							>
 								<SelectInputContent>
 									<SelectInputOption onSelect={() => setWeaponFilter("all")}>
-										All Weapon Types
+										{t(
+											getTranslationToken(
+												"common",
+												commonLocaleKeys.filter_all_weapon_types,
+											),
+										)}
 									</SelectInputOption>
 									<SelectInputOption onSelect={() => setWeaponFilter(String(WeaponType.SWORD))}>
 										{weaponTypeLabels[WeaponType.SWORD]}
@@ -483,7 +460,9 @@ function RouteComponent() {
 							>
 								<SelectInputContent>
 									<SelectInputOption onSelect={() => setRarityFilter("all")}>
-										All Rarities
+										{t(
+											getTranslationToken("common", commonLocaleKeys.filter_all_rarities),
+										)}
 									</SelectInputOption>
 									<SelectInputOption onSelect={() => setRarityFilter("5")}>
 										5★
@@ -495,22 +474,39 @@ function RouteComponent() {
 							</SelectInput>
 
 							<SelectInput
-								value={sortByLabelMap[sortBy] ?? "Sort"}
+								value={
+									sortByLabelMap[sortBy] ??
+									t(getTranslationToken("common", commonLocaleKeys.filter_sort))
+								}
 								readOnly
 								wrapperClassName="w-full"
 							>
 								<SelectInputContent>
 									<SelectInputOption onSelect={() => setSortBy("name-asc")}>
-										Name A-Z
+										{t(
+											getTranslationToken("common", commonLocaleKeys.filter_name_asc),
+										)}
 									</SelectInputOption>
 									<SelectInputOption onSelect={() => setSortBy("name-desc")}>
-										Name Z-A
+										{t(
+											getTranslationToken("common", commonLocaleKeys.filter_name_desc),
+										)}
 									</SelectInputOption>
 									<SelectInputOption onSelect={() => setSortBy("cost-asc")}>
-										Total Cost Low-High
+										{t(
+											getTranslationToken(
+												"common",
+												commonLocaleKeys.filter_total_cost_low_high,
+											),
+										)}
 									</SelectInputOption>
 									<SelectInputOption onSelect={() => setSortBy("cost-desc")}>
-										Total Cost High-Low
+										{t(
+											getTranslationToken(
+												"common",
+												commonLocaleKeys.filter_total_cost_high_low,
+											),
+										)}
 									</SelectInputOption>
 								</SelectInputContent>
 							</SelectInput>
@@ -669,7 +665,12 @@ function RouteComponent() {
 							>
 								<SelectInputContent>
 									<SelectInputOption onSelect={() => setWeaponTypeTableFilter("all")}>
-										All Weapon Types
+										{t(
+											getTranslationToken(
+												"common",
+												commonLocaleKeys.filter_all_weapon_types,
+											),
+										)}
 									</SelectInputOption>
 									<SelectInputOption onSelect={() => setWeaponTypeTableFilter(String(WeaponType.SWORD))}>
 										{weaponTypeLabels[WeaponType.SWORD]}
@@ -690,42 +691,23 @@ function RouteComponent() {
 							</SelectInput>
 
 							<SelectInput
-								value={weaponTableRarityLabel}
-								readOnly
-								wrapperClassName="w-full"
-							>
-								<SelectInputContent>
-									<SelectInputOption onSelect={() => setWeaponRarityTableFilter("all")}>
-										All Rarities
-									</SelectInputOption>
-									{weaponRarityKeys.map((rarity) => (
-										<SelectInputOption
-											key={`weapon-rarity-${rarity}`}
-											onSelect={() => setWeaponRarityTableFilter(String(rarity))}
-										>
-											{weaponRarityLabels[rarity]}
-										</SelectInputOption>
-									))}
-								</SelectInputContent>
-							</SelectInput>
-
-							<SelectInput
-								value={weaponTableSortByLabelMap[weaponTableSortBy] ?? "Sort"}
+								value={
+									weaponTableSortByLabelMap[weaponTableSortBy] ??
+									t(getTranslationToken("common", commonLocaleKeys.filter_sort))
+								}
 								readOnly
 								wrapperClassName="w-full"
 							>
 								<SelectInputContent>
 									<SelectInputOption onSelect={() => setWeaponTableSortBy("name-asc")}>
-										Name A-Z
+										{t(
+											getTranslationToken("common", commonLocaleKeys.filter_name_asc),
+										)}
 									</SelectInputOption>
 									<SelectInputOption onSelect={() => setWeaponTableSortBy("name-desc")}>
-										Name Z-A
-									</SelectInputOption>
-									<SelectInputOption onSelect={() => setWeaponTableSortBy("rarity-asc")}>
-										Rarity Low-High
-									</SelectInputOption>
-									<SelectInputOption onSelect={() => setWeaponTableSortBy("rarity-desc")}>
-										Rarity High-Low
+										{t(
+											getTranslationToken("common", commonLocaleKeys.filter_name_desc),
+										)}
 									</SelectInputOption>
 								</SelectInputContent>
 							</SelectInput>
@@ -754,14 +736,6 @@ function RouteComponent() {
 											getTranslationToken(
 												"weapons",
 												weaponsLocaleKeys.weapons_table_type,
-											),
-										)}
-									</TableHead>
-									<TableHead>
-										{t(
-											getTranslationToken(
-												"weapons",
-												weaponsLocaleKeys.weapons_table_rarity,
 											),
 										)}
 									</TableHead>
@@ -796,7 +770,6 @@ function RouteComponent() {
 												<span>{weaponTypeLabels[weapon.type]}</span>
 											</div>
 										</TableCell>
-										<TableCell>{weaponRarityLabels[weapon.rarity]}</TableCell>
 									</TableRow>
 								))}
 								{filteredWeapons.length === 0 && (
@@ -806,57 +779,6 @@ function RouteComponent() {
 										</TableCell>
 									</TableRow>
 								)}
-							</TableBody>
-						</Table>
-					</section>
-
-					<section className="rounded-xl border border-white/10 bg-black/30 p-4 backdrop-blur mt-6">
-						<h2 className="mb-4 text-lg font-semibold text-white">
-							{t(
-								getTranslationToken(
-									"weapon-costs",
-									weaponCostsLocaleKeys.weapon_costs_upgrade_level,
-								),
-							)}
-						</h2>
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>
-										{t(
-											getTranslationToken(
-												"weapon-costs",
-												weaponCostsLocaleKeys.weapon_costs_upgrade_level,
-											),
-										)}
-									</TableHead>
-									{weaponRarityKeys.map((rarity) => (
-										<TableHead key={rarity}>{weaponRarityLabels[rarity]}</TableHead>
-									))}
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{weaponCosts.map((costRow) => {
-									const itemMap = new Map(
-										costRow.items.map((item) => [item.rarity, item]),
-									);
-									return (
-										<TableRow key={costRow.upgradeLevel}>
-											<TableCell>{costRow.upgradeLevel}</TableCell>
-											{weaponRarityKeys.map((rarity) => {
-												const item = itemMap.get(rarity);
-												if (!item) {
-													return <TableCell key={`${costRow.upgradeLevel}-${rarity}`}>-</TableCell>;
-												}
-												return (
-													<TableCell key={`${costRow.upgradeLevel}-${rarity}`}>
-														{item.value} {getUnitLabel(item.unit)}
-													</TableCell>
-												);
-											})}
-										</TableRow>
-									);
-								})}
 							</TableBody>
 						</Table>
 					</section>

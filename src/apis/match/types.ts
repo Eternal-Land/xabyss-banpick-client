@@ -3,9 +3,11 @@ import type { ProfileResponse } from "../self/types";
 import { paginationQuerySchema } from "@/lib/types";
 import {
 	MatchType,
+	type CharacterElementEnum,
 	type MatchStatusEnum,
 	type MatchTypeEnum,
 	type PlayerSideEnum,
+	type WeaponTypeEnum,
 } from "@/lib/constants";
 
 export interface MatchResponse {
@@ -17,6 +19,15 @@ export interface MatchResponse {
 	bluePlayer?: ProfileResponse;
 	type: MatchTypeEnum;
 	status: MatchStatusEnum;
+}
+
+export interface MatchStateCharacterSummary {
+	characterId: string;
+	level: number;
+	constellation: number;
+	cost: number;
+	element: CharacterElementEnum;
+	weaponType: WeaponTypeEnum;
 }
 
 export interface MatchStateResponse {
@@ -46,6 +57,8 @@ export interface MatchStateResponse {
 	blueUsedChars: string[];
 	redUsedChars: string[];
 	supachaiMaxUses: number;
+	blueSelectedCharacterSummaries?: MatchStateCharacterSummary[];
+	redSelectedCharacterSummaries?: MatchStateCharacterSummary[];
 }
 
 export const listMatchesQuerySchema = z.object({
