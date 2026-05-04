@@ -21,7 +21,7 @@ import type { AccountCharacterResponse } from "@/apis/account-characters/types";
 import type { UserCharacterResponse } from "@/apis/user-characters/types";
 import type { BanPickCharacter } from "@/components/match/ban-pick.types";
 import type { BanPickTimerInputValues } from "@/components/match/ban-pick-timer-inputs";
-import { MatchType, PlayerSide, MatchStatus } from "@/lib/constants";
+import { MatchType, PlayerSide, MatchStatus, CharacterElement } from "@/lib/constants";
 import { SocketEvent } from "@/lib/constants";
 import { selectAuthProfile } from "@/lib/redux/auth.slice";
 import { useAppSelector } from "@/hooks/use-app-selector";
@@ -493,7 +493,7 @@ function RouteComponent() {
 				return;
 			}
 
-			setPageMatchState(nextMatchState);
+			mergeMatchStateSummaries(nextMatchState);
 		},
 	);
 
@@ -515,7 +515,7 @@ function RouteComponent() {
 
 					const latestMatchState = await matchApi.getMatchState(match.id);
 					if (latestMatchState.data) {
-						setPageMatchState(latestMatchState.data);
+						mergeMatchStateSummaries(latestMatchState.data);
 					}
 				}
 
@@ -656,6 +656,26 @@ function RouteComponent() {
 		() => accountCharacters.map(mapAccountCharacterToBanPickCharacter),
 		[accountCharacters],
 	);
+	const mergeMatchStateSummaries = useCallback(
+		(nextMatchState: MatchStateResponse) => {
+			setPageMatchState((prev) => {
+				if (!prev) {
+					return nextMatchState;
+				}
+
+				return {
+					...nextMatchState,
+					blueSelectedCharacterSummaries:
+						nextMatchState.blueSelectedCharacterSummaries ??
+						prev.blueSelectedCharacterSummaries,
+					redSelectedCharacterSummaries:
+						nextMatchState.redSelectedCharacterSummaries ??
+						prev.redSelectedCharacterSummaries,
+				};
+			});
+		},
+		[],
+	);
 
 	const isBlueViewer = profile?.id === bluePlayer?.id;
 	const isRedViewer = profile?.id === redPlayer?.id;
@@ -674,6 +694,39 @@ function RouteComponent() {
 			return EMPTY_DRAFT_STATE;
 		}
 
+		const applySummaries = (
+			characters: (BanPickCharacter | null)[],
+			summaries?: MatchStateResponse["blueSelectedCharacterSummaries"],
+		) => {
+			if (!summaries?.length) {
+				return characters;
+			}
+
+			const summaryMap = new Map(
+				summaries.map((summary) => [summary.characterId, summary]),
+			);
+
+			return characters.map((character) => {
+				if (!character) {
+					return character;
+				}
+
+				const summary = summaryMap.get(character.id);
+				if (!summary) {
+					return character;
+				}
+
+				return {
+					...character,
+					level: summary.level,
+					constellation: summary.constellation,
+					cost: summary.cost,
+					element: summary.element,
+					weaponType: summary.weaponType,
+				};
+			});
+		};
+
 		// For picks: use the respective player's character roster (account or global)
 		// For bans: always use global characters since players can ban any character
 		const blueDraftCharactersForPicks = isBlueViewer
@@ -689,9 +742,12 @@ function RouteComponent() {
 					globalDraftCharacters,
 					pageMatchState.blueBanChars,
 				),
-				picks: mapCharacterNamesToBanPickCharacters(
-					blueDraftCharactersForPicks,
-					pageMatchState.blueSelectedChars,
+				picks: applySummaries(
+					mapCharacterNamesToBanPickCharacters(
+						blueDraftCharactersForPicks,
+						pageMatchState.blueSelectedChars,
+					),
+					pageMatchState.blueSelectedCharacterSummaries,
 				),
 			},
 			red: {
@@ -699,9 +755,12 @@ function RouteComponent() {
 					globalDraftCharacters,
 					pageMatchState.redBanChars,
 				),
-				picks: mapCharacterNamesToBanPickCharacters(
-					redDraftCharactersForPicks,
-					pageMatchState.redSelectedChars,
+				picks: applySummaries(
+					mapCharacterNamesToBanPickCharacters(
+						redDraftCharactersForPicks,
+						pageMatchState.redSelectedChars,
+					),
+					pageMatchState.redSelectedCharacterSummaries,
 				),
 			},
 		};
@@ -1057,6 +1116,19 @@ function RouteComponent() {
 		}
 
 		// Fallback minimal mapping when no metadata is available
+		// Attempt to infer traveller element from the pending character name
+		const inferredElement = (() => {
+			const name = String((pendingCharacter as any).name ?? "").toLowerCase();
+			if (name.includes("anemo")) return CharacterElement.ANEMO;
+			if (name.includes("geo")) return CharacterElement.GEO;
+			if (name.includes("electro")) return CharacterElement.ELECTRO;
+			if (name.includes("dendro")) return CharacterElement.DENDRO;
+			if (name.includes("hydro")) return CharacterElement.HYDRO;
+			if (name.includes("pyro")) return CharacterElement.PYRO;
+			if (name.includes("cryo")) return CharacterElement.CRYO;
+			return (globalCharacters[0]?.element as any) ?? CharacterElement.ANEMO;
+		})();
+
 		return {
 			id: candidateId,
 			name: (pendingCharacter as any).name ?? `#${candidateId}`,
@@ -1065,7 +1137,7 @@ function RouteComponent() {
 			level: 0,
 			constellation: 0,
 			cost: 0,
-			element: (globalCharacters[0]?.element as any) ?? (0 as any),
+			element: inferredElement as any,
 			weaponType: (globalCharacters[0]?.weaponType as any) ?? ("" as any),
 		};
 	}, [pendingCharacter, globalCharacters]);

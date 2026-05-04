@@ -1,6 +1,7 @@
 import { Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IconAssets } from "@/lib/constants/icon-assets";
+import { CharacterElementDetail } from "@/lib/constants";
 import type { BanPickCharacter } from "@/components/match/ban-pick.types";
 import { useEffect, useMemo, useState } from "react";
 import type { UserWeaponResponse } from "@/apis/user-weapons/types";
@@ -207,6 +208,38 @@ export default function BanPickTeamBuild({
 		);
 	};
 
+	const renderElementBadge = (member: BanPickCharacter | null) => {
+		if (!member) {
+			return null;
+		}
+
+		const element = CharacterElementDetail[member.element];
+
+		return (
+			<span className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full border border-white/30 bg-black/70 shadow">
+				<img src={element.iconUrl} alt={element.name} className="size-4" />
+			</span>
+		);
+	};
+
+	const renderLevelBadge = (member: BanPickCharacter | null) => {
+		if (!member) return null;
+		return (
+			<span className="absolute left-1 bottom-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+				Lv {member.level}
+			</span>
+		);
+	};
+
+	const renderCostBadge = (member: BanPickCharacter | null) => {
+		if (!member) return null;
+		return (
+			<span className="absolute right-1 bottom-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+				{member.cost ?? 0}
+			</span>
+		);
+	};
+
 	const renderWeaponSlot = (member: BanPickCharacter | null) => {
 		if (!member) {
 			return <Plus className="h-6 w-6 text-white/80" />;
@@ -336,6 +369,9 @@ export default function BanPickTeamBuild({
 													className="w-full h-full object-cover"
 												/>
 												{renderConstellationBadge(member)}
+												{renderElementBadge(member)}
+												{renderLevelBadge(member)}
+												{renderCostBadge(member)}
 											</>
 										) : (
 											<img
@@ -403,6 +439,9 @@ export default function BanPickTeamBuild({
 													className="w-full h-full object-cover"
 												/>
 												{renderConstellationBadge(member)}
+												{renderElementBadge(member)}
+												{renderLevelBadge(member)}
+												{renderCostBadge(member)}
 											</>
 										) : (
 											<img
