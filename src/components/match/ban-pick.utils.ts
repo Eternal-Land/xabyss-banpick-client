@@ -281,7 +281,7 @@ export function filterBanPickCharacters(
 
 		const matchesElement =
 			elementFilter === ELEMENT_FILTER_ALL ||
-			String(character.element) === elementFilter;
+			CharacterElementDetail[character.element].key === elementFilter;
 
 		const matchesRarity =
 			rarityFilter === RARITY_FILTER_ALL ||

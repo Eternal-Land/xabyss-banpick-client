@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils'
 import { IconAssets } from '@/lib/constants/icon-assets'
+import { CharacterElementDetail } from '@/lib/constants'
 import { matchLocaleKeys } from '@/i18n/keys'
 import { useTranslation } from 'react-i18next'
 import type {
@@ -119,7 +120,7 @@ export default function BanPickDraftSlots({
                         <div
                             key={index}
                             className={cn(
-                                'bg-gray-800/50 w-full aspect-square flex flex-col items-center justify-center border border-2 overflow-hidden',
+                                'bg-gray-800/50 relative w-full aspect-square flex flex-col items-center justify-center border border-2 overflow-hidden',
                                 side === 'blue' && `col-start-${index + 2}`,
                                 getSlotHighlightClasses(
                                     side,
@@ -133,14 +134,23 @@ export default function BanPickDraftSlots({
                             )}
                         >
                             {slotCharacter ? (
-                                <img
-                                    src={slotCharacter.imageUrl}
-                                    alt={slotCharacter.name}
-                                    className={cn(
-                                        'w-full h-full object-cover',
-                                        'grayscale',
-                                    )}
-                                />
+                                <>
+                                    <img
+                                        src={slotCharacter.imageUrl}
+                                        alt={slotCharacter.name}
+                                        className={cn(
+                                            'w-full h-full object-cover',
+                                            'grayscale',
+                                        )}
+                                    />
+                                    <span className="absolute left-1 top-1 flex size-6 items-center justify-center rounded-full border border-white/30 bg-black/70 shadow">
+                                        <img
+                                            src={CharacterElementDetail[slotCharacter.element].iconUrl}
+                                            alt={CharacterElementDetail[slotCharacter.element].name}
+                                            className="size-4"
+                                        />
+                                    </span>
+                                </>
                             ) : (
                                 <img
                                     src={IconAssets.EMPTY_CHARACTER_ICON}
@@ -170,7 +180,7 @@ export default function BanPickDraftSlots({
                         <div
                             key={index}
                             className={cn(
-                                'w-full aspect-square flex items-center justify-center border border-2',
+                                'relative w-full aspect-square flex items-center justify-center border border-2',
                                 pickBaseClass,
                                 getSlotHighlightClasses(
                                     side,
@@ -184,11 +194,20 @@ export default function BanPickDraftSlots({
                             )}
                         >
                             {slotCharacter ? (
-                                <img
-                                    src={slotCharacter.imageUrl}
-                                    alt={slotCharacter.name}
-                                    className="w-full h-full object-cover"
-                                />
+                                <>
+                                    <img
+                                        src={slotCharacter.imageUrl}
+                                        alt={slotCharacter.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                    <span className="absolute left-1 top-1 flex size-6 items-center justify-center rounded-full border border-white/30 bg-black/70 shadow">
+                                        <img
+                                            src={CharacterElementDetail[slotCharacter.element].iconUrl}
+                                            alt={CharacterElementDetail[slotCharacter.element].name}
+                                            className="size-4"
+                                        />
+                                    </span>
+                                </>
                             ) : (
                                 <img
                                     src={IconAssets.EMPTY_CHARACTER_ICON}
