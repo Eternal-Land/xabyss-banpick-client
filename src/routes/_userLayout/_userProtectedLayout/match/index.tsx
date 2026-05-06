@@ -56,6 +56,17 @@ function RouteComponent() {
 			}),
 	});
 
+	const handleDelete = async (matchId: string) => {
+		try {
+			await matchApi.deleteMatch(matchId);
+			toast.success(tMatch(matchLocaleKeys.match_delete_success));
+			// refetch
+			listMatchesQuery.refetch();
+		} catch (err: any) {
+			toast.error(err?.message || tMatch(matchLocaleKeys.match_delete_error));
+		}
+	};
+
 	const handleSearchChange = (value: string) => {
 		setSearch(value);
 	};
@@ -129,6 +140,9 @@ function RouteComponent() {
 					statusClassName={getMatchStatusClassName(match.status)}
 					player1={match.bluePlayer!}
 					player2={match.redPlayer!}
+					matchId={match.id}
+					isHost={match.host?.id === profile?.id}
+					onDelete={handleDelete}
 					onClick={() => {
 						if (match.status == MatchStatus.WAITING) {
 							navigate({
