@@ -6,6 +6,7 @@ import { TURN_DURATION_SECONDS } from "@/components/match/ban-pick.utils";
 
 interface BanPickDraftTimerProps {
 	turnStartedAt: string | null;
+	matchStateUpdatedAt: string | null;
 	blueTimeBank: number;
 	redTimeBank: number;
 	currentAction?: DraftAction;
@@ -23,6 +24,7 @@ const formatTimer = (seconds: number) => {
 
 export default function BanPickDraftTimer({
 	turnStartedAt,
+	matchStateUpdatedAt,
 	blueTimeBank,
 	redTimeBank,
 	currentAction,
@@ -32,6 +34,7 @@ export default function BanPickDraftTimer({
 }: BanPickDraftTimerProps) {
 	const { t } = useTranslation("match");
 	const [now, setNow] = useState(Date.now());
+	const [serverClockOffsetMs, setServerClockOffsetMs] = useState(0);
 
 	useEffect(() => {
 		if (isDraftCompleted || !turnStartedAt) {
@@ -50,18 +53,42 @@ export default function BanPickDraftTimer({
 		setNow(Date.now());
 	}, [turnStartedAt]);
 
+	useEffect(() => {
+		if (!matchStateUpdatedAt) {
+			setServerClockOffsetMs(0);
+			return;
+		}
+
+		const updatedAtMs = new Date(matchStateUpdatedAt).getTime();
+		if (Number.isNaN(updatedAtMs)) {
+			setServerClockOffsetMs(0);
+			return;
+		}
+
+		setServerClockOffsetMs(Date.now() - updatedAtMs);
+	}, [matchStateUpdatedAt]);
+
 	const timerState = useMemo(() => {
 		if (isDraftCompleted || (!turnStartedAt && !isPaused) || !currentAction) {
 			return null;
 		}
 
+		const turnStartedAtMs = turnStartedAt
+			? new Date(turnStartedAt).getTime()
+			: null;
+		if (turnStartedAtMs !== null && Number.isNaN(turnStartedAtMs)) {
+			return null;
+		}
+
+		const estimatedServerNowMs = now - serverClockOffsetMs;
+
 		const elapsedSeconds = Math.max(
 			0,
 			isPaused && pausedElapsedMs !== undefined && pausedElapsedMs !== null
 				? pausedElapsedMs / 1000
-				: turnStartedAt
-					? (now - new Date(turnStartedAt).getTime()) / 1000
-					: 0
+				: turnStartedAtMs !== null
+					? (estimatedServerNowMs - turnStartedAtMs) / 1000
+					: 0,
 		);
 
 		const sideBank = currentAction.side === "blue" ? blueTimeBank : redTimeBank;
@@ -86,8 +113,11 @@ export default function BanPickDraftTimer({
 		currentAction,
 		isDraftCompleted,
 		now,
+		pausedElapsedMs,
 		redTimeBank,
+		serverClockOffsetMs,
 		turnStartedAt,
+		isPaused,
 	]);
 
 	if (!timerState) {

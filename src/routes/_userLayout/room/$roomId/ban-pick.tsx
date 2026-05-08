@@ -1919,6 +1919,7 @@ function RouteComponent() {
 						}
 						redTotalComparableSeconds={leadComparison.redTotalComparableSeconds}
 						turnStartedAt={pageMatchState?.turnStartedAt ?? null}
+						matchStateUpdatedAt={pageMatchState?.updatedAt ?? null}
 						blueTimeBank={pageMatchState?.blueTimeBank ?? 0}
 						redTimeBank={pageMatchState?.redTimeBank ?? 0}
 						onSubmit={handleSubmit}
