@@ -52,26 +52,16 @@ async function startMatch(matchId: string) {
 	return response.data;
 }
 
-async function pickChar(
-	matchId: string,
-	charId: string,
-	clientActionAt?: string,
-) {
+async function pickChar(matchId: string, charId: string) {
 	const response = await http.put<BaseApiResponse>(
 		`/api/user/match/${matchId}/pick-char/${charId}`,
-		clientActionAt ? { clientActionAt } : undefined,
 	);
 	return response.data;
 }
 
-async function banChar(
-	matchId: string,
-	charId: string,
-	clientActionAt?: string,
-) {
+async function banChar(matchId: string, charId: string) {
 	const response = await http.put<BaseApiResponse>(
 		`/api/user/match/${matchId}/ban-char/${charId}`,
-		clientActionAt ? { clientActionAt } : undefined,
 	);
 	return response.data;
 }
