@@ -108,7 +108,6 @@ function MatchResultComponent() {
 	const report = reportResponse.data;
 	const bluePlayer = report.bluePlayer;
 	const redPlayer = report.redPlayer;
-	const totalSessions = report.sessions.length;
 
 	let blueWins = 0;
 	let redWins = 0;
@@ -251,13 +250,6 @@ function MatchResultComponent() {
 						<div className={cn("text-2xl font-bold", finalResultClassName)}>
 							{finalResultLabel}
 						</div>
-						<div className="text-sm text-white/70">
-							{tMatch(matchLocaleKeys.match_result_summary, {
-								blueWins,
-								redWins,
-								totalSessions,
-							})}
-						</div>
 					</div>
 				</div>
 
@@ -288,10 +280,10 @@ function MatchResultComponent() {
 											session.leftWon ? "text-amber-300" : "text-white/80",
 										)}
 									>
-									<div className="text-sm uppercase tracking-wider text-white/50">
-										{session.leftName}
+										<div className="text-sm uppercase tracking-wider text-white/50">
+											{session.leftName}
+										</div>
 									</div>
-								</div>
 
 									{/* Divider */}
 									<div className="text-center min-w-24">
@@ -312,12 +304,12 @@ function MatchResultComponent() {
 											session.rightWon ? "text-amber-300" : "text-white/80",
 										)}
 									>
-									<div className="text-sm uppercase tracking-wider text-white/50">
-										{session.rightName}
+										<div className="text-sm uppercase tracking-wider text-white/50">
+											{session.rightName}
+										</div>
 									</div>
 								</div>
 							</div>
-						</div>
 						);
 					})}
 				</div>

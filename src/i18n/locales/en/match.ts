@@ -60,8 +60,7 @@ const matchEn: MatchLocaleObject = {
 	match_result_scoreboard_title: "Match Scoreboard",
 	match_result_back_to_lobby: "Back to Lobby",
 	match_result_total_result: "Total Result",
-	match_result_summary:
-		"{{blueWins}} - {{redWins}} across {{totalSessions}} sessions",
+	match_result_summary: "{{blueWins}} - {{redWins}}",
 	match_result_session_details: "Session Details",
 	match_result_game_label: "GAME {{index}}",
 	match_result_vs_label: "VS",
