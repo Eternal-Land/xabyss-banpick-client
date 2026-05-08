@@ -44,7 +44,7 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
-	const MIN_PLAYER_SEARCH_LENGTH = 4;
+	const MIN_PLAYER_SEARCH_LENGTH = 1;
 	const { t } = useTranslation();
 	const navigate = Route.useNavigate();
 	const tMatch = (key: string) => t(getTranslationToken("match", key));
@@ -278,8 +278,6 @@ function RouteComponent() {
 			{renderSelectedCard(config.selectedPlayer)}
 		</div>
 	);
-
-
 
 	const sessionOptions = [
 		{

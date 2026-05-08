@@ -93,6 +93,7 @@ export function applyDraftActionToMatchState(
 		redSelectedChars: [...prevState.redSelectedChars],
 		draftStep: prevState.draftStep + 1,
 		turnStartedAt: new Date().toISOString(),
+		updatedAt: new Date().toISOString(),
 	};
 
 	if (action.type === "ban") {

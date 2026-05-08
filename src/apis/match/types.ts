@@ -34,6 +34,7 @@ export interface MatchStateResponse {
 	hostJoined: boolean;
 	redPlayerJoined: boolean;
 	bluePlayerJoined: boolean;
+	updatedAt: string;
 	currentSession: number;
 	currentTurn: PlayerSideEnum;
 	blueBanChars: string[];

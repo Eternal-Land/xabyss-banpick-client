@@ -15,6 +15,7 @@ interface BanPickActionPanelProps {
 	blueTotalComparableSeconds: number;
 	redTotalComparableSeconds: number;
 	turnStartedAt: string | null;
+	matchStateUpdatedAt: string | null;
 	blueTimeBank: number;
 	redTimeBank: number;
 	onSubmit: () => Promise<void> | void;
@@ -36,6 +37,7 @@ export default function BanPickActionPanel({
 	blueTotalComparableSeconds,
 	redTotalComparableSeconds,
 	turnStartedAt,
+	matchStateUpdatedAt,
 	blueTimeBank,
 	redTimeBank,
 	onSubmit,
@@ -84,6 +86,7 @@ export default function BanPickActionPanel({
 
 			<BanPickDraftTimer
 				turnStartedAt={turnStartedAt}
+				matchStateUpdatedAt={matchStateUpdatedAt}
 				blueTimeBank={blueTimeBank}
 				redTimeBank={redTimeBank}
 				currentAction={currentAction}
