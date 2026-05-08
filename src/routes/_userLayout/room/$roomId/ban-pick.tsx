@@ -1306,10 +1306,11 @@ function RouteComponent() {
 		setIsSubmittingTurnAction(true);
 
 		try {
+			const clientActionAt = new Date().toISOString();
 			if (currentAction.type === "ban") {
-				await matchApi.banChar(match.id, characterId);
+				await matchApi.banChar(match.id, characterId, clientActionAt);
 			} else {
-				await matchApi.pickChar(match.id, characterId);
+				await matchApi.pickChar(match.id, characterId, clientActionAt);
 			}
 		} catch {
 			setPageMatchState(previousMatchState);
