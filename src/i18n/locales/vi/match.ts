@@ -60,7 +60,7 @@ const matchVi: MatchLocaleObject = {
 	match_result_scoreboard_title: "Bảng tỉ số trận đấu",
 	match_result_back_to_lobby: "Về sảnh",
 	match_result_total_result: "Kết quả chung cuộc",
-	match_result_summary: "{{blueWins}} - {{redWins}} qua {{totalSessions}} ván",
+	match_result_summary: "{{blueWins}} - {{redWins}}",
 	match_result_session_details: "Chi tiết từng ván",
 	match_result_game_label: "VÁN {{index}}",
 	match_result_vs_label: "VS",

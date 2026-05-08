@@ -21,7 +21,12 @@ import type { AccountCharacterResponse } from "@/apis/account-characters/types";
 import type { UserCharacterResponse } from "@/apis/user-characters/types";
 import type { BanPickCharacter } from "@/components/match/ban-pick.types";
 import type { BanPickTimerInputValues } from "@/components/match/ban-pick-timer-inputs";
-import { MatchType, PlayerSide, MatchStatus, CharacterElement } from "@/lib/constants";
+import {
+	MatchType,
+	PlayerSide,
+	MatchStatus,
+	CharacterElement,
+} from "@/lib/constants";
 import { SocketEvent } from "@/lib/constants";
 import { selectAuthProfile } from "@/lib/redux/auth.slice";
 import { useAppSelector } from "@/hooks/use-app-selector";
@@ -87,8 +92,14 @@ type MatchTimerInputsSyncPayload = {
 };
 
 type AccountDraftState = {
-	blue: { bans: (BanPickCharacter | null)[]; picks: (BanPickCharacter | null)[] };
-	red: { bans: (BanPickCharacter | null)[]; picks: (BanPickCharacter | null)[] };
+	blue: {
+		bans: (BanPickCharacter | null)[];
+		picks: (BanPickCharacter | null)[];
+	};
+	red: {
+		bans: (BanPickCharacter | null)[];
+		picks: (BanPickCharacter | null)[];
+	};
 };
 
 const EMPTY_DRAFT_STATE: AccountDraftState = {
@@ -236,7 +247,8 @@ function RouteComponent() {
 	const redPlayer = match?.redPlayer;
 	const isHost = profile?.id === match?.host?.id;
 	// Host must also be one of the two players to manage completed session actions
-	const hostIsPlayer = profile?.id === bluePlayer?.id || profile?.id === redPlayer?.id;
+	const hostIsPlayer =
+		profile?.id === bluePlayer?.id || profile?.id === redPlayer?.id;
 	const isRealtimeMatch = match?.type === MatchType.REALTIME;
 	const canReorderBlueTeam = profile?.id === bluePlayer?.id;
 	const canReorderRedTeam = profile?.id === redPlayer?.id;
@@ -261,7 +273,8 @@ function RouteComponent() {
 	const [isActivatingSupachai, setIsActivatingSupachai] = useState(false);
 	const [blueSupachaiFromCharacterId, setBlueSupachaiFromCharacterId] =
 		useState("");
-	const [blueSupachaiToCharacterId, setBlueSupachaiToCharacterId] = useState("");
+	const [blueSupachaiToCharacterId, setBlueSupachaiToCharacterId] =
+		useState("");
 	const [redSupachaiFromCharacterId, setRedSupachaiFromCharacterId] =
 		useState("");
 	const [redSupachaiToCharacterId, setRedSupachaiToCharacterId] = useState("");
@@ -274,14 +287,14 @@ function RouteComponent() {
 	const [timerInputs, setTimerInputs] = useState<BanPickTimerInputsBySide>(
 		EMPTY_TIMER_INPUTS_BY_SIDE,
 	);
-	const [specialCostInputs, setSpecialCostInputs] = useState<BanPickSpecialCostInputsBySide>(
-		() => ({ blue: "0", red: "0" }),
-	);
+	const [specialCostInputs, setSpecialCostInputs] =
+		useState<BanPickSpecialCostInputsBySide>(() => ({ blue: "0", red: "0" }));
 	const isApplyingRemoteTimerSyncRef = useRef(false);
 	const isApplyingRemoteSpecialCostSyncRef = useRef(false);
-	const previousSpecialCostInputsRef = useRef<BanPickSpecialCostInputsBySide>(
-		{ blue: "0", red: "0" },
-	);
+	const previousSpecialCostInputsRef = useRef<BanPickSpecialCostInputsBySide>({
+		blue: "0",
+		red: "0",
+	});
 	const [
 		blueSelectedWeaponRefinementByCharacterIdLocal,
 		setBlueSelectedWeaponRefinementByCharacterIdLocal,
@@ -584,7 +597,9 @@ function RouteComponent() {
 	}, [initialMatch]);
 
 	const [showWinnerDialog, setShowWinnerDialog] = useState(false);
-	const [selectedWinnerSide, setSelectedWinnerSide] = useState<number | null>(null);
+	const [selectedWinnerSide, setSelectedWinnerSide] = useState<number | null>(
+		null,
+	);
 
 	const confirmWinnerAndComplete = async () => {
 		if (!match?.id) return;
@@ -595,7 +610,9 @@ function RouteComponent() {
 
 		setIsSubmittingTurnAction(true);
 		try {
-			await matchApi.completeSession(match.id, { winnerSide: selectedWinnerSide });
+			await matchApi.completeSession(match.id, {
+				winnerSide: selectedWinnerSide,
+			});
 			const refreshedMatchResponse = await matchApi.getMatch(match.id);
 			const refreshedMatch = refreshedMatchResponse.data;
 			if (refreshedMatch) {
@@ -606,13 +623,25 @@ function RouteComponent() {
 				refreshedMatch?.status === MatchStatus.COMPLETED ||
 				refreshedMatch?.status === MatchStatus.CANCELED
 			) {
-				toast.success(t(matchLocaleKeys.ban_pick_session_completed_match_finished));
-				void router.navigate({ to: "/room/$roomId/result", params: { roomId: match.id } });
+				toast.success(
+					t(matchLocaleKeys.ban_pick_session_completed_match_finished),
+				);
+				void router.navigate({
+					to: "/room/$roomId/result",
+					params: { roomId: match.id },
+				});
 			} else if (refreshedMatch?.status === MatchStatus.WAITING) {
-				toast.success(t(matchLocaleKeys.ban_pick_session_completed_next_started));
-				void router.navigate({ to: "/room/$roomId/waiting", params: { roomId: match.id } });
+				toast.success(
+					t(matchLocaleKeys.ban_pick_session_completed_next_started),
+				);
+				void router.navigate({
+					to: "/room/$roomId/waiting",
+					params: { roomId: match.id },
+				});
 			} else {
-				toast.success(t(matchLocaleKeys.ban_pick_session_completed_next_started));
+				toast.success(
+					t(matchLocaleKeys.ban_pick_session_completed_next_started),
+				);
 				await router.invalidate();
 
 				const latestMatchResponse = await matchApi.getMatch(match.id);
@@ -764,7 +793,13 @@ function RouteComponent() {
 				),
 			},
 		};
-	}, [accountDraftCharacters, globalDraftCharacters, isBlueViewer, isRedViewer, pageMatchState]);
+	}, [
+		accountDraftCharacters,
+		globalDraftCharacters,
+		isBlueViewer,
+		isRedViewer,
+		pageMatchState,
+	]);
 
 	const draftStep = pageMatchState?.draftStep ?? 0;
 
@@ -772,19 +807,6 @@ function RouteComponent() {
 		draftStep < DRAFT_SEQUENCE.length ? DRAFT_SEQUENCE[draftStep] : undefined;
 
 	const isDraftCompleted = draftStep >= DRAFT_SEQUENCE.length;
-
-	const hasShownWinnerDialogRef = useRef(false);
-
-	useEffect(() => {
-		if (isDraftCompleted && profile?.id === match?.host?.id) {
-			if (!hasShownWinnerDialogRef.current) {
-				setShowWinnerDialog(true);
-				hasShownWinnerDialogRef.current = true;
-			}
-		} else if (!isDraftCompleted) {
-			hasShownWinnerDialogRef.current = false;
-		}
-	}, [isDraftCompleted, profile?.id, match?.host?.id]);
 
 	const isCurrentUserTurn = useMemo(() => {
 		if (isDraftCompleted || !profile?.id || !currentAction) {
@@ -864,7 +886,11 @@ function RouteComponent() {
 				...bluePreviouslyUsedCharacterIds,
 				...selectedCharacterIds,
 			]),
-		[bluePickedCharacterIds, bluePreviouslyUsedCharacterIds, selectedCharacterIds],
+		[
+			bluePickedCharacterIds,
+			bluePreviouslyUsedCharacterIds,
+			selectedCharacterIds,
+		],
 	);
 
 	const redDisabledCharacterIds = useMemo(
@@ -874,7 +900,11 @@ function RouteComponent() {
 				...redPreviouslyUsedCharacterIds,
 				...selectedCharacterIds,
 			]),
-		[redPickedCharacterIds, redPreviouslyUsedCharacterIds, selectedCharacterIds],
+		[
+			redPickedCharacterIds,
+			redPreviouslyUsedCharacterIds,
+			selectedCharacterIds,
+		],
 	);
 
 	const leftFilteredCharacters = useMemo(
@@ -920,8 +950,8 @@ function RouteComponent() {
 	);
 
 	const hasTravellerPicked = (picks: (BanPickCharacter | null)[]) => {
-		return picks.some((pick) =>
-			pick && pick.name.toLowerCase().startsWith("traveller"),
+		return picks.some(
+			(pick) => pick && pick.name.toLowerCase().startsWith("traveller"),
 		);
 	};
 
@@ -945,45 +975,57 @@ function RouteComponent() {
 		[draftState.red.bans],
 	);
 
-	const blueSupachaiReplacementOptions = useMemo(
-		() => {
-			const characterPool = isBlueViewer ? accountCharacters : globalCharacters;
-			return characterPool
-				.filter(
-					(character) =>
-						!blueDisabledCharacterIds.has(getBanPickCharacterId(character)),
-				)
-				.map((character) =>
-					isBlueViewer
-						? mapAccountCharacterToBanPickCharacter(character as AccountCharacterResponse)
-						: mapGlobalCharacterToDraftCharacter(character as UserCharacterResponse),
-				);
-		},
-		[isBlueViewer, accountCharacters, globalCharacters, blueDisabledCharacterIds],
-	);
+	const blueSupachaiReplacementOptions = useMemo(() => {
+		const characterPool = isBlueViewer ? accountCharacters : globalCharacters;
+		return characterPool
+			.filter(
+				(character) =>
+					!blueDisabledCharacterIds.has(getBanPickCharacterId(character)),
+			)
+			.map((character) =>
+				isBlueViewer
+					? mapAccountCharacterToBanPickCharacter(
+							character as AccountCharacterResponse,
+						)
+					: mapGlobalCharacterToDraftCharacter(
+							character as UserCharacterResponse,
+						),
+			);
+	}, [
+		isBlueViewer,
+		accountCharacters,
+		globalCharacters,
+		blueDisabledCharacterIds,
+	]);
 
-	const redSupachaiReplacementOptions = useMemo(
-		() => {
-			const characterPool = isRedViewer ? accountCharacters : globalCharacters;
-			return characterPool
-				.filter(
-					(character) =>
-						!redDisabledCharacterIds.has(getBanPickCharacterId(character)),
-				)
-				.map((character) =>
-					isRedViewer
-						? mapAccountCharacterToBanPickCharacter(character as AccountCharacterResponse)
-						: mapGlobalCharacterToDraftCharacter(character as UserCharacterResponse),
-				);
-		},
-		[isRedViewer, accountCharacters, globalCharacters, redDisabledCharacterIds],
-	);
+	const redSupachaiReplacementOptions = useMemo(() => {
+		const characterPool = isRedViewer ? accountCharacters : globalCharacters;
+		return characterPool
+			.filter(
+				(character) =>
+					!redDisabledCharacterIds.has(getBanPickCharacterId(character)),
+			)
+			.map((character) =>
+				isRedViewer
+					? mapAccountCharacterToBanPickCharacter(
+							character as AccountCharacterResponse,
+						)
+					: mapGlobalCharacterToDraftCharacter(
+							character as UserCharacterResponse,
+						),
+			);
+	}, [
+		isRedViewer,
+		accountCharacters,
+		globalCharacters,
+		redDisabledCharacterIds,
+	]);
 
 	const blueSupachaiRemainingUses = Math.max(
 		0,
 		Math.min(
 			(pageMatchState?.supachaiMaxUses ?? 1) -
-			(pageMatchState?.blueSupachaiUsedCount ?? 0),
+				(pageMatchState?.blueSupachaiUsedCount ?? 0),
 			1 - (pageMatchState?.blueSupachaiUsedSessionCount ?? 0),
 		),
 	);
@@ -992,7 +1034,7 @@ function RouteComponent() {
 		0,
 		Math.min(
 			(pageMatchState?.supachaiMaxUses ?? 1) -
-			(pageMatchState?.redSupachaiUsedCount ?? 0),
+				(pageMatchState?.redSupachaiUsedCount ?? 0),
 			1 - (pageMatchState?.redSupachaiUsedSessionCount ?? 0),
 		),
 	);
@@ -1002,7 +1044,8 @@ function RouteComponent() {
 		console.debug("supachai-state", {
 			supachaiMaxUses: pageMatchState?.supachaiMaxUses,
 			blueSupachaiUsedCount: pageMatchState?.blueSupachaiUsedCount,
-			blueSupachaiUsedSessionCount: pageMatchState?.blueSupachaiUsedSessionCount,
+			blueSupachaiUsedSessionCount:
+				pageMatchState?.blueSupachaiUsedSessionCount,
 			redSupachaiUsedCount: pageMatchState?.redSupachaiUsedCount,
 			redSupachaiUsedSessionCount: pageMatchState?.redSupachaiUsedSessionCount,
 		});
@@ -1018,9 +1061,9 @@ function RouteComponent() {
 		() =>
 			pageMatchState
 				? mapSelectedWeaponsByCharacterId(
-					blueBanPickPicks.filter((c): c is BanPickCharacter => c !== null),
-					pageMatchState.blueSelectedWeapons,
-				)
+						blueBanPickPicks.filter((c): c is BanPickCharacter => c !== null),
+						pageMatchState.blueSelectedWeapons,
+					)
 				: {},
 		[blueBanPickPicks, pageMatchState],
 	);
@@ -1029,9 +1072,9 @@ function RouteComponent() {
 		() =>
 			pageMatchState
 				? mapSelectedWeaponsByCharacterId(
-					redBanPickPicks.filter((c): c is BanPickCharacter => c !== null),
-					pageMatchState.redSelectedWeapons,
-				)
+						redBanPickPicks.filter((c): c is BanPickCharacter => c !== null),
+						pageMatchState.redSelectedWeapons,
+					)
 				: {},
 		[redBanPickPicks, pageMatchState],
 	);
@@ -1107,9 +1150,13 @@ function RouteComponent() {
 		}
 
 		// Viewer may have selected an opponent-panel character; try to resolve from global catalog
-		const candidateId = String((pendingCharacter as any).characterId ?? (pendingCharacter as any).id);
+		const candidateId = String(
+			(pendingCharacter as any).characterId ?? (pendingCharacter as any).id,
+		);
 		const byGlobal = globalCharacters.find(
-			(g) => String(g.id) === candidateId || g.name === (pendingCharacter as any).name,
+			(g) =>
+				String(g.id) === candidateId ||
+				g.name === (pendingCharacter as any).name,
 		);
 		if (byGlobal) {
 			return mapGlobalCharacterToDraftCharacter(byGlobal);
@@ -1290,7 +1337,9 @@ function RouteComponent() {
 		}
 
 		const fromCharId =
-			side === "blue" ? blueSupachaiFromCharacterId : redSupachaiFromCharacterId;
+			side === "blue"
+				? blueSupachaiFromCharacterId
+				: redSupachaiFromCharacterId;
 		const toCharId =
 			side === "blue" ? blueSupachaiToCharacterId : redSupachaiToCharacterId;
 
@@ -1384,10 +1433,10 @@ function RouteComponent() {
 					...(isUnequip
 						? {}
 						: {
-							weaponId,
-							weaponRefinement,
-							weaponRarity: pickedWeapon?.rarity,
-						}),
+								weaponId,
+								weaponRefinement,
+								weaponRarity: pickedWeapon?.rarity,
+							}),
 					side: PlayerSide.BLUE,
 				},
 			);
@@ -1446,10 +1495,10 @@ function RouteComponent() {
 					...(isUnequip
 						? {}
 						: {
-							weaponId,
-							weaponRefinement,
-							weaponRarity: pickedWeapon?.rarity,
-						}),
+								weaponId,
+								weaponRefinement,
+								weaponRarity: pickedWeapon?.rarity,
+							}),
 					side: PlayerSide.RED,
 				},
 			);
@@ -1737,7 +1786,8 @@ function RouteComponent() {
 					isDraftCompleted,
 					hasFromCharacter: !!blueSupachaiFromCharacterId,
 					hasToCharacter: !!blueSupachaiToCharacterId,
-					charactersAreDifferent: blueSupachaiFromCharacterId !== blueSupachaiToCharacterId,
+					charactersAreDifferent:
+						blueSupachaiFromCharacterId !== blueSupachaiToCharacterId,
 					hasRemainingUses: blueSupachaiRemainingUses > 0,
 				},
 				values: {
@@ -1755,7 +1805,8 @@ function RouteComponent() {
 					isDraftCompleted,
 					hasFromCharacter: !!redSupachaiFromCharacterId,
 					hasToCharacter: !!redSupachaiToCharacterId,
-					charactersAreDifferent: redSupachaiFromCharacterId !== redSupachaiToCharacterId,
+					charactersAreDifferent:
+						redSupachaiFromCharacterId !== redSupachaiToCharacterId,
 					hasRemainingUses: redSupachaiRemainingUses > 0,
 				},
 				values: {
@@ -1793,21 +1844,23 @@ function RouteComponent() {
 		<>
 			<div className="min-h-screen max-w-screen overflow-hidden">
 				<div className="grid grid-cols-7 h-dvh gap-4">
-				<BanPickSideSection
-					side="blue"
-					player={bluePlayer}
-					cost={blueSideCost}
-					specialCostValue={specialCostInputs.blue}
-					onSpecialCostChange={onSpecialCostValuesChange}
-					canEditSpecialCost={canEditBlueSpecialCost}
-					isRealtimeMatch={isRealtimeMatch}
-					timerValues={timerInputs.blue}
-					onTimerValuesChange={onTimerValuesChange}
-					bans={blueBanPickBans}
+					<BanPickSideSection
+						side="blue"
+						player={bluePlayer}
+						cost={blueSideCost}
+						specialCostValue={specialCostInputs.blue}
+						onSpecialCostChange={onSpecialCostValuesChange}
+						canEditSpecialCost={canEditBlueSpecialCost}
+						isRealtimeMatch={isRealtimeMatch}
+						timerValues={timerInputs.blue}
+						onTimerValuesChange={onTimerValuesChange}
+						bans={blueBanPickBans}
 						picks={blueBanPickPicks}
 						currentAction={currentAction}
 						isDraftCompleted={isDraftCompleted}
-						canManageCompletedSession={isHost && hostIsPlayer && profile?.id === bluePlayer?.id}
+						canManageCompletedSession={
+							isHost && hostIsPlayer && profile?.id === bluePlayer?.id
+						}
 						pendingCharacter={pendingBanPickCharacter}
 						canInteract={isCurrentUserTurn}
 						search={leftSearch}
@@ -1891,7 +1944,9 @@ function RouteComponent() {
 						picks={redBanPickPicks}
 						currentAction={currentAction}
 						isDraftCompleted={isDraftCompleted}
-						canManageCompletedSession={isHost && hostIsPlayer && profile?.id === redPlayer?.id}
+						canManageCompletedSession={
+							isHost && hostIsPlayer && profile?.id === redPlayer?.id
+						}
 						pendingCharacter={pendingBanPickCharacter}
 						canInteract={isCurrentUserTurn}
 						search={rightSearch}
@@ -1946,13 +2001,17 @@ function RouteComponent() {
 
 					<div className="grid gap-4 mt-4">
 						<Button
-							variant={selectedWinnerSide === PlayerSide.BLUE ? "default" : "outline"}
+							variant={
+								selectedWinnerSide === PlayerSide.BLUE ? "default" : "outline"
+							}
 							onClick={() => setSelectedWinnerSide(PlayerSide.BLUE)}
 						>
 							{bluePlayer?.displayName ?? t("ban_pick_side_blue")}
 						</Button>
 						<Button
-							variant={selectedWinnerSide === PlayerSide.RED ? "default" : "outline"}
+							variant={
+								selectedWinnerSide === PlayerSide.RED ? "default" : "outline"
+							}
 							onClick={() => setSelectedWinnerSide(PlayerSide.RED)}
 						>
 							{redPlayer?.displayName ?? t("ban_pick_side_red")}
@@ -1960,7 +2019,11 @@ function RouteComponent() {
 					</div>
 
 					<DialogFooter>
-						<Button type="button" variant="outline" onClick={() => setShowWinnerDialog(false)}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setShowWinnerDialog(false)}
+						>
 							{t("ban_pick_cancel")}
 						</Button>
 						<Button type="button" onClick={confirmWinnerAndComplete}>
