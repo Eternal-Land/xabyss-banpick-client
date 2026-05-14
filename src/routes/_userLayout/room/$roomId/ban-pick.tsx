@@ -975,51 +975,39 @@ function RouteComponent() {
 		[draftState.red.bans],
 	);
 
-	const blueSupachaiReplacementOptions = useMemo(() => {
-		const characterPool = isBlueViewer ? accountCharacters : globalCharacters;
-		return characterPool
-			.filter(
-				(character) =>
-					!blueDisabledCharacterIds.has(getBanPickCharacterId(character)),
-			)
-			.map((character) =>
-				isBlueViewer
-					? mapAccountCharacterToBanPickCharacter(
-							character as AccountCharacterResponse,
-						)
-					: mapGlobalCharacterToDraftCharacter(
-							character as UserCharacterResponse,
-						),
-			);
-	}, [
-		isBlueViewer,
-		accountCharacters,
-		globalCharacters,
-		blueDisabledCharacterIds,
-	]);
+	const blueSupachaiReplacementOptions = useMemo(
+		() => {
+			const characterPool = isBlueViewer ? accountCharacters : globalCharacters;
+			// Supachai: allow any character from roster EXCEPT already picked in current session
+			return characterPool
+				.filter(
+					(character) => !bluePickedCharacterIds.has(getBanPickCharacterId(character)),
+				)
+				.map((character) =>
+					isBlueViewer
+						? mapAccountCharacterToBanPickCharacter(character as AccountCharacterResponse)
+						: mapGlobalCharacterToDraftCharacter(character as UserCharacterResponse),
+				);
+		},
+		[isBlueViewer, accountCharacters, globalCharacters, bluePickedCharacterIds],
+	);
 
-	const redSupachaiReplacementOptions = useMemo(() => {
-		const characterPool = isRedViewer ? accountCharacters : globalCharacters;
-		return characterPool
-			.filter(
-				(character) =>
-					!redDisabledCharacterIds.has(getBanPickCharacterId(character)),
-			)
-			.map((character) =>
-				isRedViewer
-					? mapAccountCharacterToBanPickCharacter(
-							character as AccountCharacterResponse,
-						)
-					: mapGlobalCharacterToDraftCharacter(
-							character as UserCharacterResponse,
-						),
-			);
-	}, [
-		isRedViewer,
-		accountCharacters,
-		globalCharacters,
-		redDisabledCharacterIds,
-	]);
+	const redSupachaiReplacementOptions = useMemo(
+		() => {
+			const characterPool = isRedViewer ? accountCharacters : globalCharacters;
+			// Supachai: allow any character from roster EXCEPT already picked in current session
+			return characterPool
+				.filter(
+					(character) => !redPickedCharacterIds.has(getBanPickCharacterId(character)),
+				)
+				.map((character) =>
+					isRedViewer
+						? mapAccountCharacterToBanPickCharacter(character as AccountCharacterResponse)
+						: mapGlobalCharacterToDraftCharacter(character as UserCharacterResponse),
+				);
+		},
+		[isRedViewer, accountCharacters, globalCharacters, redPickedCharacterIds],
+	);
 
 	const blueSupachaiRemainingUses = Math.max(
 		0,
