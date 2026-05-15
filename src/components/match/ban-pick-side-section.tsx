@@ -29,7 +29,7 @@ import type {
 	DraftSide,
 } from "@/components/match/ban-pick.types";
 import { useTranslation } from "react-i18next";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { BanPickTimerInputValues } from "@/components/match/ban-pick-timer-inputs";
 import { ArrowRightLeft } from "lucide-react";
 import supachaiIcon from "@/assets/image/supachai.png";
@@ -159,6 +159,7 @@ export default function BanPickSideSection({
 	void onTimerValuesChange;
 	const [isSupachaiDialogOpen, setIsSupachaiDialogOpen] = useState(false);
 	const [isSupachaiWarningOpen, setIsSupachaiWarningOpen] = useState(false);
+	const skipSupachaiResetRef = useRef(false);
 	const isBlue = side === "blue";
 	const backgroundClassName = isBlue
 		? "bg-transparent bg-radial from-sky-400/50 from-0% to-white/0 to-70% fixed inset-0 z-[-2] left-[-500px] top-0 h-screen aspect-square rounded-full"
@@ -167,6 +168,10 @@ export default function BanPickSideSection({
 	// or the parent explicitly allowed management for this side (host-as-player for that side)
 	const canShowSupachaiControls = isDraftCompleted && (canPickWeapon || canManageCompletedSession);
 	const isSupachaiUsedThisSession = supachaiRemainingUses <= 0;
+	const resetSupachaiSelection = () => {
+		onSupachaiFromCharacterIdChange("");
+		onSupachaiToCharacterIdChange("");
+	};
 
 	const supachaiTargetCharacter = useMemo(
 		() => supachaiPickOptions.find((character) => character?.id === supachaiFromCharacterId) ?? null,
@@ -353,7 +358,13 @@ export default function BanPickSideSection({
 
 								<Dialog
 									open={isSupachaiDialogOpen}
-									onOpenChange={setIsSupachaiDialogOpen}
+									onOpenChange={(open) => {
+										setIsSupachaiDialogOpen(open);
+										if (!open && !skipSupachaiResetRef.current) {
+											resetSupachaiSelection();
+										}
+										skipSupachaiResetRef.current = false;
+									}}
 								>
 									<DialogContent className="sm:max-w-2xl">
 										<DialogHeader>
@@ -412,7 +423,10 @@ export default function BanPickSideSection({
 											<Button
 												type="button"
 												variant="outline"
-												onClick={() => setIsSupachaiDialogOpen(false)}
+												onClick={() => {
+													resetSupachaiSelection();
+													setIsSupachaiDialogOpen(false);
+												}}
 											>
 												{t(matchLocaleKeys.ban_pick_cancel)}
 											</Button>
@@ -425,6 +439,7 @@ export default function BanPickSideSection({
 													supachaiRemainingUses <= 0
 												}
 												onClick={() => {
+													skipSupachaiResetRef.current = true;
 													setIsSupachaiDialogOpen(false);
 													setIsSupachaiWarningOpen(true);
 												}}
