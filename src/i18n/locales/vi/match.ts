@@ -55,6 +55,11 @@ const matchVi: MatchLocaleObject = {
 		"Ván hiện tại đã kết thúc. Xem kết quả và chờ chủ phòng tiếp tục ván tiếp theo.",
 	match_waiting_session_result_winner: "Người thắng: {{winner}}",
 	match_waiting_session_result_waiting_host: "Đang chờ chủ phòng tiếp tục...",
+	match_waiting_session_result_pick_first_label:
+		"Chọn người pick trước ở ván tiếp theo",
+	match_waiting_session_result_pick_first_description:
+		"Người được chọn sẽ vào bên xanh và pick đầu ở ván kế tiếp.",
+	match_waiting_session_result_pick_first_blue_badge: "Pick trước",
 	match_waiting_session_result_continue: "Tiếp tục ván tiếp theo",
 	match_result_loading: "Đang tải kết quả...",
 	match_result_scoreboard_title: "Bảng tỉ số trận đấu",

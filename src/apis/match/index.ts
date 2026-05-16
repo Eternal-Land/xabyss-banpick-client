@@ -1,5 +1,6 @@
 import { http } from "@/lib/http";
 import type {
+	ContinueSessionInput,
 	CreateMatchInput,
 	ListMatchesQuery,
 	MatchResponse,
@@ -89,9 +90,10 @@ async function completeSession(
 	return response.data;
 }
 
-async function continueSession(matchId: string) {
+async function continueSession(matchId: string, body?: ContinueSessionInput) {
 	const response = await http.post<BaseApiResponse>(
 		`/api/user/match/${matchId}/continue-session`,
+		body ?? undefined,
 	);
 	return response.data;
 }

@@ -55,6 +55,10 @@ const matchEn: MatchLocaleObject = {
 		"The current session has ended. Review the result and wait for the host to continue.",
 	match_waiting_session_result_winner: "Winner: {{winner}}",
 	match_waiting_session_result_waiting_host: "Waiting for host to continue...",
+	match_waiting_session_result_pick_first_label: "Choose who picks first next",
+	match_waiting_session_result_pick_first_description:
+		"The selected player will draft first as blue in the next session.",
+	match_waiting_session_result_pick_first_blue_badge: "Pick first",
 	match_waiting_session_result_continue: "Continue next session",
 	match_result_loading: "Loading Results...",
 	match_result_scoreboard_title: "Match Scoreboard",
