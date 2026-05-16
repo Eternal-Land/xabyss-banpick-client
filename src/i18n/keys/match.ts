@@ -54,6 +54,12 @@ export const matchLocaleKeys = {
 	match_waiting_session_result_winner: "match_waiting_session_result_winner",
 	match_waiting_session_result_waiting_host:
 		"match_waiting_session_result_waiting_host",
+	match_waiting_session_result_pick_first_label:
+		"match_waiting_session_result_pick_first_label",
+	match_waiting_session_result_pick_first_description:
+		"match_waiting_session_result_pick_first_description",
+	match_waiting_session_result_pick_first_blue_badge:
+		"match_waiting_session_result_pick_first_blue_badge",
 	match_waiting_session_result_continue:
 		"match_waiting_session_result_continue",
 	match_result_loading: "match_result_loading",

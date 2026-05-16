@@ -20,7 +20,7 @@ import { IconAssets } from "@/lib/constants/icon-assets";
 import { selectAuthProfile } from "@/lib/redux/auth.slice";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useLoaderData } from "@tanstack/react-router";
-import { ArrowRight, Copy, Swords, Trophy } from "lucide-react";
+import { ArrowRight, Check, Copy, Swords, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -76,6 +76,9 @@ function RouteComponent() {
 	const [pageMatchState, setPageMatchState] = useState<
 		MatchStateResponse | undefined
 	>(matchState);
+	const [nextBluePlayerId, setNextBluePlayerId] = useState<string | undefined>(
+		match?.bluePlayer?.id,
+	);
 
 	const bluePlayer = match?.bluePlayer;
 	const redPlayer = match?.redPlayer;
@@ -94,7 +97,16 @@ function RouteComponent() {
 	});
 
 	const continueSessionMutation = useMutation({
-		mutationFn: matchApi.continueSession,
+		mutationFn: ({
+			matchId,
+			nextBluePlayerId,
+		}: {
+			matchId: string;
+			nextBluePlayerId?: string;
+		}) =>
+			matchApi.continueSession(matchId, {
+				nextBluePlayerId,
+			}),
 		onError: () => {
 			toast.error(tMatch(matchLocaleKeys.match_waiting_continue_error));
 		},
@@ -128,6 +140,9 @@ function RouteComponent() {
 			index: latestCompletedSession.sessionIndex,
 		})
 		: "";
+	const nextSessionBlueOptions = [bluePlayer, redPlayer].filter(
+		(player): player is NonNullable<typeof bluePlayer> => Boolean(player?.id),
+	);
 
 	useSocketEvent(
 		SocketEvent.UPDATE_MATCH_STATE,
@@ -164,12 +179,15 @@ function RouteComponent() {
 	});
 
 	const handleContinueNextSession = async () => {
-		if (!match?.id) {
+		if (!match?.id || !nextBluePlayerId) {
 			return;
 		}
 
 		try {
-			await continueSessionMutation.mutateAsync(match.id);
+			await continueSessionMutation.mutateAsync({
+				matchId: match.id,
+				nextBluePlayerId,
+			});
 			navigate({
 				to: "/room/$roomId/ban-pick",
 				params: { roomId },
@@ -182,6 +200,10 @@ function RouteComponent() {
 	useEffect(() => {
 		setPageMatchState(matchState);
 	}, [matchState]);
+
+	useEffect(() => {
+		setNextBluePlayerId(match?.bluePlayer?.id);
+	}, [match?.bluePlayer?.id, match?.id]);
 
 	useEffect(() => {
 		if (!match) {
@@ -304,6 +326,57 @@ function RouteComponent() {
 							</p>
 						</div>
 
+						{isHost && match.sessionCount > 1 ? (
+							<div className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 p-4">
+								<p className="text-xs uppercase tracking-[0.24em] text-cyan-100/70">
+									{tMatch(matchLocaleKeys.match_waiting_session_result_pick_first_label)}
+								</p>
+								<p className="mt-2 text-sm leading-6 text-cyan-50/80">
+									{tMatch(matchLocaleKeys.match_waiting_session_result_pick_first_description)}
+								</p>
+								<div className="mt-4 grid gap-3 sm:grid-cols-2">
+									{nextSessionBlueOptions.map((player) => {
+										const isSelected = nextBluePlayerId === player.id;
+										return (
+											<button
+												key={player.id}
+												type="button"
+												onClick={() => setNextBluePlayerId(player.id)}
+												className={cn(
+													"rounded-2xl border p-4 text-left transition-all duration-200",
+													isSelected
+														? "border-cyan-300 bg-cyan-100/15 shadow-[0_0_25px_rgba(34,211,238,0.2)]"
+														: "border-white/10 bg-slate-950/40 hover:border-cyan-300/40 hover:bg-cyan-100/5",
+												)}
+												aria-pressed={isSelected}
+											>
+												<div className="flex items-start justify-between gap-3">
+													<div>
+														<p className="text-base font-semibold text-white">
+															{player.displayName}
+														</p>
+														<p className="mt-1 text-xs text-white/55">
+															UID {player.ingameUuid}
+														</p>
+													</div>
+													<span
+														className={cn(
+															"rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-center",
+															isSelected
+																? "border-cyan-300/60 bg-cyan-300/15 text-cyan-100"
+																: "border-white/10 bg-white/5 text-white/45",
+														)}
+													>
+														<Check className="size-3" />
+													</span>
+												</div>
+											</button>
+										);
+									})}
+								</div>
+							</div>
+						) : null}
+
 						<DialogFooter className="flex items-center justify-between gap-3 sm:justify-between">
 							<div className="text-xs uppercase tracking-[0.22em] text-white/40">
 								{isHost ? tMatch(matchLocaleKeys.match_waiting_host_action_required) : tMatch(matchLocaleKeys.match_waiting_waiting_for_host)}
@@ -311,7 +384,7 @@ function RouteComponent() {
 							{isHost ? (
 								<Button
 									onClick={handleContinueNextSession}
-									disabled={continueSessionMutation.isPending}
+									disabled={continueSessionMutation.isPending || !nextBluePlayerId}
 									className="gap-2 bg-cyan-400 text-slate-950 hover:bg-cyan-300"
 								>
 									{continueSessionMutation.isPending
