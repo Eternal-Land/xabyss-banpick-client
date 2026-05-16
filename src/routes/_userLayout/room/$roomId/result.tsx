@@ -154,26 +154,30 @@ function MatchResultComponent() {
 
 	const sessionRows = report.sessions.map((session, index) => {
 		const isBlueLeft = session.blueParticipant?.id === bluePlayer?.id;
-		const leftName = isBlueLeft
-			? (bluePlayer?.displayName ??
-				tMatch(matchLocaleKeys.match_result_blue_fallback))
-			: (redPlayer?.displayName ??
-				tMatch(matchLocaleKeys.match_result_red_fallback));
-		const rightName = isBlueLeft
-			? (redPlayer?.displayName ??
-				tMatch(matchLocaleKeys.match_result_red_fallback))
-			: (bluePlayer?.displayName ??
-				tMatch(matchLocaleKeys.match_result_blue_fallback));
+		const leftName =
+			session.blueParticipant?.displayName ??
+			(isBlueLeft
+				? (bluePlayer?.displayName ??
+					tMatch(matchLocaleKeys.match_result_blue_fallback))
+				: (redPlayer?.displayName ??
+					tMatch(matchLocaleKeys.match_result_red_fallback)));
+		const rightName =
+			session.redParticipant?.displayName ??
+			(isBlueLeft
+				? (redPlayer?.displayName ??
+					tMatch(matchLocaleKeys.match_result_red_fallback))
+				: (bluePlayer?.displayName ??
+					tMatch(matchLocaleKeys.match_result_blue_fallback)));
 
 		let leftWon = false;
 		let rightWon = false;
 
 		if (session.winnerSide === PlayerSide.BLUE) {
-			leftWon = isBlueLeft;
-			rightWon = !isBlueLeft;
+			leftWon = true;
+			rightWon = false;
 		} else if (session.winnerSide === PlayerSide.RED) {
-			leftWon = !isBlueLeft;
-			rightWon = isBlueLeft;
+			leftWon = false;
+			rightWon = true;
 		}
 
 		const winnerLabel =

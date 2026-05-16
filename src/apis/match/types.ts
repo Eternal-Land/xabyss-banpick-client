@@ -21,6 +21,10 @@ export interface MatchResponse {
 	status: MatchStatusEnum;
 }
 
+export interface ContinueSessionInput {
+	nextBluePlayerId?: string;
+}
+
 export interface MatchStateCharacterSummary {
 	characterId: string;
 	level: number;

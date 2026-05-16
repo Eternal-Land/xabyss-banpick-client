@@ -27,6 +27,8 @@ Routes in `src/routes/` use file-based routing. Auto-generates `src/routeTree.ge
 - shadcn/ui uses "new-york" style
 - Tailwind CSS v4 (configured in `vite.config.ts`)
 - Admin character-weapon screens should hydrate character and weapon avatar/name display from the list APIs instead of relying on relation keys alone, and the create/edit flow uses a dialog with `SearchSelect` inputs.
+- Between BO3/BO5 sessions, the waiting route must let the host choose which player starts next as blue before it calls `matchApi.continueSession(...)`.
+- Match result screens must derive stable match-side ownership from session participants, not from mutable `match.bluePlayer` / `match.redPlayer` values that can change between sessions.
 
 ## Environment
 
