@@ -1883,8 +1883,6 @@ function RouteComponent() {
 						isSupachaiButtonDisabled={
 							isActivatingSupachai ||
 							!isDraftCompleted ||
-							blueSupachaiFromCharacterId !== "" ||
-							blueSupachaiToCharacterId !== "" ||
 							blueSupachaiRemainingUses <= 0
 						}
 						hasTravellerPicked={blueHasTravellerPicked}
@@ -1970,8 +1968,6 @@ function RouteComponent() {
 						isSupachaiButtonDisabled={
 							isActivatingSupachai ||
 							!isDraftCompleted ||
-							redSupachaiFromCharacterId !== "" ||
-							redSupachaiToCharacterId !== "" ||
 							redSupachaiRemainingUses <= 0
 						}
 						hasTravellerPicked={redHasTravellerPicked}
